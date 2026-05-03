@@ -19,6 +19,8 @@ Why 365 and not ACT/365 or ACT/360 or business day counts: this is a pet project
 
 **Assumed zero in v1.** The pricing module computes prices under the textbook no dividend assumption. The user facing form does not collect a dividend yield. The backend does not compute or persist a dividend value. Greeks are computed under the same no dividend assumption.
 
+**Greeks at the deterministic limits.** When `T = 0`, `sigma = 0`, or `S = 0`, the closed form Greeks are not well defined (delta is a step function in those limits, gamma and vega blow up or vanish). The implementation returns zero for all five Greeks at these inputs by design. The price functions still return the correct deterministic forward intrinsic at those inputs (e.g., `max(S - K, 0)` at `T = 0`); only the Greeks short circuit. A user who needs sensitivity at these limits should perturb the inputs slightly and inspect the resulting Greeks numerically.
+
 This is an explicit modeling choice, not a bug. It is the simplest assumption that lets the whole project ship and is consistent with the source video transcript.
 
 If a future phase adds dividends, the change is captured as a new entry in `docs/future-ideas.md` and surfaces as an ADR. The expected route is to add a `q` field (continuous dividend yield) to the request payload, switch to the Black Scholes Merton form (multiply S by exp(-qT) inside the d1 numerator and the call value), and update both the conventions doc and the sanity cases.

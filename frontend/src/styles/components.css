@@ -434,6 +434,68 @@ button {
   background: var(--color-text-subtle);
 }
 
+/* ══ Greeks panel ════════════════════════════════════════════════════════ */
+[data-component='ResultPanel'] [data-component='GreeksPanel'] {
+  grid-column: 1 / -1;
+}
+[data-component='GreeksPanel'] [data-element='row'] {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: var(--space-3);
+}
+[data-component='GreeksPanel'] [data-element='tile'] {
+  background: var(--color-surface-2);
+  border-radius: var(--radius-lg);
+  padding: var(--space-4);
+  border-left: 3px solid var(--color-border);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+}
+[data-component='GreeksPanel'] [data-element='tile'][data-accent='primary'] {
+  border-left-color: var(--color-primary-300);
+}
+[data-component='GreeksPanel'] [data-element='tile'][data-accent='accent'] {
+  border-left-color: var(--color-accent-500);
+}
+[data-component='GreeksPanel'] [data-element='tile'][data-accent='amber'] {
+  border-left-color: var(--color-greek-amber);
+}
+[data-component='GreeksPanel'] [data-element='tile'][data-accent='info'] {
+  border-left-color: var(--color-info-500);
+}
+[data-component='GreeksPanel'] [data-element='tile'][data-accent='violet'] {
+  border-left-color: var(--color-greek-violet);
+}
+[data-component='GreeksPanel'] [data-element='glyph'] {
+  font-family: var(--font-display);
+  font-style: italic;
+  font-weight: var(--weight-bold);
+  font-size: 22px;
+  color: var(--color-text-muted);
+  line-height: 1;
+}
+[data-component='GreeksPanel'] [data-element='value'] {
+  font-family: var(--font-number);
+  font-size: 22px;
+  font-variant-numeric: tabular-nums;
+  color: var(--color-text-primary);
+  line-height: 1.1;
+}
+[data-component='GreeksPanel'] [data-element='name'] {
+  font-family: var(--font-display);
+  font-style: italic;
+  font-weight: var(--weight-medium);
+  font-size: 14px;
+  color: var(--color-text-muted);
+}
+
+@media (max-width: 480px) {
+  [data-component='GreeksPanel'] [data-element='row'] {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
 /* ══ Tags ════════════════════════════════════════════════════════════════ */
 .tr-tag {
   display: inline-flex;

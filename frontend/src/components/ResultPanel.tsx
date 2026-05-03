@@ -6,6 +6,7 @@
 
 import type { JSX } from 'react'
 
+import { GreeksPanel } from './GreeksPanel'
 import { MetricCard } from './MetricCard'
 import {
   callIntrinsic as computeCallIntrinsic,
@@ -19,25 +20,34 @@ interface ResultPanelProps {
   result: PriceResponse | null
 }
 
-const ZERO_RESULT: PriceResponse = { call: 0, put: 0 }
+const ZERO_VALUES = { call: 0, put: 0 }
 
 export function ResultPanel({ inputs, result }: ResultPanelProps): JSX.Element {
-  const r = result ?? ZERO_RESULT
+  const callValue = result?.call ?? ZERO_VALUES.call
+  const putValue = result?.put ?? ZERO_VALUES.put
   const callI = computeCallIntrinsic(inputs.S, inputs.K)
   const putI = computePutIntrinsic(inputs.S, inputs.K)
-  const callT = computeTimeValue(r.call, callI)
-  const putT = computeTimeValue(r.put, putI)
+  const callT = computeTimeValue(callValue, callI)
+  const putT = computeTimeValue(putValue, putI)
 
   return (
     <section data-component="ResultPanel">
       <MetricCard
         variant="call"
         title="Call Value"
-        value={r.call}
+        value={callValue}
         intrinsic={callI}
         timeValue={callT}
       />
-      <MetricCard variant="put" title="Put Value" value={r.put} intrinsic={putI} timeValue={putT} />
+      <MetricCard
+        variant="put"
+        title="Put Value"
+        value={putValue}
+        intrinsic={putI}
+        timeValue={putT}
+      />
+      <GreeksPanel title="Call Greeks" greeks={result?.call_greeks ?? null} />
+      <GreeksPanel title="Put Greeks" greeks={result?.put_greeks ?? null} />
     </section>
   )
 }

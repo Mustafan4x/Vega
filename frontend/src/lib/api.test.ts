@@ -25,11 +25,28 @@ describe('fetchPrice', () => {
   })
 
   it('parses a 200 response into a PriceResponse', async () => {
-    fetchSpy.mockResolvedValue(jsonResponse(200, { call: 10.45, put: 5.57 }))
+    const greeksFixture = {
+      delta: 0.5,
+      gamma: 0.01,
+      theta_per_day: -0.02,
+      vega_per_pct: 0.3,
+      rho_per_pct: 0.4,
+    }
+    fetchSpy.mockResolvedValue(
+      jsonResponse(200, {
+        call: 10.45,
+        put: 5.57,
+        call_greeks: greeksFixture,
+        put_greeks: { ...greeksFixture, delta: -0.5 },
+      }),
+    )
 
     const result = await fetchPrice(REQUEST, { baseUrl: BASE_URL })
 
-    expect(result).toEqual({ call: 10.45, put: 5.57 })
+    expect(result.call).toBe(10.45)
+    expect(result.put).toBe(5.57)
+    expect(result.call_greeks.delta).toBe(0.5)
+    expect(result.put_greeks.delta).toBe(-0.5)
     expect(fetchSpy).toHaveBeenCalledWith(
       `${BASE_URL}/api/price`,
       expect.objectContaining({
@@ -37,6 +54,14 @@ describe('fetchPrice', () => {
         body: JSON.stringify(REQUEST),
       }),
     )
+  })
+
+  it('rejects a 200 response missing the greeks fields with a server PriceError', async () => {
+    fetchSpy.mockResolvedValue(jsonResponse(200, { call: 10.45, put: 5.57 }))
+
+    await expect(fetchPrice(REQUEST, { baseUrl: BASE_URL })).rejects.toMatchObject({
+      kind: 'server',
+    })
   })
 
   it('maps a 422 to a validation PriceError with the offending field names', async () => {

@@ -2,7 +2,7 @@
 
 This is the per phase implementation plan, derived from `SPEC.md`. It is owned by the Project Manager and updated at every phase boundary. For "which phase is next" status, read `STATUS.md` (the single source of truth). This file is the longer plan: who does what, what ships, and what gates a phase before it closes.
 
-**Currently in flight**: Phase 7 (The Greeks) reserved for the next window. Phases 0, 1, 2, 3, 4, 5, and 6 are complete.
+**Currently in flight**: Phase 8 (Real market data via yfinance) reserved for the next window. Phases 0 through 7 are complete.
 
 ## How this plan is used
 
@@ -261,22 +261,28 @@ QA, Security, Code Review, Risk Reviewer.
 
 ---
 
-## Phase 7: The Greeks
+## Phase 7: The Greeks [DONE]
 
 **Owners**: Quant Domain Validator, Pricing Models Engineer, Backend Developer, Frontend Developer, QA Engineer.
 
-**Window cost**: ~40% alone. **Bundle candidate with Phase 8** unless the user objects.
+**Window cost**: ~40% alone. Spanned two windows in practice (backend half landed in window 1 after Phase 6 closeout pushed usage high; frontend half resumed in window 2 from Resume notes).
 
 ### Deliverables
 
-* Closed form Greeks (delta, gamma, theta, vega, rho) added to the Black Scholes module.
-* `POST /api/price` returns Greeks alongside call and put.
-* `GreeksPanel` displays them next to the result panel.
-* Property based tests: put call parity, delta bounds, vega non negativity, etc.
+* [x] Closed form Greeks in `backend/app/pricing/black_scholes.py`: a `Greeks` dataclass plus `black_scholes_call_greeks` and `black_scholes_put_greeks` functions returning textbook math units (per unit sigma for vega, per unit r for rho, per year for theta; delta and gamma in natural units). Edge cases T=0, sigma=0, S=0 return zero Greeks by design (documented in `docs/risk/conventions.md`).
+* [x] `POST /api/price` returns nested `call_greeks` and `put_greeks` of shape `GreeksDisplay`. The math-to-display layer (`_to_display` in `app/api/price.py`) rescales: vega per 1 percent sigma, rho per 1 percent r, theta per calendar day. Delta and gamma stay unscaled. Conversion is centralized in one place.
+* [x] `frontend/src/components/GreeksPanel.tsx`: five-tile grid (Delta, Gamma, Theta, Vega, Rho). Each tile carries a Greek glyph (italic serif), a value (Newsreader tabular), a name (italic serif). 3 px left accent border cycles through primary, accent, amber, info, violet. aria-label includes display units (per day, per 1 percent of sigma, per 1 percent of r) for screen reader users.
+* [x] `ResultPanel` now renders both `GreeksPanel` instances (Call and Put) below the call and put metric cards; the Greeks panels span both columns of the grid (`grid-column: 1 / -1`).
+* [x] Property-based tests: put-call parity (C - P = S - K e^(-rT)), delta_call - delta_put = 1, call delta in [0, 1], put delta in [-1, 0], gamma non-negative and identical across legs, vega non-negative and identical across legs, plus reference values at the canonical Hull inputs.
+* [x] Unit conversion documented in the math layer docstring; sigma=0 and T=0 zero-Greeks behavior added to `docs/risk/conventions.md` per Risk Reviewer recommendation.
 
 ### Gates
 
-QA, Security, Code Review, Risk Reviewer.
+* [x] QA: 177 backend tests pass (was 138, +39 across new test_greeks.py and updated test_price.py). 64 frontend tests pass (was 57, +7 GreeksPanel tests, +1 ResultPanel test, +1 api.test.ts test for the new server response shape). tsc, eslint, prettier, ruff, mypy clean.
+* [x] Security: no new endpoints; the Phase 4/6 reviews still apply. `GreeksDisplay` type guard rejects malformed responses with `kind: 'server'`.
+* [x] Code Review: PM session reviewed the diff. No simplifications outstanding.
+* [x] Risk and Financial Correctness Reviewer: subagent signed off with no blockers. Confirmed reference values at Hull canonical inputs (call delta 0.6368, put delta -0.3632, gamma 0.01876, vega per pct 0.3752, theta per day -0.01757 for call), sign conventions (long holder perspective), identities (gamma and vega equal across legs, delta sum equals 1), edge case handling, and unit scaling. One minor doc nit applied: documented the Greeks-at-deterministic-limits convention in `conventions.md`.
+* [x] Live smoke test: `trader-serve` returned the full Greeks payload at canonical inputs matching Hull to 4+ decimals.
 
 ---
 

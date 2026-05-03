@@ -21,9 +21,19 @@ export interface PriceRequest {
   sigma: number
 }
 
+export interface GreeksDisplay {
+  delta: number
+  gamma: number
+  theta_per_day: number
+  vega_per_pct: number
+  rho_per_pct: number
+}
+
 export interface PriceResponse {
   call: number
   put: number
+  call_greeks: GreeksDisplay
+  put_greeks: GreeksDisplay
 }
 
 export interface HeatmapRequest extends PriceRequest {
@@ -184,10 +194,27 @@ async function postJson<TRequest, TResponse>(
   })
 }
 
+function isGreeksDisplay(g: unknown): g is GreeksDisplay {
+  if (typeof g !== 'object' || g === null) return false
+  const r = g as Record<string, unknown>
+  return (
+    typeof r.delta === 'number' &&
+    typeof r.gamma === 'number' &&
+    typeof r.theta_per_day === 'number' &&
+    typeof r.vega_per_pct === 'number' &&
+    typeof r.rho_per_pct === 'number'
+  )
+}
+
 function isPriceResponse(body: unknown): body is PriceResponse {
   if (typeof body !== 'object' || body === null) return false
   const b = body as Record<string, unknown>
-  return typeof b.call === 'number' && typeof b.put === 'number'
+  return (
+    typeof b.call === 'number' &&
+    typeof b.put === 'number' &&
+    isGreeksDisplay(b.call_greeks) &&
+    isGreeksDisplay(b.put_greeks)
+  )
 }
 
 function isHeatmapResponse(body: unknown): body is HeatmapResponse {

@@ -2,7 +2,7 @@
 
 This is the per phase implementation plan, derived from `SPEC.md`. It is owned by the Project Manager and updated at every phase boundary. For "which phase is next" status, read `STATUS.md` (the single source of truth). This file is the longer plan: who does what, what ships, and what gates a phase before it closes.
 
-**Currently in flight**: Phase 4 (Heat map visualization) reserved for the next window. Phases 0, 1, 2, and 3 are complete.
+**Currently in flight**: Phase 5 (P&L heat map) reserved for the next window. Phases 0, 1, 2, 3, and 4 are complete.
 
 ## How this plan is used
 
@@ -174,21 +174,32 @@ QA, Security, Code Review, Risk Reviewer.
 
 ---
 
-## Phase 4: Heat map visualization
+## Phase 4: Heat map visualization [DONE]
 
 **Owners**: Frontend Developer (lead), Backend Developer (vectorized endpoint), Performance Engineer (profile).
 
-**Window cost**: ~90% of one window.
+**Window cost**: ~90% of one window. Spanned two windows in practice (backend half landed in the first window with usage already at 68 percent and 34 minutes to reset; frontend half resumed cleanly in the next window from Resume notes).
 
 ### Deliverables
 
-* `POST /api/heatmap`: 2D grid of call and put values for vol shocks plus price shocks. Vectorized with numpy; a 25 by 25 grid responds in well under one second.
-* `HeatMap` component side by side for call and put. Default approach: canvas plus a transparent div hit grid (matches the Oxblood reference). Recharts/Plotly is acceptable if it materially improves maintainability; decision goes through Code Reviewer.
-* User configurable vol and price shock ranges and resolution.
+* [x] `backend/app/pricing/black_scholes_vec.py`: vectorized numpy pricer for call and put on a 1D `S` axis and a 1D `sigma` axis, returning a 2D ndarray with rows indexed by sigma and cols indexed by S. Verified cell for cell against the scalar pricer.
+* [x] `POST /api/heatmap` (`backend/app/api/heatmap.py`): 2D grid of call and put values. Strict Pydantic validation, threat model T12 cap of 21 by 21 cells, finite only inputs, sane upper bounds on `S`, `K`, `T`, `r`, `sigma` to prevent OverflowError, and a model_validator rejecting inverted shock ranges and shocks outside [-0.95, 1.0]. Cold perf: 21 by 21 call+put math runs in under 1 ms; full HTTP path well under 50 ms.
+* [x] `frontend/src/lib/heatMapColors.ts`: segmented linear color interpolator with three stop tables (`stopsValue`, `stopsNeg`, `stopsPos`) ported verbatim from `docs/design/wireframes.md` heat map color scale spec. Unit tested.
+* [x] `frontend/src/lib/api.ts`: refactored to share a `postJson` helper between `fetchPrice` and the new `fetchHeatmap`. Same `PriceError` union (validation, rate limit, server, network, timeout, aborted), 12 second deadline for heat map requests.
+* [x] `frontend/src/components/HeatMap.tsx`: 240 by 240 canvas painter doing bilinear interpolation across the data grid; transparent CSS grid overlay (`[data-element="hitGrid"]`) of `[data-element="cell"]` divs with `aria-label` carrying sigma, spot, and value or P&L per cell.
+* [x] `frontend/src/components/HeatMapControls.tsx`: mode tabs (Value, P&L), vol shock and spot shock range pair sliders, resolution selector (5, 9, 13, 17, 21), and basis NumFields surfaced only in P&L mode.
+* [x] `frontend/src/screens/HeatMapScreen.tsx`: composes the InputForm with the new controls and two heat maps side by side (call, put). AbortController on every request so a rapid-fire user is never racing a stale response.
+* [x] App nav switched: Heat Map nav item now opens the live screen (Phase placeholder removed).
+* [x] 50 frontend Vitest tests pass (was 24): added 8 for `heatMapColors`, 6 for `HeatMap`, 5 for `HeatMapControls`, 3 for `fetchHeatmap`, plus an updated App test for the new screen.
+* [x] 125 backend tests pass (was 85): added 12 for the vectorized pricer and 28 for the heat map endpoint.
 
 ### Gates
 
-QA, Security, Code Review, Performance review.
+* [x] QA: 125 backend + 50 frontend tests pass. tsc, eslint, prettier, ruff, mypy all clean. Vite production build green.
+* [x] Security: Phase 4 review run by Security Engineer subagent. Sign off received with no critical or high findings. Medium finding (unbounded `r` and `T` causing OverflowError on `math.exp`) addressed in this phase by adding sane upper bounds on `S`, `K`, `T`, `r`, `sigma` to both `PriceRequest` and `HeatmapRequest`. Low note (per route rate limits) deferred to Phase 10 (backtest).
+* [x] Code Review: PM session reviewed the diff. No simplifications outstanding.
+* [x] Performance: 21 by 21 grid call+put math in 0.4 ms cold, far under the SPEC's "well under one second" bar. Performance Engineer dispatch deferred since the budget is so loose.
+* [x] Live smoke test: `trader-serve` exchanged a 9 by 9 heat map call from `localhost:5173` and a 22 by 22 rejection with clean field level error.
 
 ---
 

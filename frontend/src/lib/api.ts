@@ -1,15 +1,17 @@
 /**
  * Typed API client for the Trader backend.
  *
- * Wraps `POST /api/price` with strict request and response types, an
- * AbortController plus deadline so the UI never hangs on a slow backend,
- * and an error normalization step that maps validation errors, timeouts,
- * rate limiting, and network failures to a small `PriceError` union the
- * UI can render without leaking backend internals.
+ * Wraps `POST /api/price` and `POST /api/heatmap` with strict request
+ * and response types, an AbortController plus deadline so the UI never
+ * hangs on a slow backend, and an error normalization step that maps
+ * validation errors, timeouts, rate limiting, and network failures to
+ * a single `PriceError` union the UI can render without leaking
+ * backend internals.
  */
 
 const DEFAULT_BASE_URL = 'http://localhost:8000'
 const DEFAULT_TIMEOUT_MS = 8_000
+const DEFAULT_HEATMAP_TIMEOUT_MS = 12_000
 
 export interface PriceRequest {
   S: number
@@ -22,6 +24,20 @@ export interface PriceRequest {
 export interface PriceResponse {
   call: number
   put: number
+}
+
+export interface HeatmapRequest extends PriceRequest {
+  vol_shock: [number, number]
+  spot_shock: [number, number]
+  rows: number
+  cols: number
+}
+
+export interface HeatmapResponse {
+  call: number[][]
+  put: number[][]
+  sigma_axis: number[]
+  spot_axis: number[]
 }
 
 export type PriceErrorKind =
@@ -50,7 +66,7 @@ export class PriceError extends Error {
   }
 }
 
-interface FetchPriceOptions {
+interface FetchOptions {
   baseUrl?: string
   timeoutMs?: number
   signal?: AbortSignal
@@ -60,6 +76,12 @@ interface ValidationDetail {
   loc?: ReadonlyArray<string | number>
   msg?: string
   type?: string
+}
+
+interface PostShape {
+  path: string
+  label: string
+  defaultTimeoutMs: number
 }
 
 function readApiBaseUrl(): string {
@@ -92,19 +114,21 @@ function extractValidationFields(detail: unknown): ReadonlyArray<string> {
   return fields
 }
 
-export async function fetchPrice(
-  request: PriceRequest,
-  options: FetchPriceOptions = {},
-): Promise<PriceResponse> {
+async function postJson<TRequest, TResponse>(
+  shape: PostShape,
+  request: TRequest,
+  options: FetchOptions,
+  validate: (body: unknown) => body is TResponse,
+): Promise<TResponse> {
   const baseUrl = trimTrailingSlash(options.baseUrl ?? readApiBaseUrl())
-  const timeoutMs = options.timeoutMs ?? DEFAULT_TIMEOUT_MS
+  const timeoutMs = options.timeoutMs ?? shape.defaultTimeoutMs
   const controller = new AbortController()
   combineSignals(options.signal, controller)
   const timer = setTimeout(() => controller.abort(new Error('timeout')), timeoutMs)
 
   let response: Response
   try {
-    response = await fetch(`${baseUrl}/api/price`, {
+    response = await fetch(`${baseUrl}${shape.path}`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
       body: JSON.stringify(request),
@@ -121,18 +145,18 @@ export async function fetchPrice(
     if (isAbort) {
       const reason = controller.signal.reason
       if (reason instanceof Error && reason.message === 'timeout') {
-        throw new PriceError('timeout', 'The pricing request timed out.')
+        throw new PriceError('timeout', `The ${shape.label} request timed out.`)
       }
-      throw new PriceError('aborted', 'The pricing request was cancelled.')
+      throw new PriceError('aborted', `The ${shape.label} request was cancelled.`)
     }
-    throw new PriceError('network', 'Could not reach the pricing service.')
+    throw new PriceError('network', `Could not reach the ${shape.label} service.`)
   }
   clearTimeout(timer)
 
   if (response.status === 200) {
-    const body = (await response.json()) as PriceResponse
-    if (typeof body?.call !== 'number' || typeof body?.put !== 'number') {
-      throw new PriceError('server', 'Unexpected response shape from the pricing service.', {
+    const body = (await response.json()) as unknown
+    if (!validate(body)) {
+      throw new PriceError('server', `Unexpected response shape from the ${shape.label} service.`, {
         status: response.status,
       })
     }
@@ -155,7 +179,48 @@ export async function fetchPrice(
     })
   }
 
-  throw new PriceError('server', `The pricing service returned ${response.status}.`, {
+  throw new PriceError('server', `The ${shape.label} service returned ${response.status}.`, {
     status: response.status,
   })
+}
+
+function isPriceResponse(body: unknown): body is PriceResponse {
+  if (typeof body !== 'object' || body === null) return false
+  const b = body as Record<string, unknown>
+  return typeof b.call === 'number' && typeof b.put === 'number'
+}
+
+function isHeatmapResponse(body: unknown): body is HeatmapResponse {
+  if (typeof body !== 'object' || body === null) return false
+  const b = body as Record<string, unknown>
+  return (
+    Array.isArray(b.call) &&
+    Array.isArray(b.put) &&
+    Array.isArray(b.sigma_axis) &&
+    Array.isArray(b.spot_axis)
+  )
+}
+
+export async function fetchPrice(
+  request: PriceRequest,
+  options: FetchOptions = {},
+): Promise<PriceResponse> {
+  return postJson<PriceRequest, PriceResponse>(
+    { path: '/api/price', label: 'pricing', defaultTimeoutMs: DEFAULT_TIMEOUT_MS },
+    request,
+    options,
+    isPriceResponse,
+  )
+}
+
+export async function fetchHeatmap(
+  request: HeatmapRequest,
+  options: FetchOptions = {},
+): Promise<HeatmapResponse> {
+  return postJson<HeatmapRequest, HeatmapResponse>(
+    { path: '/api/heatmap', label: 'heat map', defaultTimeoutMs: DEFAULT_HEATMAP_TIMEOUT_MS },
+    request,
+    options,
+    isHeatmapResponse,
+  )
 }

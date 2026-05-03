@@ -116,6 +116,26 @@ def test_heatmap_rejects_extreme_shock(client: TestClient) -> None:
 
 
 @pytest.mark.parametrize(
+    "field, bad_value",
+    [
+        ("r", -10.0),
+        ("r", 10.0),
+        ("T", 1000.0),
+        ("S", 1e12),
+        ("sigma", 100.0),
+    ],
+)
+def test_heatmap_rejects_out_of_bound_scalar_inputs(
+    client: TestClient, field: str, bad_value: float
+) -> None:
+    payload = {**VALID_PAYLOAD, field: bad_value}
+
+    response = client.post("/api/heatmap", json=payload)
+
+    assert response.status_code == 422
+
+
+@pytest.mark.parametrize(
     "field", ["S", "K", "T", "r", "sigma", "vol_shock", "spot_shock", "rows", "cols"]
 )
 def test_heatmap_rejects_missing_field(client: TestClient, field: str) -> None:

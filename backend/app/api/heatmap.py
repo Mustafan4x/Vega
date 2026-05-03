@@ -23,11 +23,17 @@ MAX_DIMENSION = 21
 class HeatmapRequest(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
-    S: float = Field(ge=0, allow_inf_nan=False, description="Base asset price.")
-    K: float = Field(gt=0, allow_inf_nan=False, description="Strike price.")
-    T: float = Field(ge=0, allow_inf_nan=False, description="Time to expiry in years.")
-    r: float = Field(allow_inf_nan=False, description="Risk free rate (annualized, continuous).")
-    sigma: float = Field(ge=0, allow_inf_nan=False, description="Base volatility (annualized).")
+    # Sane upper bounds keep the math finite. See threat model T12 and the
+    # matching bounds on PriceRequest.
+    S: float = Field(ge=0, le=1e9, allow_inf_nan=False, description="Base asset price.")
+    K: float = Field(gt=0, le=1e9, allow_inf_nan=False, description="Strike price.")
+    T: float = Field(ge=0, le=100, allow_inf_nan=False, description="Time to expiry in years.")
+    r: float = Field(
+        ge=-1.0, le=1.0, allow_inf_nan=False, description="Risk free rate (annualized, continuous)."
+    )
+    sigma: float = Field(
+        ge=0, le=10, allow_inf_nan=False, description="Base volatility (annualized)."
+    )
     vol_shock: list[float] = Field(
         min_length=2, max_length=2, description="[min, max] vol shock as fraction of sigma."
     )

@@ -10,13 +10,22 @@ describe('App', () => {
     expect(document.querySelector('[data-component="PricingScreen"]')).not.toBeNull()
   })
 
-  it('renders a placeholder when a non pricing nav item is active', async () => {
+  it('renders the HeatMap screen when the heatmap nav item is active', async () => {
     const user = (await import('@testing-library/user-event')).default.setup()
     render(<App />)
 
     await user.click(screen.getByRole('button', { name: /heat map/i }))
 
-    expect(screen.getByRole('heading', { name: /heat map/i })).toBeInTheDocument()
-    expect(screen.getByText(/coming in phase 4/i)).toBeInTheDocument()
+    expect(document.querySelector('[data-component="HeatMapScreen"]')).not.toBeNull()
+    expect(screen.getByRole('button', { name: /recompute heat map/i })).toBeInTheDocument()
+  })
+
+  it('renders a placeholder when a not yet shipped nav item is active', async () => {
+    const user = (await import('@testing-library/user-event')).default.setup()
+    render(<App />)
+
+    await user.click(screen.getByRole('button', { name: /backtest/i }))
+
+    expect(screen.getByText(/coming in phase 10/i)).toBeInTheDocument()
   })
 })

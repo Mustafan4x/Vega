@@ -18,11 +18,16 @@ router = APIRouter(prefix="/api", tags=["pricing"])
 class PriceRequest(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
-    S: float = Field(ge=0, allow_inf_nan=False, description="Current asset price.")
-    K: float = Field(gt=0, allow_inf_nan=False, description="Strike price.")
-    T: float = Field(ge=0, allow_inf_nan=False, description="Time to expiry in years.")
-    r: float = Field(allow_inf_nan=False, description="Risk free rate (annualized, continuous).")
-    sigma: float = Field(ge=0, allow_inf_nan=False, description="Volatility (annualized).")
+    # Sane upper bounds keep the math finite: math.exp blows up well before
+    # the values below are reached, so an attacker cannot turn a public
+    # endpoint into a guaranteed OverflowError. See threat model T12.
+    S: float = Field(ge=0, le=1e9, allow_inf_nan=False, description="Current asset price.")
+    K: float = Field(gt=0, le=1e9, allow_inf_nan=False, description="Strike price.")
+    T: float = Field(ge=0, le=100, allow_inf_nan=False, description="Time to expiry in years.")
+    r: float = Field(
+        ge=-1.0, le=1.0, allow_inf_nan=False, description="Risk free rate (annualized, continuous)."
+    )
+    sigma: float = Field(ge=0, le=10, allow_inf_nan=False, description="Volatility (annualized).")
 
 
 class PriceResponse(BaseModel):

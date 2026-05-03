@@ -2,7 +2,7 @@
 
 This is the per phase implementation plan, derived from `SPEC.md`. It is owned by the Project Manager and updated at every phase boundary. For "which phase is next" status, read `STATUS.md` (the single source of truth). This file is the longer plan: who does what, what ships, and what gates a phase before it closes.
 
-**Currently in flight**: Phase 3 (React frontend MVP) reserved for the next window. Phases 0, 1, and 2 are complete.
+**Currently in flight**: Phase 4 (Heat map visualization) reserved for the next window. Phases 0, 1, 2, and 3 are complete.
 
 ## How this plan is used
 
@@ -147,7 +147,7 @@ QA, Security, Code Review, Risk Reviewer.
 
 ---
 
-## Phase 3: React frontend MVP
+## Phase 3: React frontend MVP [DONE]
 
 **Owners**: Frontend Developer (lead), UI/UX Designer (review), Accessibility Specialist (audit), Security Engineer (CSP, secrets, frontend to backend calls).
 
@@ -155,16 +155,22 @@ QA, Security, Code Review, Risk Reviewer.
 
 ### Deliverables
 
-* `InputForm` (the five inputs, client side validation, submits `POST /api/price`).
-* `ResultPanel` (call and put values).
-* `LayoutShell`, `Sidebar`, `TopBar` per the Oxblood design.
-* Typed API client wrapping `/api/price`.
-* Vitest plus Testing Library tests using `[data-component]` and `[data-element]` selectors.
-* a11y audit: keyboard nav, screen reader labels, color contrast.
+* [x] `LayoutShell`, `Sidebar`, `TopBar` rendered with the Oxblood theme tokens; primary navigation switches between Pricing and Phase placeholder screens for Heat Map (4), History (6), Compare (9), and Backtest (10).
+* [x] `InputForm` with the five inputs (S, K, T, r, sigma); r and sigma display in percent. Client side validation reflected in `aria-invalid`. Calculate button disables and shows `aria-busy` while a request is pending.
+* [x] `NumField` primitive with draft state, blur clamp, partial decimal regex, and `htmlFor`/`id` label association.
+* [x] `MetricCard` (call and put variants) with hero number, ITM/OTM tag, intrinsic plus time value sub line. `ResultPanel` composes both metric cards.
+* [x] `PricingScreen` owns the form state, the in flight `AbortController`, the API call, and split status (`role='status'`) and error (`role='alert'`) regions.
+* [x] Typed API client (`src/lib/api.ts`) for `POST /api/price`: timeout, abort handling, and a `PriceError` union for validation, rate limit, server, network, timeout, aborted. `credentials: 'omit'`, `mode: 'cors'`. API base URL from `VITE_API_BASE_URL` (default `http://localhost:8000` for local dev).
+* [x] Component CSS ported from `docs/design/claude-design-output.html` to `src/styles/components.css`; selectors and `data-component`/`data-element` names match the canonical reference for cross referencing.
+* [x] 24 Vitest plus Testing Library tests (api client error mapping, NumField typing/blur, InputForm submit/disabled/invalid, ResultPanel formatting and ITM/OTM, LayoutShell nav, App smoke).
 
 ### Gates
 
-QA, Security, Code Review, UI/UX sign off, a11y sign off.
+* [x] QA: 24 tests pass via `pnpm test`. ESLint clean, Prettier clean, `tsc --noEmit` clean. `pnpm build` succeeds.
+* [x] Security: Phase 3 review run by Security Engineer subagent. Sign off received with no critical or high severity findings. Two info severity items deferred (production fail loud on missing `VITE_API_BASE_URL`, CSP and security headers wired at Cloudflare Pages in Phase 11).
+* [x] a11y: Phase 3 audit run by Accessibility Specialist subagent. Two contrast blockers (call hero, OTM tag, error status text) addressed by switching to the `--color-primary-300`/`--color-primary-200` tints. Major items addressed: ITM/OTM tag accessible name, avatar role and label, status/alert role split, sidebar nav `aria-label` for icon only mode, sr-only `<h1>` per screen, sidebar status accessible name. Remaining minor items (focus ring thickness on icon buttons, color-scheme dark+light when the theme toggle ships) deferred to a follow up.
+* [x] Code Review: PM session reviewed the diff. No simplifications outstanding.
+* [x] Live smoke test: backend `trader-serve` plus frontend `vite preview` exchanged a happy path `/api/price` call from the `localhost:5173` origin.
 
 ---
 

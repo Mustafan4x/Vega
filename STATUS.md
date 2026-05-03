@@ -2,11 +2,11 @@
 
 Single source of truth for which phase is next. Read this file when the user says "work on the next phase" or any equivalent. Update this file when a phase changes state. The Project Manager session owns it.
 
-**Last updated**: 2026-05-03 (Phase 3 closed).
+**Last updated**: 2026-05-03 (Phase 4 opened).
 
 ## Next phase
 
-**Phase 4: Heat map visualization.** Adds a vectorized `POST /api/heatmap` endpoint and a `HeatMap` React component with a canvas painter plus a transparent hit grid. Reserved for the next window.
+**Phase 4: Heat map visualization.** In progress. Adds a vectorized `POST /api/heatmap` endpoint and a `HeatMap` React component with a canvas painter plus a transparent hit grid. Started with usage already at 68 percent and 34 minutes to reset; aiming to land the backend half (vectorized pricing plus the endpoint plus tests) before the window cap and resume the frontend half in the next window.
 
 If you are reading this file because the user just said "work on the next phase", do the following:
 
@@ -26,7 +26,7 @@ Status values: `not started`, `in progress`, `completed`, `bundled with phase N`
 | 1 | Python REPL Black Scholes | completed | 2026-05-02 | ~30% alone | shipped solo (commit 8a0735e); 38/38 tests pass; REPL produces textbook Wilmott values |
 | 2 | FastAPI backend | completed | 2026-05-03 | ~60% alone | 85/85 tests pass; POST /api/price live, security headers, rate limit, structured logs; Security Engineer signed off |
 | 3 | React frontend MVP | completed | 2026-05-03 | ~95% | LayoutShell, InputForm, ResultPanel wired end to end against Phase 2 backend; 24 Vitest tests; Security and a11y reviews signed off |
-| 4 | Heat map visualization | not started | | ~90% | |
+| 4 | Heat map visualization | in progress | | ~90% | started 2026-05-03 with usage at 68 percent and 34 minutes to reset; expected to span this window plus part of the next |
 | 5 | P&L heat map | not started | | ~40% alone | bundle candidate with Phase 6 |
 | 6 | Persistence | not started | | ~60% alone, ~95% with Phase 5 | |
 | 7 | The Greeks | not started | | ~40% alone | bundle candidate with Phase 8 |

@@ -8,6 +8,7 @@ authors = [
 requires-python = ">=3.12"
 dependencies = [
     "fastapi>=0.136.1",
+    "numpy>=2.4.4",
     "pydantic>=2.13.3",
     "slowapi>=0.1.9",
     "uvicorn[standard]>=0.46.0",
@@ -35,8 +36,10 @@ select = ["E", "F", "I", "B", "UP", "N", "W"]
 # Pricing module signatures use textbook notation (S, K, T) per
 # docs/math/black-scholes.md and docs/risk/conventions.md. Quant Validator
 # tests bind by these names. PEP8 N803 does not apply to math symbols.
-"app/pricing/*.py" = ["N803"]
-"tests/pricing/*.py" = ["N803"]
+"app/pricing/*.py" = ["N803", "N806"]
+"tests/pricing/*.py" = ["N802", "N803", "N806"]
+"app/api/heatmap.py" = ["N803", "N806"]
+"tests/api/test_heatmap.py" = ["N803", "N806"]
 
 [tool.mypy]
 python_version = "3.12"

@@ -22,16 +22,6 @@ A scratch list of features that are out of scope for v1 but worth picking up lat
 
 **Notes for the implementer**: the convention is documented in `docs/risk/conventions.md` (dividends assumed zero in v1). The Quant Domain Validator owns the formula change and the new reference values. Risk Reviewer must update sanity cases. Backend Developer adds an optional `q: float = 0.0` parameter to the function signature so existing callers keep working. Frontend Developer adds the input field and the percent to decimal conversion. Default to `q = 0` everywhere so the v1 behavior is preserved.
 
-## Required signed commits on `main`
-
-**Idea**: enable `required_signatures` on the GitHub branch protection rule for `main`. Each commit must carry a verified GPG or SSH signature; GitHub displays a "Verified" badge.
-
-**Why deferred**: the user does not currently have a GPG or SSH commit signing key configured locally. Enabling the toggle without first setting up a key would block all future commits. Defense in depth value is moderate for a solo dev pet project (the main attacker scenario, account takeover, would also let the attacker disable the toggle). Still worth doing before Phase 11 deploys publicly.
-
-**When to revisit**: before Phase 11 (production deployment). Or any time the user wants to set up signing.
-
-**Notes for the implementer**: generate an SSH or GPG key, upload the public key to GitHub at https://github.com/settings/keys (Authentication and Signing keys), set `git config user.signingkey`, set `git config commit.gpgsign true` (or `gpg.format ssh` plus `commit.gpgsign true` for SSH signing), then re run the branch protection PUT to set `required_signatures: true`. The setting to flip is `required_signatures` in the existing branch protection JSON; everything else stays unchanged.
-
 ## Other deferred ideas
 
 (Add more here as they come up. Each entry should follow the same format: idea, why deferred, when to revisit, notes.)

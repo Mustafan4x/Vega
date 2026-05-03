@@ -50,7 +50,9 @@ Each row is one agent. Numbers come from the Task tool task notifications:
 * `duration_ms` (wall clock duration; convert to `Mm Ss` for human reading).
 * What they completed in plain English, no marketing copy.
 
-Add a subagent subtotal row, an "Agent | PM (foreground) | N/A | N/A | N/A | summary" row noting that PM session tokens are not queryable from inside the session, and update the "Running totals" table at the bottom. Read the file first to match the existing format.
+Add a subagent subtotal row, then a `PM (foreground) | ~NNN,000 | N/A | N/A | summary` row with a rough estimate prefixed `~` (PM tokens cannot be queried from inside the session). Update the "Running totals" table at the bottom (Subagent column exact, PM column estimate, prefixed `~`). Read the file first to match the existing format.
+
+PM estimation heuristic: ~30k per major file read into context, ~3k per subagent dispatch prompt, ~1k per subagent return summary, ~5k per commit cycle, plus user facing output. Round to the nearest 10k.
 
 If the file does not exist yet (first PM session after the file was deleted), recreate the structure from `~/src/tracker/total_token_usage.md`'s header and `## How this file is updated` section before appending the new phase block.
 

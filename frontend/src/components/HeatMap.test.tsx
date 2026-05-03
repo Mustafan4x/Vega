@@ -85,6 +85,60 @@ describe('HeatMap', () => {
     expect(firstCell?.getAttribute('aria-label')).toMatch(/P&L/)
   })
 
+  it('shows the basis in the meta line in pl mode', () => {
+    render(
+      <HeatMap
+        dataComp="PnlHeatMap"
+        title="Call P&L"
+        grid={SMALL_GRID}
+        vAxis={SIGMA}
+        sAxis={SPOT}
+        mode="pl"
+        basis={5}
+      />,
+    )
+
+    expect(screen.getByText(/basis \$5\.00/i)).toBeInTheDocument()
+  })
+
+  it('renders signed P&L per cell in pl mode (value minus basis)', () => {
+    render(
+      <HeatMap
+        dataComp="PnlHeatMap"
+        title="Call P&L"
+        grid={SMALL_GRID}
+        vAxis={SIGMA}
+        sAxis={SPOT}
+        mode="pl"
+        basis={5}
+      />,
+    )
+
+    const cells = document.querySelectorAll('[data-element="cell"]')
+    // First grid cell has value 1, basis 5, so P&L = -$4.00.
+    expect(cells[0].getAttribute('aria-label')).toMatch(/-\$4\.00/)
+    // Last cell has value 9, basis 5, so P&L = $4.00 (unsigned dollar).
+    expect(cells[cells.length - 1].getAttribute('aria-label')).toMatch(/\$4\.00/)
+  })
+
+  it('value mode uses value wording even when basis is set', () => {
+    render(
+      <HeatMap
+        dataComp="HeatMap"
+        title="Call value"
+        grid={SMALL_GRID}
+        vAxis={SIGMA}
+        sAxis={SPOT}
+        mode="value"
+        basis={5}
+      />,
+    )
+
+    const firstCell = document.querySelector('[data-element="cell"]')
+    expect(firstCell?.getAttribute('aria-label')).toMatch(/value/)
+    expect(firstCell?.getAttribute('aria-label')).not.toMatch(/P&L/)
+  })
+
   it('renders empty cells when grid is empty', () => {
     render(
       <HeatMap

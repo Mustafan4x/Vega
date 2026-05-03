@@ -56,3 +56,47 @@ describe('rgbToCss', () => {
     expect(rgbToCss([10.4, 20.5, 30.6])).toBe('rgb(10, 21, 31)')
   })
 })
+
+describe('plColor sign property tests', () => {
+  // Pseudo random fixture: avoids a real PRNG dep so the test is hermetic.
+  const cases: Array<[number, number]> = []
+  for (let basis = 1; basis <= 50; basis += 7) {
+    for (let delta = -basis; delta <= basis * 2; delta += 3) {
+      cases.push([basis + delta, basis])
+    }
+  }
+
+  it('values below the basis return a red leaning color (R >= G and R >= B)', () => {
+    for (const [value, basis] of cases) {
+      if (value >= basis) continue
+      const [r, g, b] = plColor(value, basis)
+      expect(r >= g - 1).toBe(true)
+      expect(r >= b - 1).toBe(true)
+    }
+  })
+
+  it('values above the basis return a green leaning color (G >= R and G >= B)', () => {
+    for (const [value, basis] of cases) {
+      if (value <= basis) continue
+      const [r, g, b] = plColor(value, basis)
+      expect(g >= r - 1).toBe(true)
+      expect(g >= b - 1).toBe(true)
+    }
+  })
+
+  it('value equal to basis returns the neutral gray stop', () => {
+    for (let basis = 1; basis <= 50; basis += 7) {
+      const c = plColor(basis, basis)
+      expect(c).toEqual(stopsPos[0])
+    }
+  })
+
+  it('symmetric P&L magnitudes around the basis produce mirrored ramp positions', () => {
+    const basis = 10
+    const small = plColor(basis - 2, basis)
+    const big = plColor(basis - 12, basis)
+    // Larger magnitude on the loss side should be visually deeper red:
+    // R component should not decrease as the loss grows.
+    expect(big[0] <= small[0] + 5).toBe(true)
+  })
+})

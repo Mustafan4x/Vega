@@ -2,7 +2,7 @@
 
 This is the per phase implementation plan, derived from `SPEC.md`. It is owned by the Project Manager and updated at every phase boundary. For "which phase is next" status, read `STATUS.md` (the single source of truth). This file is the longer plan: who does what, what ships, and what gates a phase before it closes.
 
-**Currently in flight**: Phase 5 (P&L heat map) reserved for the next window. Phases 0, 1, 2, 3, and 4 are complete.
+**Currently in flight**: Phase 6 (Persistence) reserved for the next window. Phases 0, 1, 2, 3, 4, and 5 are complete.
 
 ## How this plan is used
 
@@ -203,22 +203,29 @@ QA, Security, Code Review, Risk Reviewer.
 
 ---
 
-## Phase 5: P&L heat map
+## Phase 5: P&L heat map [DONE]
 
 **Owners**: Frontend Developer (lead), Backend Developer, Risk Reviewer.
 
-**Window cost**: ~40% alone. **Bundle candidate with Phase 6** unless the user objects.
+**Window cost**: ~40% alone. Shipped solo (not bundled with Phase 6).
 
 ### Deliverables
 
-* Two new form fields: `purchase_price_call`, `purchase_price_put`.
-* Heat map toggle: value mode versus P&L mode.
-* Color scale: green positive, red negative, neutral midpoint at zero.
-* Risk Reviewer validates the P&L sign and magnitude under stress cases.
+* [x] Two purchase price NumFields (`Call paid`, `Put paid`) surfaced in `HeatMapControls` only when the mode tab is set to P&L. (Landed as a side effect of Phase 4 controls work.)
+* [x] Heat map toggle: value mode versus P&L mode via the mode tabs in `HeatMapControls`. Pressing the tab switches the color ramp and the cell label wording on both heat maps simultaneously.
+* [x] Color scale: green positive, red negative, neutral gray at zero, anchored to the per leg basis. Implemented in `frontend/src/lib/heatMapColors.ts` `plColor` with the diverging zero anchored ramp from `docs/design/wireframes.md`.
+* [x] Sign convention: `pl = value - basis` from the long holder perspective per `docs/risk/conventions.md`. Call basis routes to the call heat map; put basis to the put heat map.
+* [x] Cell `aria-label` formats signed dollar amounts (`-$4.00` vs `$4.00`) so a screen reader user gets unambiguous sign information.
+* [x] 7 new frontend tests (3 P&L property tests on `plColor` color ramp lean and saturation; 4 P&L wording and signed P&L tests on `HeatMap`). 57 frontend tests pass total.
+* [x] Wireframes spec aligned: the P&L denominator is documented as `max(0.5, abs(basis) * 0.4) * 3` to match the implementation's defensive `Math.abs(basis)`.
 
 ### Gates
 
-QA, Security, Code Review, Risk Reviewer.
+* [x] QA: 57 frontend + 125 backend tests pass. tsc, eslint, prettier, ruff, mypy clean.
+* [x] Security: no new endpoints; the Phase 4 review still applies.
+* [x] Code Review: PM session reviewed the diff. No simplifications outstanding.
+* [x] Risk Reviewer: subagent signed off with no blockers. Confirmed sign correctness on a centered grid (call = 10.45, put = 5.57 at the canonical reference inputs match `docs/risk/sanity-cases.md` Case 1), monotonicity along the spot axis (call rises with spot, put falls), maximum loss bounded by basis, and screen reader sign disambiguation.
+* [x] Live smoke test: `trader-serve` exchanged a 5x5 P&L grid; confirmed the center cell at the at the money basis comes out to $0.00, and the corners reach the expected ±premium magnitudes.
 
 ---
 

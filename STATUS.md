@@ -2,11 +2,11 @@
 
 Single source of truth for which phase is next. Read this file when the user says "work on the next phase" or any equivalent. Update this file when a phase changes state. The Project Manager session owns it.
 
-**Last updated**: 2026-05-03 (Phase 4 closed).
+**Last updated**: 2026-05-03 (Phase 5 closed).
 
 ## Next phase
 
-**Phase 5: P&L heat map.** Adds `purchase_price_call` and `purchase_price_put` fields and a P&L mode toggle. Small phase (~40%); bundle candidate with Phase 6 (persistence) per `SPEC.md`. Reserved for the next window.
+**Phase 6: Persistence.** Postgres schema (`inputs` and `outputs` tables linked by `calculation_id`), Alembic migrations, SQLAlchemy 2.x models with parameterized queries, `GET /api/calculations/{id}`, and a Calculate-click write path on `POST /api/heatmap`. Reserved for the next window.
 
 If you are reading this file because the user just said "work on the next phase", do the following:
 
@@ -27,7 +27,7 @@ Status values: `not started`, `in progress`, `completed`, `bundled with phase N`
 | 2 | FastAPI backend | completed | 2026-05-03 | ~60% alone | 85/85 tests pass; POST /api/price live, security headers, rate limit, structured logs; Security Engineer signed off |
 | 3 | React frontend MVP | completed | 2026-05-03 | ~95% | LayoutShell, InputForm, ResultPanel wired end to end against Phase 2 backend; 24 Vitest tests; Security and a11y reviews signed off |
 | 4 | Heat map visualization | completed | 2026-05-03 | ~90% | spanned two windows; backend at a6a427e, frontend follow-up; 28 endpoint tests, 50 frontend tests; canvas painter live; Security signed off |
-| 5 | P&L heat map | not started | | ~40% alone | bundle candidate with Phase 6 |
+| 5 | P&L heat map | completed | 2026-05-03 | ~40% alone | shipped solo; 7 new tests, Risk Reviewer signed off; wireframes spec aligned |
 | 6 | Persistence | not started | | ~60% alone, ~95% with Phase 5 | |
 | 7 | The Greeks | not started | | ~40% alone | bundle candidate with Phase 8 |
 | 8 | Real market data | not started | | ~55% alone, ~95% with Phase 7 | |

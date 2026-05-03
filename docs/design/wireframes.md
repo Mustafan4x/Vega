@@ -144,7 +144,7 @@ Interpolation is segmented linear: pick the segment `seg = floor(t * 4)` (clampe
 The midpoint rule for P&L is **fixed at zero** (the breakeven point). Each cell's P&L is `pl = v - basis` where `basis` is the user supplied purchase price. The scale is normalized so a cell's color depth grows symmetrically as P&L moves away from zero:
 
 ```
-denom = max(0.5, basis * 0.4) * 3
+denom = max(0.5, abs(basis) * 0.4) * 3
 tn = clamp(pl / denom, -1, 1)
 if tn <= 0: stops = stopsNeg, t = tn + 1   // 0..1 across stopsNeg
 else:        stops = stopsPos, t = tn       // 0..1 across stopsPos

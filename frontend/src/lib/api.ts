@@ -13,6 +13,7 @@ const DEFAULT_BASE_URL = 'http://localhost:8000'
 const DEFAULT_TIMEOUT_MS = 8_000
 const DEFAULT_HEATMAP_TIMEOUT_MS = 12_000
 const DEFAULT_TICKER_TIMEOUT_MS = 6_000
+const DEFAULT_BACKTEST_TIMEOUT_MS = 20_000
 
 const TICKER_RE = /^[A-Z0-9.-]{1,10}$/
 
@@ -63,6 +64,37 @@ export interface TickerQuote {
   name: string
   price: number
   currency: string
+}
+
+export type BacktestStrategy = 'long_call' | 'long_put' | 'straddle'
+
+export interface BacktestRequest {
+  symbol: string
+  strategy: BacktestStrategy
+  start_date: string
+  end_date: string
+  sigma: number
+  r: number
+  dte_days: number
+}
+
+export interface BacktestLeg {
+  sign: number
+  kind: string
+}
+
+export interface BacktestResponse {
+  symbol: string
+  strategy: BacktestStrategy
+  dates: string[]
+  spot: number[]
+  position_value: number[]
+  pnl: number[]
+  strike: number
+  entry_basis: number
+  entry_date: string
+  expiry_date: string
+  legs: BacktestLeg[]
 }
 
 export type PriceErrorKind =
@@ -366,6 +398,104 @@ export async function fetchTicker(
   }
 
   throw new PriceError('server', `The ticker service returned ${response.status}.`, {
+    status: response.status,
+  })
+}
+
+function isBacktestResponse(body: unknown): body is BacktestResponse {
+  if (typeof body !== 'object' || body === null) return false
+  const b = body as Record<string, unknown>
+  return (
+    typeof b.symbol === 'string' &&
+    typeof b.strategy === 'string' &&
+    Array.isArray(b.dates) &&
+    Array.isArray(b.spot) &&
+    Array.isArray(b.position_value) &&
+    Array.isArray(b.pnl) &&
+    typeof b.strike === 'number' &&
+    typeof b.entry_basis === 'number' &&
+    typeof b.entry_date === 'string' &&
+    typeof b.expiry_date === 'string' &&
+    Array.isArray(b.legs)
+  )
+}
+
+export async function fetchBacktest(
+  request: BacktestRequest,
+  options: FetchOptions = {},
+): Promise<BacktestResponse> {
+  if (!TICKER_RE.test(request.symbol.toUpperCase())) {
+    throw new PriceError('validation', 'Symbol must be 1 to 10 letters, digits, dots, or dashes.')
+  }
+  const baseUrl = trimTrailingSlash(options.baseUrl ?? readApiBaseUrl())
+  const timeoutMs = options.timeoutMs ?? DEFAULT_BACKTEST_TIMEOUT_MS
+  const controller = new AbortController()
+  combineSignals(options.signal, controller)
+  const timer = setTimeout(() => controller.abort(new Error('timeout')), timeoutMs)
+
+  let response: Response
+  try {
+    response = await fetch(`${baseUrl}/api/backtest`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
+      body: JSON.stringify({ ...request, symbol: request.symbol.toUpperCase() }),
+      credentials: 'omit',
+      mode: 'cors',
+      signal: controller.signal,
+    })
+  } catch (err) {
+    clearTimeout(timer)
+    const isAbort =
+      (err instanceof DOMException && err.name === 'AbortError') ||
+      (err instanceof Error && err.name === 'AbortError') ||
+      controller.signal.aborted
+    if (isAbort) {
+      const reason = controller.signal.reason
+      if (reason instanceof Error && reason.message === 'timeout') {
+        throw new PriceError('timeout', 'The backtest request timed out.')
+      }
+      throw new PriceError('aborted', 'The backtest request was cancelled.')
+    }
+    throw new PriceError('network', 'Could not reach the backtest service.')
+  }
+  clearTimeout(timer)
+
+  if (response.status === 200) {
+    const body = (await response.json()) as unknown
+    if (!isBacktestResponse(body)) {
+      throw new PriceError('server', 'Unexpected response shape from the backtest service.', {
+        status: 200,
+      })
+    }
+    return body
+  }
+  if (response.status === 404) {
+    throw new PriceError('not_found', 'No data for that symbol.', { status: 404 })
+  }
+  if (response.status === 422) {
+    const body = (await response.json().catch(() => ({}))) as { detail?: unknown }
+    throw new PriceError('validation', 'One or more inputs are invalid.', {
+      status: 422,
+      fields: extractValidationFields(body.detail),
+    })
+  }
+  if (response.status === 429) {
+    throw new PriceError('rate_limit', 'Rate limit reached. Slow down and try again.', {
+      status: 429,
+    })
+  }
+  if (response.status === 504) {
+    throw new PriceError('upstream_timeout', 'The market data provider timed out.', {
+      status: 504,
+    })
+  }
+  if (response.status === 502 || response.status === 503) {
+    throw new PriceError('upstream', 'Historical market data is unavailable right now.', {
+      status: response.status,
+    })
+  }
+
+  throw new PriceError('server', `The backtest service returned ${response.status}.`, {
     status: response.status,
   })
 }

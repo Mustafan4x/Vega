@@ -128,8 +128,24 @@ The Trader service exposes three pricing models on the price and heatmap endpoin
 
 **Numerical safety fallbacks.** When the binomial tree's risk neutral probability `p = (exp(r * dt) - d) / (u - d)` falls outside `(0, 1)` due to extreme inputs (very low sigma combined with high `|r|` over a long horizon), the binomial pricer falls back to the deterministic discounted forward, which is the correct sigma-collapses-to-zero limit. The Monte Carlo pricer rounds odd path counts up to the next even number so antithetic pairing is exact; this preserves the unbiased estimator property. Both fallbacks are intentional and tested.
 
+## Backtest engine assumptions (Phase 10)
+
+The backtest engine in `backend/app/backtest/engine.py` makes a small set of explicit simplifications so the curve it produces is unambiguous and reproducible. Each assumption is documented below; future enhancements (per leg IV, intraday marking, multi-strike spreads, short legs) will require extending one or more of these conventions.
+
+* **Strike at entry spot (ATM at entry).** The engine sets the strike equal to the entry day's close, so every backtested trade is exactly at the money on entry. The entry premium is therefore pure time value; intrinsic at entry is zero by construction. The `strike` field in the response reports this value.
+
+* **Constant implied vol over the life of the trade.** The user supplied `sigma` is interpreted as the implied vol the position was opened against and is held constant for every daily mark. The engine does not observe realized vol from the close series and does not refresh the IV surface day to day. This is a v1 simplification; a future enhancement would mark each day at that day's actual IV.
+
+* **Close to close marking.** The position is marked once per day at the close. The P&L curve is therefore close to close; intraday excursions are not visible.
+
+* **Calendar day expiry.** The expiry date is computed as `entry_date + timedelta(days=dte_days)` and is a calendar date, not a trading date. This is consistent with the project's 365 calendar day count convention. If the expiry falls on a non trading day, the engine marks the position on the last trading day in the series that falls on or before expiry; once the date is at or past expiry, `T = 0` and the BS formula collapses to the intrinsic payoff.
+
+* **Long only basis sign.** Every v1 strategy is long only, so the entry basis is always positive (premium paid). The P&L formula `position_value - entry_basis` therefore reads naturally: positive P&L means the marked position has risen above the cost. When short legs are introduced (covered call, cash secured put, vertical credit spreads), the basis convention must extend so a net credit position records a negative basis and the same `position_value - entry_basis` formula continues to give a P&L that increases as the position becomes more profitable.
+
+* **Daily mark uses the same closed form Black Scholes module as `/api/price`.** Sigma collapse to zero, T collapse to zero, and S collapse to zero all short circuit to the deterministic limits documented in the main conventions section.
+
 ## Cross references
 
 * `docs/math/black-scholes.md`: the Quant Domain Validator's formula and derivation reference. The conventions in this file must agree with that one.
-* `docs/risk/sanity-cases.md`: hand calculated reference cases that the pricing module must reproduce to two decimal places. Cases 6 and 7 cover model comparison and divergence regimes.
+* `docs/risk/sanity-cases.md`: hand calculated reference cases that the pricing module must reproduce to two decimal places. Cases 6 and 7 cover model comparison and divergence regimes; Case 8 covers the backtest engine.
 * `docs/future-ideas.md`: where the dividend yield extension will be captured if added.

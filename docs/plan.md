@@ -2,7 +2,7 @@
 
 This is the per phase implementation plan, derived from `SPEC.md`. It is owned by the Project Manager and updated at every phase boundary. For "which phase is next" status, read `STATUS.md` (the single source of truth). This file is the longer plan: who does what, what ships, and what gates a phase before it closes.
 
-**Currently in flight**: Phase 10 (Backtesting). Phases 0 through 9 are complete.
+**Currently in flight**: Phase 11 (Production deployment). Phases 0 through 10 are complete.
 
 ## How this plan is used
 
@@ -340,21 +340,33 @@ QA, Security, Code Review, Risk Reviewer.
 
 ---
 
-## Phase 10: Backtesting
+## Phase 10: Backtesting [DONE]
 
-**Owners**: Pricing Models Engineer plus Backend Developer (engine), Frontend Developer (chart), Performance Engineer.
+**Owners**: Pricing Models Engineer plus Backend Developer (engine), Frontend Developer (chart), Performance Engineer, Risk Reviewer.
 
-**Window cost**: ~95 to 99% of one window. **Do not bundle anything else.**
+**Window cost**: ~50%. Came in well under the 95-99% budget because the backtest engine cleanly composes the existing Black Scholes pricer (one BS call per leg per day, microsecond cheap) and the yfinance integration reused the SSRF-guarded service pattern from Phase 8.
 
 ### Deliverables
 
-* `POST /api/backtest`: given a strategy (long call, covered call, straddle, etc.) and a date range, replay historical prices and produce a P&L curve.
-* `BacktestChart` renders the curve, with strategy selector.
-* Performance review: the backtest endpoint stays within an acceptable time and memory budget.
+* [x] `backend/app/services/historical.py`: `HistoricalLookup` Protocol with `YFinanceHistoricalLookup` adapter (calls `yf.Ticker(symbol).history(start, end, auto_adjust=True)` through a 2-worker `ThreadPoolExecutor` with hard 10 second timeout) and `CachedHistoricalLookup` wrapper (TTL 1 day, LRU 32 entries, NotFound deliberately not cached). Three exception types (`NotFoundError`, `UpstreamTimeoutError`, `UpstreamLookupError`) mirror the ticker service. `HISTORICAL_TICKER_RE` defence-in-depth on the symbol.
+* [x] `backend/app/backtest/engine.py`: pure backtest engine. `Strategy` StrEnum (`LONG_CALL`, `LONG_PUT`, `STRADDLE`); `Leg` dataclass; `STRATEGY_LEGS` registry. `run_backtest(req)` enters at the first close (strike = entry close, ATM by construction), marks each leg via the analytical Black Scholes formula at `T = max(expiry - day, 0) / 365` (T=0 collapses to intrinsic via the existing BS short circuit). Returns dates, spot, position_value, pnl, strike, entry_basis, entry_date, expiry_date, legs. `MAX_DATES = 1300` (five years of trading days plus margin) aligned with the API date range cap.
+* [x] `backend/app/api/backtest.py`: `POST /api/backtest` with strict Pydantic validation (symbol regex from threat model T6, date range cap of 5 years, dte cap of 365 days, sigma 0..10, r in [-1, 1]). Errors map to discrete HTTP statuses without leaking library internals: 404 ticker not found, 504 upstream timeout, 502 upstream error, 422 validation or insufficient data.
+* [x] `frontend/src/lib/api.ts`: `BacktestStrategy` union, `BacktestRequest` and `BacktestResponse` interfaces, `fetchBacktest` with client side regex gate, 20 second timeout (longer than other endpoints because the cold path dominates), encodeURIComponent on the symbol, and full error mapping to the existing `PriceError` union.
+* [x] `frontend/src/components/BacktestForm.tsx`: ticker input (uppercased), strategy `<select>`, start/end `<input type="date">`, DTE/sigma/r `NumField` rows. aria-invalid on field-level errors, aria-busy on the Run button while pending.
+* [x] `frontend/src/components/BacktestChart.tsx`: inline SVG line chart with no third-party library. One polyline of P&L points; zero P&L gridline; 5 y-axis ticks and 5 x-axis ticks (yyyy-mm-dd → mm-dd). Stroke is the accent color (sea green) when final P&L is positive, primary (oxblood) when negative. Empty state placeholder when `result === null`.
+* [x] `frontend/src/screens/BacktestScreen.tsx`: composes `BacktestForm` + `BacktestChart` in a 2-column layout. Owns the AbortController for in-flight fetches. Status/error regions split (`role='status'` + `role='alert'`).
+* [x] App nav: replaced the Backtest placeholder with the real screen.
+* [x] 41 new backend tests (was 245; total now 286): 6 historical service unit tests, 17 backtest engine tests including a perf assertion (`test_engine_perf_max_dates_straddle_under_50_ms`), 18 endpoint contract tests covering happy path, response shape lockdown, strategy dispatch, validation, upstream error mapping, error message authorship, insufficient-data 422.
+* [x] 20 new frontend tests (was 91; total now 111): 9 fetchBacktest tests, 5 BacktestChart tests, 5 BacktestForm tests, 1 App nav test for the new screen.
+* [x] Live integration smoke test against real Yahoo: AAPL long_call from 2026-01-02 to 2026-04-30 with sigma=0.30, r=0.05, dte=30. Returned 81 trading days in 697 ms, entry strike $270.76, basis $9.83, terminal P&L -$9.83 (option expired worthless because spot stayed below strike at expiry).
 
 ### Gates
 
-QA, Security, Code Review, Risk Reviewer, Performance review.
+* [x] QA: 286 backend + 111 frontend tests pass. ruff, mypy, eslint, prettier, tsc clean. Vite build green (30 KB CSS, 232 KB JS, 71 KB gzip).
+* [x] Security: no new endpoints from a security perspective beyond the existing yfinance SSRF surface (T6 controls already documented for the ticker service apply identically here). Per-route slowapi limit on `/api/backtest` recommended by the Performance Engineer is **deferred to Phase 11 production hardening** alongside the per-route limits for `/api/tickers/{symbol}` and `/api/heatmap`. Documented as accepted residual risk in `docs/security/threat-model.md` T6: the existing 60/minute global per IP cap plus the 1-day TTL cache plus the 10-second hard timeout plus the engine's 1300 date cap together bound the abuse surface in the meantime.
+* [x] Code Review: PM session reviewed the diff. No simplifications outstanding.
+* [x] Risk and Financial Correctness Reviewer: subagent **conditional clean sign-off, no code blockers**. Code reads correctly: long-only sign convention applied per leg, T=0 intrinsic collapse via the BS short circuit, ATM-at-entry, time-decay sign on flat series, calendar-day expiry, single-date edge case rejected at the API boundary. Five new conventions documented in `docs/risk/conventions.md` (ATM at entry, constant sigma over trade life, close-to-close marking, calendar day expiry, long-only basis sign). Four new sanity cases added to `docs/risk/sanity-cases.md` (8a long call up move, 8b long put down move, 8c straddle big move, 8d long call expires worthless on flat series).
+* [x] Performance Engineer: subagent **conditional sign-off, two MUST + one SHOULD applied this phase, one MUST deferred**. Applied: (1) raised engine `MAX_DATES` from 400 to 1300 to match the API's 5-year date range cap so the previous quiet-fail path no longer wastes an upstream round trip; (2) added a perf assertion test on the worst-case engine call (1300 day straddle under 50 ms; measured ~5 ms). Deferred: per-route `@limiter.limit("10/minute")` on `/api/backtest` (slowapi architectural refactor; lands in Phase 11). Pure engine cost confirmed at ~1.2 us per BS leg per day; response payload ~5 KB JSON for 81 days.
 
 ---
 

@@ -138,6 +138,10 @@ G. **Reputation**: the project is linked from a resume. Visible compromise (defa
 
 **Residual risk**: yfinance internally hits Yahoo endpoints we do not control. Compromise of Yahoo could feed bogus prices to the user. Mitigated only by sanity checks on numeric ranges (Risk Reviewer's domain).
 
+**Phase 10 v1 implementation notes** (Performance Engineer review, 2026-05-03):
+
+* The `/api/backtest` endpoint hits yfinance on every cache miss. The Performance Engineer recommended adding `@limiter.limit("10/minute")` per route on top of the global slowapi default of 60/minute per IP. The recommendation is **deferred to Phase 11 production hardening** because the existing slowapi setup creates the `Limiter` inside `build_app()` per call (so each test gets a fresh limiter with deterministic in-memory storage), which conflicts with the module-level `@limiter.limit(...)` decorator pattern slowapi expects for per-route limits. Implementing Fix B cleanly requires a refactor of the limiter ownership model; that refactor lands in Phase 11 alongside per-route limits for `/api/tickers/{symbol}` and `/api/heatmap`. The risk is bounded in the meantime by: (a) the existing 60/minute global per IP cap, (b) the historical service's 1 day TTL + 32 entry LRU cache which absorbs repeated requests on the same `(symbol, start, end)` key, (c) the historical service's 10 second hard timeout per upstream call, and (d) the engine's 1300 date cap which limits the response payload size. Documented as accepted residual risk for v1.
+
 **Phase 8 v1 implementation notes** (Security Engineer review, 2026-05-03):
 
 * The 1 MB response size cap is **not** enforced in the v1 implementation. yfinance buffers the entire payload internally and we never see the raw bytes. Accepted residual risk for v1: yfinance only hits hard coded Yahoo URLs; Yahoo's quoteSummary and chart payloads are single digit KB; the worst case is a memory pressure issue, not an exfiltration path. Concrete remediation if revisited: pass a custom `requests.Session` whose `send` reads the body in chunks with a hard byte ceiling, then `yf.Ticker(symbol, session=...)`.

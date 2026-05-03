@@ -7,6 +7,7 @@
 import { useState, type JSX } from 'react'
 
 import { LayoutShell } from './components/LayoutShell'
+import { BacktestScreen } from './screens/BacktestScreen'
 import { HeatMapScreen } from './screens/HeatMapScreen'
 import { Placeholder } from './screens/Placeholder'
 import { PricingScreen } from './screens/PricingScreen'
@@ -14,7 +15,6 @@ import type { ScreenId } from './lib/screens'
 
 const PLACEHOLDER_PHASES: Partial<Record<ScreenId, { label: string; phase: number }>> = {
   compare: { label: 'Model Comparison', phase: 9 },
-  backtest: { label: 'Backtest', phase: 10 },
   history: { label: 'History', phase: 6 },
 }
 
@@ -25,7 +25,8 @@ function App(): JSX.Element {
     <LayoutShell active={active} onNav={setActive}>
       {active === 'pricing' && <PricingScreen />}
       {active === 'heatmap' && <HeatMapScreen />}
-      {active !== 'pricing' && active !== 'heatmap' && (
+      {active === 'backtest' && <BacktestScreen />}
+      {active !== 'pricing' && active !== 'heatmap' && active !== 'backtest' && (
         <Placeholder
           title={PLACEHOLDER_PHASES[active]!.label}
           phase={PLACEHOLDER_PHASES[active]!.phase}

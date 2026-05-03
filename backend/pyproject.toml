@@ -52,10 +52,13 @@ select = ["E", "F", "I", "B", "UP", "N", "W"]
 # FastAPI's idiomatic Depends() default is a false positive for B008.
 "app/api/calculations.py" = ["B008", "N803"]
 "app/api/tickers.py" = ["B008"]
+"app/api/backtest.py" = ["B008"]
+"app/backtest/engine.py" = ["N803", "N806"]
 # TickerNotFound mirrors stdlib LookupError/KeyError naming;
 # TickerUpstreamTimeout mirrors stdlib TimeoutError. Both intentionally
 # omit the Error suffix to match the stdlib base classes they extend.
 "app/services/tickers.py" = ["N818"]
+"app/services/historical.py" = ["N818"]
 
 [tool.mypy]
 python_version = "3.12"

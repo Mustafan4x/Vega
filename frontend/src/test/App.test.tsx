@@ -20,12 +20,22 @@ describe('App', () => {
     expect(screen.getByRole('button', { name: /recompute heat map/i })).toBeInTheDocument()
   })
 
-  it('renders a placeholder when a not yet shipped nav item is active', async () => {
+  it('renders the Backtest screen when the backtest nav item is active', async () => {
     const user = (await import('@testing-library/user-event')).default.setup()
     render(<App />)
 
     await user.click(screen.getByRole('button', { name: /backtest/i }))
 
-    expect(screen.getByText(/coming in phase 10/i)).toBeInTheDocument()
+    expect(document.querySelector('[data-component="BacktestScreen"]')).not.toBeNull()
+    expect(screen.getByRole('button', { name: /run backtest/i })).toBeInTheDocument()
+  })
+
+  it('renders a placeholder when a not yet shipped nav item is active', async () => {
+    const user = (await import('@testing-library/user-event')).default.setup()
+    render(<App />)
+
+    await user.click(screen.getByRole('button', { name: /history/i }))
+
+    expect(screen.getByText(/coming in phase 6/i)).toBeInTheDocument()
   })
 })

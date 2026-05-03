@@ -17,6 +17,7 @@ from slowapi.util import get_remote_address
 from starlette.requests import Request
 from starlette.responses import JSONResponse
 
+from app.api.backtest import router as backtest_router
 from app.api.calculations import router as calculations_router
 from app.api.heatmap import router as heatmap_router
 from app.api.price import router as price_router
@@ -96,6 +97,7 @@ def build_app() -> FastAPI:
     app.include_router(heatmap_router)
     app.include_router(calculations_router)
     app.include_router(tickers_router)
+    app.include_router(backtest_router)
 
     return app
 

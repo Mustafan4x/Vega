@@ -183,6 +183,55 @@ This is the stress region where the three pricers' approximations are most visib
 
 The convention is: when the user picks a non Black Scholes model on a deep OTM near expiry input, expect a visibly different number, and treat the closed form as the reference if a single number is required.
 
+### Case 8: backtest engine sanity cases (Phase 10)
+
+These cases use the canonical Wilmott centered inputs (S = K = 100, T = 30/365, r = 0.05, sigma = 0.20) so the entry basis is computable from Case 4 with `T = 30/365`. The backtest engine's assumptions are documented in `docs/risk/conventions.md` (Backtest engine assumptions, Phase 10).
+
+Reference entry basis values at `T = 30/365`, `r = 0.05`, `sigma = 0.20`:
+
+| Quantity | Value |
+|---|---|
+| `black_scholes_call(100, 100, 30/365, 0.05, 0.20)` | ~2.52 |
+| `black_scholes_put(100, 100, 30/365, 0.05, 0.20)` | ~2.11 |
+| Straddle basis (call + put) | ~4.63 |
+
+#### Case 8a: long call, big up move
+
+Entry day 0 at S = 100, strategy = `long_call`. The series ends day 30 at S = 130.
+
+* Entry basis (call premium): ~2.52.
+* Terminal payoff: max(130 - 100, 0) = 30.
+* Terminal P&L: 30 - 2.52 = **~27.48**.
+* Sign property: terminal P&L is positive because the underlying rallied well above the strike.
+
+#### Case 8b: long put, big down move
+
+Entry day 0 at S = 100, strategy = `long_put`. The series ends day 30 at S = 70.
+
+* Entry basis (put premium): ~2.11.
+* Terminal payoff: max(100 - 70, 0) = 30.
+* Terminal P&L: 30 - 2.11 = **~27.89**.
+* Sign property: terminal P&L is positive because the underlying fell well below the strike.
+
+#### Case 8c: straddle, big move (either direction)
+
+Entry day 0 at S = 100, strategy = `straddle`. Test twice: terminal at S = 130 and at S = 70.
+
+* Entry basis (call + put): ~4.63.
+* Terminal P&L at S = 130: (30 + 0) - 4.63 = ~25.37.
+* Terminal P&L at S = 70: (0 + 30) - 4.63 = ~25.37.
+* Sign property: terminal P&L is positive in both directions because the absolute move dominates the combined premium. Tiny asymmetry from `r` is below the cent tolerance.
+
+#### Case 8d: long call expires worthless on a flat series
+
+Entry day 0 at S = 100, strategy = `long_call`, `sigma = 0.30` (matches the live AAPL spot check). Series is flat at 100 through day 30.
+
+* Entry basis (call premium at sigma = 0.30): ~3.84.
+* Terminal payoff: max(100 - 100, 0) = 0.
+* Terminal P&L: 0 - 3.84 = **~-3.84**.
+* Sign property: terminal P&L is negative because the option expired exactly at the money and the entire premium was time value.
+* Time decay property: P&L is monotonically non positive at every mark in the series (the option's value can only go down on a flat series with positive `r`, since the time value collapses faster than the discounted strike rises).
+
 ## Tolerance
 
 The pricing module must reproduce all expected prices in this document (Cases 1 to 5b) to within one cent (absolute tolerance of 0.01). This tolerance accommodates rounding in the N(x) lookups and the small differences between table values and high precision floating point.
@@ -190,6 +239,8 @@ The pricing module must reproduce all expected prices in this document (Cases 1 
 The Quant Domain Validator's test suite asserts these tolerances explicitly. Any drift beyond one cent is treated as a regression and blocks the phase.
 
 For the Phase 9 multi model cases (6 and 7) the tolerance widens to the per model bounds in Case 6.
+
+For the Phase 10 backtest cases (8a to 8d) the tolerance widens to within one cent on the entry basis and within five cents on the terminal P&L (the underlying spot path is exact, but the BS formula's `N(d)` computation has the usual rounding noise).
 
 ## Cross references
 

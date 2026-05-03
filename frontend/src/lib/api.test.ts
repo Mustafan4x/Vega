@@ -36,6 +36,7 @@ describe('fetchPrice', () => {
       jsonResponse(200, {
         call: 10.45,
         put: 5.57,
+        model: 'black_scholes',
         call_greeks: greeksFixture,
         put_greeks: { ...greeksFixture, delta: -0.5 },
       }),

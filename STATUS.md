@@ -2,11 +2,11 @@
 
 Single source of truth for which phase is next. Read this file when the user says "work on the next phase" or any equivalent. Update this file when a phase changes state. The Project Manager session owns it.
 
-**Last updated**: 2026-05-03 (Phase 8 closed).
+**Last updated**: 2026-05-03 (Phase 9 closed).
 
 ## Next phase
 
-**Phase 9: Multiple pricing models.** Adds the binomial tree pricer, the Monte Carlo pricer, a `model` parameter on `POST /api/price` and `POST /api/heatmap`, the `ModelSelector` UI, and a side by side comparison view. Risk Reviewer signs off that the three models converge on identical inputs. Reserved for the next window (~95% budget).
+**Phase 10: Backtesting.** The largest single phase: backtesting endpoint (`POST /api/backtest`) accepting a strategy and date range and returning a P&L curve, strategy library (long call, covered call, straddle, etc.), historical price ETL, frontend `BacktestChart`, Performance Engineer review of time and memory cost. Reserved for the next window. **Do not bundle anything else into this phase.**
 
 If you are reading this file because the user just said "work on the next phase", do the following:
 
@@ -31,7 +31,7 @@ Status values: `not started`, `in progress`, `completed`, `bundled with phase N`
 | 6 | Persistence | completed | 2026-05-03 | ~60% alone | shipped solo; SQLAlchemy 2.x models, Alembic migration, POST/GET /api/calculations, 13 new contract tests; Security signed off |
 | 7 | The Greeks | completed | 2026-05-03 | ~40% alone | spanned two windows (backend at 82936f2, frontend follow-up); 39 new backend tests + 9 new frontend tests; Risk Reviewer signed off |
 | 8 | Real market data | completed | 2026-05-03 | ~55% alone | shipped solo; 25 new backend tests + 19 new frontend tests; live AAPL smoke test green; Security Engineer conditional pass (no blockers); three T6 residual risks documented |
-| 9 | Multiple pricing models | not started | | ~95% | |
+| 9 | Multiple pricing models | completed | 2026-05-03 | ~70% (well under budget) | binomial CRR + Monte Carlo (antithetic) added; `model` param on price and heatmap; ModelSelector + ComparePanel; 67 new backend tests + 8 new frontend tests; live three-model convergence verified; Risk Reviewer clean sign-off |
 | 10 | Backtesting | not started | | ~95 to 99% | do not bundle anything else |
 | 11 | Production deployment | not started | | ~90% | reserve a fresh window |
 

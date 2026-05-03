@@ -3,21 +3,45 @@ and spot price shocks.
 
 Strict Pydantic validation enforces the threat model T12 cap (21 by 21
 cells), bounds on the shock ranges, and ``extra='forbid'``. The actual
-math runs through :mod:`app.pricing.black_scholes_vec`, which is
-verified cell for cell against the scalar pricer.
+math runs through one of three pricers based on the ``model`` field:
+
+* ``black_scholes``: vectorized closed form (``black_scholes_vec``).
+  ~1ms for the full 21x21 grid.
+* ``binomial``: CRR tree, scalar per cell with reduced step count
+  (``_HEATMAP_BINOMIAL_STEPS``). ~150ms for the full grid.
+* ``monte_carlo``: GBM with antithetic variates, scalar per cell with
+  reduced path count (``_HEATMAP_MC_PATHS``) and a deterministic seed
+  per cell. ~250ms for the full grid.
+
+The reduced step / path counts versus the price endpoint trade some
+accuracy for responsiveness, since the heatmap is a visualization
+(the user reads color, not the exact dollar) and the per cell budget
+in a 21x21 grid is 50x tighter than the per request budget at
+``/api/price``.
 """
 
 from __future__ import annotations
+
+from typing import Literal
 
 import numpy as np
 from fastapi import APIRouter
 from pydantic import BaseModel, ConfigDict, Field, model_validator
 
+from app.pricing.binomial import binomial_call, binomial_put
 from app.pricing.black_scholes_vec import black_scholes_call_vec, black_scholes_put_vec
+from app.pricing.monte_carlo import monte_carlo_call, monte_carlo_put
 
 router = APIRouter(prefix="/api", tags=["heatmap"])
 
 MAX_DIMENSION = 21
+
+PricingModel = Literal["black_scholes", "binomial", "monte_carlo"]
+
+# Reduced parameters for the heatmap path. See module docstring.
+_HEATMAP_BINOMIAL_STEPS = 100
+_HEATMAP_MC_PATHS = 20_000
+_HEATMAP_MC_SEED = 4242
 
 
 class HeatmapRequest(BaseModel):
@@ -42,6 +66,10 @@ class HeatmapRequest(BaseModel):
     )
     rows: int = Field(ge=1, le=MAX_DIMENSION, description="Number of vol axis points.")
     cols: int = Field(ge=1, le=MAX_DIMENSION, description="Number of spot axis points.")
+    model: PricingModel = Field(
+        default="black_scholes",
+        description="Pricing model: black_scholes, binomial, or monte_carlo.",
+    )
 
     @model_validator(mode="after")
     def _validate_shocks(self) -> HeatmapRequest:
@@ -59,12 +87,97 @@ class HeatmapRequest(BaseModel):
 class HeatmapResponse(BaseModel):
     call: list[list[float]]
     put: list[list[float]]
+    model: PricingModel
     sigma_axis: list[float]
     spot_axis: list[float]
 
 
 def _is_finite(x: float) -> bool:
     return x == x and x not in (float("inf"), float("-inf"))
+
+
+def _grid_black_scholes(
+    spot_axis: np.ndarray, sigma_axis: np.ndarray, K: float, T: float, r: float
+) -> tuple[np.ndarray, np.ndarray]:
+    call = black_scholes_call_vec(spot_axis, K, T, r, sigma_axis)
+    put = black_scholes_put_vec(spot_axis, K, T, r, sigma_axis)
+    return call, put
+
+
+def _grid_binomial(
+    spot_axis: np.ndarray, sigma_axis: np.ndarray, K: float, T: float, r: float
+) -> tuple[np.ndarray, np.ndarray]:
+    rows, cols = sigma_axis.size, spot_axis.size
+    call = np.zeros((rows, cols))
+    put = np.zeros((rows, cols))
+    for i in range(rows):
+        for j in range(cols):
+            call[i, j] = binomial_call(
+                float(spot_axis[j]),
+                K,
+                T,
+                r,
+                float(sigma_axis[i]),
+                steps=_HEATMAP_BINOMIAL_STEPS,
+            )
+            put[i, j] = binomial_put(
+                float(spot_axis[j]),
+                K,
+                T,
+                r,
+                float(sigma_axis[i]),
+                steps=_HEATMAP_BINOMIAL_STEPS,
+            )
+    return call, put
+
+
+def _grid_monte_carlo(
+    spot_axis: np.ndarray, sigma_axis: np.ndarray, K: float, T: float, r: float
+) -> tuple[np.ndarray, np.ndarray]:
+    rows, cols = sigma_axis.size, spot_axis.size
+    call = np.zeros((rows, cols))
+    put = np.zeros((rows, cols))
+    for i in range(rows):
+        for j in range(cols):
+            # A deterministic per cell seed keeps the grid stable
+            # under repeat requests but uses an independent stream
+            # per cell so neighboring cells are not perfectly
+            # correlated.
+            cell_seed = _HEATMAP_MC_SEED + i * MAX_DIMENSION + j
+            call[i, j] = monte_carlo_call(
+                float(spot_axis[j]),
+                K,
+                T,
+                r,
+                float(sigma_axis[i]),
+                paths=_HEATMAP_MC_PATHS,
+                seed=cell_seed,
+            )
+            put[i, j] = monte_carlo_put(
+                float(spot_axis[j]),
+                K,
+                T,
+                r,
+                float(sigma_axis[i]),
+                paths=_HEATMAP_MC_PATHS,
+                seed=cell_seed,
+            )
+    return call, put
+
+
+def _grid_for_model(
+    model: PricingModel,
+    spot_axis: np.ndarray,
+    sigma_axis: np.ndarray,
+    K: float,
+    T: float,
+    r: float,
+) -> tuple[np.ndarray, np.ndarray]:
+    if model == "black_scholes":
+        return _grid_black_scholes(spot_axis, sigma_axis, K, T, r)
+    if model == "binomial":
+        return _grid_binomial(spot_axis, sigma_axis, K, T, r)
+    return _grid_monte_carlo(spot_axis, sigma_axis, K, T, r)
 
 
 @router.post("/heatmap", response_model=HeatmapResponse)
@@ -88,12 +201,14 @@ def heatmap(payload: HeatmapRequest) -> HeatmapResponse:
     sigma_axis = np.maximum(sigma_axis, 0.0)
     spot_axis = np.maximum(spot_axis, 0.0)
 
-    call = black_scholes_call_vec(spot_axis, payload.K, payload.T, payload.r, sigma_axis)
-    put = black_scholes_put_vec(spot_axis, payload.K, payload.T, payload.r, sigma_axis)
+    call, put = _grid_for_model(
+        payload.model, spot_axis, sigma_axis, payload.K, payload.T, payload.r
+    )
 
     return HeatmapResponse(
         call=call.tolist(),
         put=put.tolist(),
+        model=payload.model,
         sigma_axis=sigma_axis.tolist(),
         spot_axis=spot_axis.tolist(),
     )

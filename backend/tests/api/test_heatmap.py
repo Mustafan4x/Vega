@@ -32,7 +32,8 @@ def test_heatmap_happy_path_returns_two_grids(client: TestClient) -> None:
 
     assert response.status_code == 200, response.text
     body = response.json()
-    assert set(body.keys()) == {"call", "put", "sigma_axis", "spot_axis"}
+    assert set(body.keys()) == {"call", "put", "model", "sigma_axis", "spot_axis"}
+    assert body["model"] == "black_scholes"
 
     call = body["call"]
     put = body["put"]
@@ -147,9 +148,55 @@ def test_heatmap_rejects_missing_field(client: TestClient, field: str) -> None:
 
 
 def test_heatmap_rejects_extra_fields(client: TestClient) -> None:
-    payload = {**VALID_PAYLOAD, "model": "binomial"}
+    # Phase 9 added `model` as a real field; use a genuinely unknown
+    # one to exercise extra="forbid".
+    payload = {**VALID_PAYLOAD, "shenanigans": True}
 
     response = client.post("/api/heatmap", json=payload)
+
+    assert response.status_code == 422
+
+
+def test_heatmap_defaults_model_to_black_scholes(client: TestClient) -> None:
+    response = client.post("/api/heatmap", json=VALID_PAYLOAD)
+
+    assert response.json()["model"] == "black_scholes"
+
+
+def test_heatmap_binomial_grid_close_to_black_scholes(client: TestClient) -> None:
+    bs_payload = {**VALID_PAYLOAD, "model": "black_scholes", "rows": 5, "cols": 5}
+    bn_payload = {**VALID_PAYLOAD, "model": "binomial", "rows": 5, "cols": 5}
+    bs_default = client.post(
+        "/api/heatmap", json={**VALID_PAYLOAD, "model": "black_scholes"}
+    ).json()
+    binom = client.post("/api/heatmap", json=bn_payload).json()
+    bs_5 = client.post("/api/heatmap", json=bs_payload).json()
+
+    assert binom["model"] == "binomial"
+    for ri, row in enumerate(binom["call"]):
+        for ci, cell in enumerate(row):
+            assert abs(cell - bs_5["call"][ri][ci]) < 0.5, (
+                f"binomial cell ({ri},{ci}) differs from BS by too much"
+            )
+    assert len(bs_default["call"]) == 9  # original 9x9 still works
+
+
+def test_heatmap_monte_carlo_grid_close_to_black_scholes(client: TestClient) -> None:
+    mc_payload = {**VALID_PAYLOAD, "model": "monte_carlo", "rows": 5, "cols": 5}
+    bs_payload = {**VALID_PAYLOAD, "model": "black_scholes", "rows": 5, "cols": 5}
+    mc = client.post("/api/heatmap", json=mc_payload).json()
+    bs_5 = client.post("/api/heatmap", json=bs_payload).json()
+
+    assert mc["model"] == "monte_carlo"
+    # MC at 20k paths per cell: per cell tolerance under 1.0 dollar
+    # for the canonical centered grid.
+    for ri, row in enumerate(mc["call"]):
+        for ci, cell in enumerate(row):
+            assert abs(cell - bs_5["call"][ri][ci]) < 1.0
+
+
+def test_heatmap_rejects_unknown_model(client: TestClient) -> None:
+    response = client.post("/api/heatmap", json={**VALID_PAYLOAD, "model": "heston"})
 
     assert response.status_code == 422
 

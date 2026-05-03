@@ -19,6 +19,7 @@ function priceResponse(call: number, put: number): PriceResponse {
   return {
     call,
     put,
+    model: 'black_scholes',
     call_greeks: { ...ZERO_GREEKS, delta: 0.6368 },
     put_greeks: { ...ZERO_GREEKS, delta: -0.3632 },
   }

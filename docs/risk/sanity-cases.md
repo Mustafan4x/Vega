@@ -161,11 +161,35 @@ Forward = 95 * exp(0.05) = 99.871, below the strike.
 * When sigma = 0 and the forward is below the strike, the call is worthless and the put is worth the discounted forward intrinsic.
 * As with T = 0, the pricing module must avoid a divide by zero at sigma = 0. Short circuit to the deterministic forward result, or handle it via a numerically safe limit.
 
+### Case 6: cross model agreement at canonical Wilmott inputs
+
+**Inputs**: S = 100, K = 100, T = 1.0, r = 0.05, sigma = 0.20.
+
+All three pricers must agree on the call and put values to within the published tolerances:
+
+| Model | Call | Put | Tolerance vs Black Scholes |
+|---|---|---|---|
+| Black Scholes (closed form) | 10.4506 | 5.5735 | reference |
+| Binomial CRR, 500 steps | ~10.45 | ~5.57 | absolute < 0.05 |
+| Monte Carlo, 100k paths, antithetic, seed=4242 | ~10.48 | ~5.60 | absolute < 0.10 |
+
+Greeks are identical across the three models because they are always computed from the closed form Black Scholes formula. See `docs/risk/conventions.md` (pricing model selection and Greeks convention).
+
+### Case 7: model divergence regime, deep OTM call near expiry
+
+**Inputs**: S = 100, K = 120, T = 0.05, r = 0.05, sigma = 0.40.
+
+This is the stress region where the three pricers' approximations are most visible to a user toggling models on the same trade ticket. The closed form gives a small price (around 0.05 to 0.15 dollar depending on rounding); binomial at 500 steps oscillates around the closed form by a few percent; Monte Carlo at 100k paths has relative error around 5 to 10 percent because the small absolute price amplifies the standard error. None of this is a correctness bug; it is the inherent convergence behavior of each method (binomial's O(1/n) with oscillation around the strike crossing, MC's O(1/sqrt(n)) standard error growing with payoff variance).
+
+The convention is: when the user picks a non Black Scholes model on a deep OTM near expiry input, expect a visibly different number, and treat the closed form as the reference if a single number is required.
+
 ## Tolerance
 
-The pricing module must reproduce all expected prices in this document to within one cent (absolute tolerance of 0.01). This tolerance accommodates rounding in the N(x) lookups and the small differences between table values and high precision floating point.
+The pricing module must reproduce all expected prices in this document (Cases 1 to 5b) to within one cent (absolute tolerance of 0.01). This tolerance accommodates rounding in the N(x) lookups and the small differences between table values and high precision floating point.
 
 The Quant Domain Validator's test suite asserts these tolerances explicitly. Any drift beyond one cent is treated as a regression and blocks the phase.
+
+For the Phase 9 multi model cases (6 and 7) the tolerance widens to the per model bounds in Case 6.
 
 ## Cross references
 

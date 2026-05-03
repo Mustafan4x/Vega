@@ -2,7 +2,7 @@
 
 This is the per phase implementation plan, derived from `SPEC.md`. It is owned by the Project Manager and updated at every phase boundary. For "which phase is next" status, read `STATUS.md` (the single source of truth). This file is the longer plan: who does what, what ships, and what gates a phase before it closes.
 
-**Currently in flight**: Phase 9 (Multiple pricing models). Phases 0 through 8 are complete.
+**Currently in flight**: Phase 10 (Backtesting). Phases 0 through 9 are complete.
 
 ## How this plan is used
 
@@ -312,23 +312,31 @@ QA, Security, Code Review, Risk Reviewer.
 
 ---
 
-## Phase 9: Multiple pricing models
+## Phase 9: Multiple pricing models [DONE]
 
 **Owners**: Pricing Models Engineer, Frontend Developer, Risk Reviewer.
 
-**Window cost**: ~95% of one window.
+**Window cost**: ~70%. Came in well under the 95% budget because the binomial and Monte Carlo modules each compose cleanly with the existing pricing layer and the frontend reused `fetchPrice` for the parallel comparison fan out.
 
 ### Deliverables
 
-* Binomial tree pricer.
-* Monte Carlo pricer.
-* `model` parameter on `/api/price` and `/api/heatmap` routes to the correct module.
-* `ModelSelector` UI with side by side comparison view.
-* Convergence tests: the three models converge on identical inputs.
+* [x] `backend/app/pricing/binomial.py`: Cox Ross Rubinstein binomial tree, vectorized terminal layer plus scalar rollback. Default 500 steps. Edge cases (T=0, sigma=0, S=0) mirror Black Scholes. Numerical safety fallback when `(a - d) / (u - d)` leaves [0, 1] (extreme inputs with very low sigma and high `|r|`) returns the deterministic discounted forward, which is the correct sigma-collapses-to-zero limit.
+* [x] `backend/app/pricing/monte_carlo.py`: GBM Monte Carlo with antithetic variates. Seeded `numpy.random.default_rng` for determinism. Default 100k paths. Odd path counts round up to the next even number so antithetic pairing is exact (preserves the unbiased estimator).
+* [x] `backend/app/api/price.py`: `model: Literal['black_scholes', 'binomial', 'monte_carlo']` field on `PriceRequest`, default `black_scholes`. Routes call/put through the chosen pricer. Greeks are always returned from the closed form Black Scholes formula regardless of model (market practice; documented in `docs/risk/conventions.md`). Monte Carlo branch pins seed `4242` so the same payload returns the same number under repeat (UI stability).
+* [x] `backend/app/api/heatmap.py`: `model` field on `HeatmapRequest`. Black Scholes uses the existing vectorized pricer; binomial runs scalar per cell at 100 steps; Monte Carlo runs scalar per cell at 20k paths with a deterministic per cell seed (`base + i * 21 + j`) so the grid is stable under repeat without making neighboring cells correlated. Reduced step / path counts versus the price endpoint trade some accuracy for responsiveness in a 21x21 grid.
+* [x] `frontend/src/lib/api.ts`: `PricingModel` union, optional `model` field on `PriceRequest` and `HeatmapRequest`, required `model` on the response types, `isPriceResponse`/`isHeatmapResponse` type guards updated.
+* [x] `frontend/src/components/ModelSelector.tsx`: three model tabs (`role="tab"` plus `aria-selected`) with a Compare toggle (`role="switch"` plus `aria-checked`). Tabs disable when Compare is on.
+* [x] `frontend/src/components/ComparePanel.tsx`: side by side three column view of the resolved call and put per model, plus a header badge showing the largest call-side spread across the three models. Loading cells render `...` so the layout does not jump when one of the three responses arrives later than the others.
+* [x] `frontend/src/screens/PricingScreen.tsx`: single mode dispatches one `fetchPrice({ ...inputs, model })`; compare mode fans out three parallel `fetchPrice` calls (one per model) with shared AbortController and renders `ComparePanel`. First validation error from any of the three drives the field-level invalid markers.
+* [x] 67 new backend tests (was 178 in pricing+api; total now 245). 19 binomial unit tests, 14 Monte Carlo unit tests, 6 new price contract tests (default model, BS-binomial convergence, BS-MC convergence, Greeks identical across models, unknown model 422, MC determinism), 4 new heatmap contract tests (default model, binomial grid close, MC grid close, unknown model 422). 91 frontend tests (was 83; +5 ModelSelector +3 ComparePanel).
+* [x] Live integration smoke test: at canonical Wilmott inputs (S=K=100, T=1, r=0.05, sigma=0.20) BS gives 10.4506/5.5735, binomial-500 gives 10.4466/5.5695 (|err| < 0.005), MC-100k seed=4242 gives 10.4783/5.5961 (|err| < 0.03).
 
 ### Gates
 
-QA, Security, Code Review, Risk Reviewer.
+* [x] QA: 245 backend + 91 frontend tests pass. ruff, mypy, eslint, prettier, tsc clean. Vite build green (29 KB CSS, 222 KB JS, 69 KB gzip).
+* [x] Security: no new endpoints; the model field passes through Pydantic Literal validation (unknown model returns 422). No new third-party calls. The Phase 4 / 6 / 8 reviews still apply. Per-route rate limit on price and heatmap remains deferred to Phase 10 alongside the backtest endpoint.
+* [x] Code Review: PM session reviewed the diff. No simplifications outstanding.
+* [x] Risk and Financial Correctness Reviewer: subagent **clean sign-off, no blockers**. Confirmed convergence at canonical inputs (binomial < 0.05, MC < 0.10), defended the Greeks-from-BS-always convention against market practice, validated the binomial fallback math and the MC odd-path-rounding bias-free property, and confirmed the per-cell MC seed scheme has no checkerboard pathology. Recommended doc additions: pricing model selection + Greeks convention + tolerances + numerical fallbacks in `docs/risk/conventions.md`; Cases 6 (cross-model agreement) and 7 (model divergence regime: deep OTM call near expiry) in `docs/risk/sanity-cases.md`. Both applied this phase.
 
 ---
 

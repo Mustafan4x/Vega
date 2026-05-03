@@ -16,12 +16,15 @@ const DEFAULT_TICKER_TIMEOUT_MS = 6_000
 
 const TICKER_RE = /^[A-Z0-9.-]{1,10}$/
 
+export type PricingModel = 'black_scholes' | 'binomial' | 'monte_carlo'
+
 export interface PriceRequest {
   S: number
   K: number
   T: number
   r: number
   sigma: number
+  model?: PricingModel
 }
 
 export interface GreeksDisplay {
@@ -35,6 +38,7 @@ export interface GreeksDisplay {
 export interface PriceResponse {
   call: number
   put: number
+  model: PricingModel
   call_greeks: GreeksDisplay
   put_greeks: GreeksDisplay
 }
@@ -49,6 +53,7 @@ export interface HeatmapRequest extends PriceRequest {
 export interface HeatmapResponse {
   call: number[][]
   put: number[][]
+  model: PricingModel
   sigma_axis: number[]
   spot_axis: number[]
 }
@@ -219,12 +224,17 @@ function isGreeksDisplay(g: unknown): g is GreeksDisplay {
   )
 }
 
+function isPricingModel(value: unknown): value is PricingModel {
+  return value === 'black_scholes' || value === 'binomial' || value === 'monte_carlo'
+}
+
 function isPriceResponse(body: unknown): body is PriceResponse {
   if (typeof body !== 'object' || body === null) return false
   const b = body as Record<string, unknown>
   return (
     typeof b.call === 'number' &&
     typeof b.put === 'number' &&
+    isPricingModel(b.model) &&
     isGreeksDisplay(b.call_greeks) &&
     isGreeksDisplay(b.put_greeks)
   )
@@ -236,6 +246,7 @@ function isHeatmapResponse(body: unknown): body is HeatmapResponse {
   return (
     Array.isArray(b.call) &&
     Array.isArray(b.put) &&
+    isPricingModel(b.model) &&
     Array.isArray(b.sigma_axis) &&
     Array.isArray(b.spot_axis)
   )

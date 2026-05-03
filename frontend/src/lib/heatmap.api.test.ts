@@ -43,6 +43,7 @@ describe('fetchHeatmap', () => {
       jsonResponse(200, {
         call: grid,
         put: grid,
+        model: 'black_scholes',
         sigma_axis: [0.1, 0.2],
         spot_axis: [70, 130],
       }),

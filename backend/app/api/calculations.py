@@ -101,6 +101,7 @@ def create_calculation(
         calculation_id=calc_id,
         call=call.tolist(),
         put=put.tolist(),
+        model=payload.model,
         sigma_axis=sigma_axis.tolist(),
         spot_axis=spot_axis.tolist(),
     )

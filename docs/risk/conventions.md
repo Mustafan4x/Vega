@@ -113,8 +113,23 @@ To keep notation consistent with the sanity cases doc and the pricing module:
 | C | Call price | currency |
 | P | Put price | currency |
 
+## Pricing model selection and Greeks convention (Phase 9)
+
+The Trader service exposes three pricing models on the price and heatmap endpoints, selected by the `model` field: `black_scholes` (closed form), `binomial` (Cox Ross Rubinstein tree), and `monte_carlo` (geometric Brownian motion with antithetic variates). The choice affects the call and put values; **Greeks are always returned from the closed form Black Scholes formula regardless of the chosen pricer.** This matches market practice: dealers quote vanilla Greeks off the closed form even when their internal book runs a tree, a PDE solver, or a stochastic vol Monte Carlo. For European vanilla on a non dividend stock, the three pricers target the same underlying GBM dynamics, so the Black Scholes Greeks are the correct sensitivities of the contract the user is pricing.
+
+**Tolerances for sign off** (canonical centered inputs S=K=100, T=1, r=0.05, sigma=0.20):
+
+* Binomial CRR at 500 steps: absolute error against the closed form < 0.05 dollar.
+* Monte Carlo at 100k paths with antithetic variates and a fixed seed: absolute error against the closed form < 0.10 dollar.
+
+**Determinism for UI stability.** The price endpoint pins a deterministic Monte Carlo seed (`_MC_SEED = 4242` in `app/api/price.py`) so the same request payload returns the same number under repeat. This makes the result stable while the user is typing. The heatmap endpoint uses a per cell seed (`base + i * 21 + j`) so the grid is stable under repeat without making neighboring cells correlated; numpy's `default_rng` (PCG64) decorrelates well across adjacent seeds.
+
+**Reduced parameters for the heatmap path.** The heatmap endpoint runs binomial at 100 steps and Monte Carlo at 20k paths per cell, lower than the price endpoint's 500 / 100k. This is acceptable because the heatmap is a visualization (the user reads color, not the exact dollar) and the per cell budget in a 21 by 21 grid is 50x tighter than the per request budget at `/api/price`.
+
+**Numerical safety fallbacks.** When the binomial tree's risk neutral probability `p = (exp(r * dt) - d) / (u - d)` falls outside `(0, 1)` due to extreme inputs (very low sigma combined with high `|r|` over a long horizon), the binomial pricer falls back to the deterministic discounted forward, which is the correct sigma-collapses-to-zero limit. The Monte Carlo pricer rounds odd path counts up to the next even number so antithetic pairing is exact; this preserves the unbiased estimator property. Both fallbacks are intentional and tested.
+
 ## Cross references
 
 * `docs/math/black-scholes.md`: the Quant Domain Validator's formula and derivation reference. The conventions in this file must agree with that one.
-* `docs/risk/sanity-cases.md`: hand calculated reference cases that the pricing module must reproduce to two decimal places.
+* `docs/risk/sanity-cases.md`: hand calculated reference cases that the pricing module must reproduce to two decimal places. Cases 6 and 7 cover model comparison and divergence regimes.
 * `docs/future-ideas.md`: where the dividend yield extension will be captured if added.

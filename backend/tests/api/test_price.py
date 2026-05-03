@@ -25,7 +25,8 @@ def test_price_happy_path_returns_call_and_put(client: TestClient) -> None:
 
     assert response.status_code == 200
     body = response.json()
-    assert set(body.keys()) == {"call", "put", "call_greeks", "put_greeks"}
+    assert set(body.keys()) == {"call", "put", "model", "call_greeks", "put_greeks"}
+    assert body["model"] == "black_scholes"
     assert isinstance(body["call"], float)
     assert isinstance(body["put"], float)
     assert math.isfinite(body["call"])
@@ -154,8 +155,67 @@ def test_price_rejects_non_finite(client: TestClient, field: str) -> None:
         )
 
 
+def test_price_defaults_model_to_black_scholes(client: TestClient) -> None:
+    response = client.post("/api/price", json=VALID_PAYLOAD)
+
+    assert response.json()["model"] == "black_scholes"
+
+
+def test_price_binomial_converges_to_black_scholes(client: TestClient) -> None:
+    bs = client.post("/api/price", json={**VALID_PAYLOAD, "model": "black_scholes"}).json()
+    binom = client.post("/api/price", json={**VALID_PAYLOAD, "model": "binomial"}).json()
+
+    assert binom["model"] == "binomial"
+    assert binom["call"] == pytest.approx(bs["call"], abs=0.05)
+    assert binom["put"] == pytest.approx(bs["put"], abs=0.05)
+
+
+def test_price_monte_carlo_converges_to_black_scholes(client: TestClient) -> None:
+    bs = client.post("/api/price", json={**VALID_PAYLOAD, "model": "black_scholes"}).json()
+    mc = client.post("/api/price", json={**VALID_PAYLOAD, "model": "monte_carlo"}).json()
+
+    assert mc["model"] == "monte_carlo"
+    # MC at 100k paths with antithetic variates and a fixed seed: well
+    # under 0.10 of the analytical price for this canonical case.
+    assert mc["call"] == pytest.approx(bs["call"], abs=0.15)
+    assert mc["put"] == pytest.approx(bs["put"], abs=0.15)
+
+
+def test_price_greeks_are_always_analytical_regardless_of_model(client: TestClient) -> None:
+    # Per docs/risk/conventions.md the Greeks always come from the
+    # closed form Black Scholes formula. Selecting binomial or MC
+    # changes the call/put values but leaves the Greeks unchanged.
+    bs = client.post("/api/price", json={**VALID_PAYLOAD, "model": "black_scholes"}).json()
+    binom = client.post("/api/price", json={**VALID_PAYLOAD, "model": "binomial"}).json()
+    mc = client.post("/api/price", json={**VALID_PAYLOAD, "model": "monte_carlo"}).json()
+
+    assert binom["call_greeks"] == bs["call_greeks"]
+    assert binom["put_greeks"] == bs["put_greeks"]
+    assert mc["call_greeks"] == bs["call_greeks"]
+    assert mc["put_greeks"] == bs["put_greeks"]
+
+
+def test_price_rejects_unknown_model(client: TestClient) -> None:
+    response = client.post("/api/price", json={**VALID_PAYLOAD, "model": "heston"})
+
+    assert response.status_code == 422
+
+
+def test_price_monte_carlo_is_deterministic_under_repeat(client: TestClient) -> None:
+    # The Monte Carlo branch uses a fixed seed so a stable input
+    # gives a stable output. This makes UI churn under typing
+    # predictable for the user.
+    a = client.post("/api/price", json={**VALID_PAYLOAD, "model": "monte_carlo"}).json()
+    b = client.post("/api/price", json={**VALID_PAYLOAD, "model": "monte_carlo"}).json()
+
+    assert a["call"] == b["call"]
+    assert a["put"] == b["put"]
+
+
 def test_price_rejects_extra_fields(client: TestClient) -> None:
-    payload = {**VALID_PAYLOAD, "model": "binomial"}
+    # Phase 9 added `model` as a real field; use a genuinely unknown
+    # one to exercise extra="forbid".
+    payload = {**VALID_PAYLOAD, "shenanigans": True}
 
     response = client.post("/api/price", json=payload)
 

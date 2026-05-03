@@ -133,7 +133,9 @@ def test_create_calculation_rejects_oversized_grid(client: TestClient) -> None:
 
 
 def test_create_calculation_rejects_extra_field(client: TestClient) -> None:
-    bad = {**VALID_PAYLOAD, "model": "binomial"}
+    # Phase 9 added `model` as a real field; use a genuinely unknown
+    # one to exercise extra="forbid".
+    bad = {**VALID_PAYLOAD, "shenanigans": True}
 
     response = client.post("/api/calculations", json=bad)
 

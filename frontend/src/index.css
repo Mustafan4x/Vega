@@ -1,0 +1,17 @@
+@import 'tailwindcss';
+@config '../tailwind.config.ts';
+@import './styles/tokens.css';
+
+html,
+body,
+#root {
+  min-height: 100vh;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  font-family: var(--font-sans);
+  background: var(--color-background);
+  color: var(--color-text-primary);
+}

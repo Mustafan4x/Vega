@@ -368,12 +368,59 @@ button {
   align-items: start;
 }
 
+.tr-pricing > [data-element='leftColumn'] {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-5);
+}
+
 [data-component='InputForm'] [data-element='grid'] {
   display: grid;
   gap: 14px;
 }
 [data-component='InputForm'] [data-element='row'] {
   display: block;
+}
+
+/* ══ Ticker autocomplete ═════════════════════════════════════════════════ */
+[data-component='TickerAutocomplete'] [data-element='search'] {
+  display: block;
+}
+[data-component='TickerAutocomplete'] [data-element='hint'] {
+  margin-top: var(--space-2);
+}
+[data-component='TickerAutocomplete'] [data-element='result'] {
+  margin-top: var(--space-4);
+}
+[data-component='TickerAutocomplete'] [data-element='quote'] {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+[data-component='TickerAutocomplete'] [data-element='quoteLine'] {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: var(--space-3);
+  font-size: 14px;
+  color: var(--color-text-primary);
+}
+[data-component='TickerAutocomplete'] [data-element='symbol'] {
+  font-weight: var(--weight-bold);
+  color: var(--color-primary-300);
+}
+[data-component='TickerAutocomplete'] [data-element='name'] {
+  color: var(--color-text-muted);
+  font-style: italic;
+}
+[data-component='TickerAutocomplete'] [data-element='price'] {
+  margin-left: auto;
+  font-variant-numeric: tabular-nums;
+  font-weight: var(--weight-bold);
+  color: var(--color-text-primary);
+}
+[data-component='TickerAutocomplete'] [data-element='apply'] {
+  align-self: flex-start;
 }
 
 /* ══ Result panel and metric cards ═══════════════════════════════════════ */

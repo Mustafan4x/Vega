@@ -53,6 +53,7 @@ The user has explicitly stressed that security is a top priority. Treat the bar 
 1. SSRF prevention: yfinance is a known good library, but treat it as untrusted. Hard timeout (e.g., 5 seconds), max response size (e.g., 1 MB), no following arbitrary redirects.
 2. Validate ticker input: alphanumeric plus dot plus dash only, length capped (e.g., 10 chars).
 3. Cache responses to limit egress and avoid rate limit driven instability.
+4. **Guardrail**: any future change to `backend/app/services/tickers.py` that accepts a URL parameter (instead of a ticker symbol) is a Security Engineer review trigger. The current v1 implementation only ever passes a regex validated symbol into yfinance, which routes to hard coded Yahoo URLs; that is the basis for accepting the residual risks documented under T6 in `docs/security/threat-model.md`.
 
 ### Phase 11 (Production)
 1. HTTPS everywhere with HSTS preload eligibility.

@@ -20,6 +20,7 @@ from starlette.responses import JSONResponse
 from app.api.calculations import router as calculations_router
 from app.api.heatmap import router as heatmap_router
 from app.api.price import router as price_router
+from app.api.tickers import router as tickers_router
 from app.core.config import load_settings
 from app.core.logging import configure_logging
 from app.middleware import (
@@ -94,6 +95,7 @@ def build_app() -> FastAPI:
     app.include_router(price_router)
     app.include_router(heatmap_router)
     app.include_router(calculations_router)
+    app.include_router(tickers_router)
 
     return app
 

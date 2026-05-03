@@ -9,7 +9,14 @@ import { useCallback, useRef, useState, type JSX } from 'react'
 
 import { InputForm } from '../components/InputForm'
 import { ResultPanel } from '../components/ResultPanel'
-import { fetchPrice, PriceError, type PriceRequest, type PriceResponse } from '../lib/api'
+import { TickerAutocomplete } from '../components/TickerAutocomplete'
+import {
+  fetchPrice,
+  PriceError,
+  type PriceRequest,
+  type PriceResponse,
+  type TickerQuote,
+} from '../lib/api'
 
 const INITIAL_INPUTS: PriceRequest = {
   S: 100,
@@ -59,19 +66,29 @@ export function PricingScreen(): JSX.Element {
   const errorMessage = status.kind === 'error' ? status.message : ''
   const infoMessage = status.kind !== 'error' ? infoStatusMessage(status, result) : ''
 
+  const onTickerApply = useCallback((quote: TickerQuote) => {
+    inFlight.current?.abort()
+    setInputs((prev) => ({ ...prev, S: round2(quote.price) }))
+    setStatus({ kind: 'idle' })
+    setInvalidFields(new Set())
+  }, [])
+
   return (
     <div className="tr-pricing tr-screen-fade" data-component="PricingScreen">
       <h1 className="sr-only">Pricing</h1>
-      <InputForm
-        inputs={inputs}
-        invalid={invalidFields}
-        pending={status.kind === 'pending'}
-        onChange={(next) => {
-          setInputs(next)
-          if (invalidFields.size > 0) setInvalidFields(new Set())
-        }}
-        onCalculate={onCalculate}
-      />
+      <div data-element="leftColumn">
+        <TickerAutocomplete onApply={onTickerApply} />
+        <InputForm
+          inputs={inputs}
+          invalid={invalidFields}
+          pending={status.kind === 'pending'}
+          onChange={(next) => {
+            setInputs(next)
+            if (invalidFields.size > 0) setInvalidFields(new Set())
+          }}
+          onCalculate={onCalculate}
+        />
+      </div>
       <div data-element="resultColumn">
         <ResultPanel inputs={inputs} result={result} />
         <p
@@ -95,4 +112,8 @@ function infoStatusMessage(status: Status, result: PriceResponse | null): string
   if (status.kind === 'pending') return 'Calculating...'
   if (result) return 'Pricing complete.'
   return 'Enter inputs and press Calculate.'
+}
+
+function round2(n: number): number {
+  return Math.round(n * 100) / 100
 }

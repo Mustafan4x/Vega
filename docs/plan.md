@@ -2,7 +2,7 @@
 
 This is the per phase implementation plan, derived from `SPEC.md`. It is owned by the Project Manager and updated at every phase boundary. For "which phase is next" status, read `STATUS.md` (the single source of truth). This file is the longer plan: who does what, what ships, and what gates a phase before it closes.
 
-**Currently in flight**: Phase 8 (Real market data via yfinance) reserved for the next window. Phases 0 through 7 are complete.
+**Currently in flight**: Phase 9 (Multiple pricing models). Phases 0 through 8 are complete.
 
 ## How this plan is used
 
@@ -286,22 +286,29 @@ QA, Security, Code Review, Risk Reviewer.
 
 ---
 
-## Phase 8: Real market data
+## Phase 8: Real market data [DONE]
 
 **Owners**: Backend Developer, Frontend Developer, Security Engineer (third party request hardening).
 
-**Window cost**: ~55% alone, or ~95% bundled with Phase 7.
+**Window cost**: ~55% alone. Shipped solo (not bundled with Phase 7).
 
 ### Deliverables
 
-* `GET /api/tickers/{symbol}`: yfinance lookup with hard timeout (5 seconds), max response size (1 MB), no following arbitrary redirects.
-* Ticker input validation: alphanumeric plus dot plus dash, length capped (10 chars).
-* Response cache for at least one minute to avoid rate limits.
-* `TickerAutocomplete` with debounced search; on select, auto fills the asset price field.
+* [x] `backend/app/services/tickers.py`: `TickerLookup` Protocol, `TickerQuote` dataclass, `CachedTickerLookup` (60s TTL, 256 entry LRU, `TickerNotFound` intentionally not cached), `YFinanceTickerLookup` adapter calling yfinance through a process wide `ThreadPoolExecutor` with `future.result(timeout=5.0)` for the hard 5 second budget. Threat model T6 controls live in three places: the FastAPI `Path(pattern=...)` constraint, a defence in depth `TICKER_RE.match` in the service module, and the frontend regex gate before fetch fires.
+* [x] `backend/app/api/tickers.py`: `GET /api/tickers/{symbol}` returns a strict `TickerResponse` (`extra="forbid"`, four fields, positive finite price). Errors map to discrete HTTP statuses without leaking library internals: 404 not found, 504 upstream timeout, 502 upstream error, 422 invalid symbol.
+* [x] `backend/tests/services/test_ticker_cache.py`: 6 unit tests for the TTL+LRU semantics (first call delegates, second call within TTL hits cache, expired refetches, distinct symbols cached independently, `TickerNotFound` is not cached, LRU evicts least recent).
+* [x] `backend/tests/api/test_tickers.py`: 19 contract tests covering happy path, response shape lockdown (no extra fields), validation rejections (lowercase, bang, space, oversize, backslash, percent), path traversal patterns rejected by URL routing, 404/504/502 mappings, error message does not leak upstream class names, cache prevents the second upstream call, dot/dash symbols (BRK.B, BRK-B) accepted.
+* [x] `frontend/src/lib/api.ts`: `fetchTicker(symbol, options)` with client side regex gate (short circuits before any network call), 6 second timeout, AbortController plumbing identical to `fetchPrice`/`fetchHeatmap`, `PriceErrorKind` extended with `not_found`/`upstream_timeout`/`upstream`. Path is built with `encodeURIComponent` after the regex check.
+* [x] `frontend/src/components/TickerAutocomplete.tsx`: `tr-card` styled section with a search input (debounced 250ms), pending status, resolved quote line (symbol, name, formatted price), and an explicit "Use price" button. Errors surface in a `role="alert"` region. Selecting the price calls `onApply(quote)`; the parent decides what to do.
+* [x] `frontend/src/screens/PricingScreen.tsx`: stacks the autocomplete above the InputForm in a new `[data-element="leftColumn"]` container; the `onTickerApply` callback aborts any in-flight pricing request and writes `quote.price` (rounded to 2 dp) into the asset price field.
+* [x] 25 new backend tests (was 177; total now 202). 19 new frontend tests (was 64; total now 83).
+* [x] Live integration smoke test: `YFinanceTickerLookup().lookup("AAPL")` returned `Apple Inc., $280.14, USD` against live Yahoo from the dev box.
 
 ### Gates
 
-QA, Security (SSRF, timeouts, response size, retries), Code Review.
+* [x] QA: 202 backend + 83 frontend tests pass. ruff, mypy, eslint, prettier, tsc clean. `pnpm build` produces a 219 KB JS bundle (68 KB gzip).
+* [x] Security: Phase 8 review run by Security Engineer subagent. **Conditional pass with no blockers**, three accepted residual risks added to `docs/security/threat-model.md` T6 (response size cap not enforced because yfinance buffers internally; thread cancellation does not actually interrupt blocked socket reads; private address range block not needed because yfinance only hits hard coded Yahoo URLs and we never pass a user URL). Per route slowapi limit on `/api/tickers/{symbol}` deferred to Phase 10 with the heat map and backtest per route limits, consistent with the Phase 4 deferral. Guardrail added to `agents/08-security-engineer.md` Phase 8: any future change to `app/services/tickers.py` that accepts a URL parameter triggers a Security Engineer review.
+* [x] Code Review: PM session reviewed the diff. No simplifications outstanding.
 
 ---
 

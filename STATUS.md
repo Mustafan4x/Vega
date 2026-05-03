@@ -2,11 +2,11 @@
 
 Single source of truth for which phase is next. Read this file when the user says "work on the next phase" or any equivalent. Update this file when a phase changes state. The Project Manager session owns it.
 
-**Last updated**: 2026-05-03 (Phase 7 closed).
+**Last updated**: 2026-05-03 (Phase 8 closed).
 
 ## Next phase
 
-**Phase 8: Real market data.** Adds `GET /api/tickers/{symbol}` (yfinance lookup with hard timeout, max response size, no arbitrary redirects), `TickerAutocomplete` with debounced search on the frontend, and Security Engineer review of the new SSRF surface. Reserved for the next window.
+**Phase 9: Multiple pricing models.** Adds the binomial tree pricer, the Monte Carlo pricer, a `model` parameter on `POST /api/price` and `POST /api/heatmap`, the `ModelSelector` UI, and a side by side comparison view. Risk Reviewer signs off that the three models converge on identical inputs. Reserved for the next window (~95% budget).
 
 If you are reading this file because the user just said "work on the next phase", do the following:
 
@@ -30,7 +30,7 @@ Status values: `not started`, `in progress`, `completed`, `bundled with phase N`
 | 5 | P&L heat map | completed | 2026-05-03 | ~40% alone | shipped solo; 7 new tests, Risk Reviewer signed off; wireframes spec aligned |
 | 6 | Persistence | completed | 2026-05-03 | ~60% alone | shipped solo; SQLAlchemy 2.x models, Alembic migration, POST/GET /api/calculations, 13 new contract tests; Security signed off |
 | 7 | The Greeks | completed | 2026-05-03 | ~40% alone | spanned two windows (backend at 82936f2, frontend follow-up); 39 new backend tests + 9 new frontend tests; Risk Reviewer signed off |
-| 8 | Real market data | not started | | ~55% alone, ~95% with Phase 7 | |
+| 8 | Real market data | completed | 2026-05-03 | ~55% alone | shipped solo; 25 new backend tests + 19 new frontend tests; live AAPL smoke test green; Security Engineer conditional pass (no blockers); three T6 residual risks documented |
 | 9 | Multiple pricing models | not started | | ~95% | |
 | 10 | Backtesting | not started | | ~95 to 99% | do not bundle anything else |
 | 11 | Production deployment | not started | | ~90% | reserve a fresh window |

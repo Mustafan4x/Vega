@@ -12,6 +12,9 @@
 const DEFAULT_BASE_URL = 'http://localhost:8000'
 const DEFAULT_TIMEOUT_MS = 8_000
 const DEFAULT_HEATMAP_TIMEOUT_MS = 12_000
+const DEFAULT_TICKER_TIMEOUT_MS = 6_000
+
+const TICKER_RE = /^[A-Z0-9.-]{1,10}$/
 
 export interface PriceRequest {
   S: number
@@ -50,6 +53,13 @@ export interface HeatmapResponse {
   spot_axis: number[]
 }
 
+export interface TickerQuote {
+  symbol: string
+  name: string
+  price: number
+  currency: string
+}
+
 export type PriceErrorKind =
   | 'validation'
   | 'rate_limit'
@@ -57,6 +67,9 @@ export type PriceErrorKind =
   | 'network'
   | 'timeout'
   | 'aborted'
+  | 'not_found'
+  | 'upstream_timeout'
+  | 'upstream'
 
 export class PriceError extends Error {
   readonly kind: PriceErrorKind
@@ -250,4 +263,98 @@ export async function fetchHeatmap(
     options,
     isHeatmapResponse,
   )
+}
+
+function isTickerQuote(body: unknown): body is TickerQuote {
+  if (typeof body !== 'object' || body === null) return false
+  const b = body as Record<string, unknown>
+  return (
+    typeof b.symbol === 'string' &&
+    typeof b.name === 'string' &&
+    typeof b.price === 'number' &&
+    Number.isFinite(b.price) &&
+    b.price > 0 &&
+    typeof b.currency === 'string'
+  )
+}
+
+export async function fetchTicker(
+  rawSymbol: string,
+  options: FetchOptions = {},
+): Promise<TickerQuote> {
+  const symbol = rawSymbol.trim().toUpperCase()
+  if (!TICKER_RE.test(symbol)) {
+    throw new PriceError('validation', 'Symbol must be 1 to 10 letters, digits, dots, or dashes.')
+  }
+  const baseUrl = trimTrailingSlash(options.baseUrl ?? readApiBaseUrl())
+  const timeoutMs = options.timeoutMs ?? DEFAULT_TICKER_TIMEOUT_MS
+  const controller = new AbortController()
+  combineSignals(options.signal, controller)
+  const timer = setTimeout(() => controller.abort(new Error('timeout')), timeoutMs)
+
+  let response: Response
+  try {
+    response = await fetch(`${baseUrl}/api/tickers/${encodeURIComponent(symbol)}`, {
+      method: 'GET',
+      headers: { Accept: 'application/json' },
+      credentials: 'omit',
+      mode: 'cors',
+      signal: controller.signal,
+    })
+  } catch (err) {
+    clearTimeout(timer)
+    const isAbort =
+      (err instanceof DOMException && err.name === 'AbortError') ||
+      (err instanceof Error && err.name === 'AbortError') ||
+      controller.signal.aborted
+    if (isAbort) {
+      const reason = controller.signal.reason
+      if (reason instanceof Error && reason.message === 'timeout') {
+        throw new PriceError('timeout', 'The ticker lookup timed out.')
+      }
+      throw new PriceError('aborted', 'The ticker lookup was cancelled.')
+    }
+    throw new PriceError('network', 'Could not reach the ticker service.')
+  }
+  clearTimeout(timer)
+
+  if (response.status === 200) {
+    const body = (await response.json()) as unknown
+    if (!isTickerQuote(body)) {
+      throw new PriceError('server', 'Unexpected response shape from the ticker service.', {
+        status: 200,
+      })
+    }
+    return body
+  }
+
+  if (response.status === 404) {
+    throw new PriceError('not_found', 'No data for that symbol.', { status: 404 })
+  }
+  if (response.status === 422) {
+    const body = (await response.json().catch(() => ({}))) as { detail?: unknown }
+    throw new PriceError('validation', 'Symbol is not a valid ticker.', {
+      status: 422,
+      fields: extractValidationFields(body.detail),
+    })
+  }
+  if (response.status === 429) {
+    throw new PriceError('rate_limit', 'Rate limit reached. Slow down and try again.', {
+      status: 429,
+    })
+  }
+  if (response.status === 504) {
+    throw new PriceError('upstream_timeout', 'The market data provider timed out.', {
+      status: 504,
+    })
+  }
+  if (response.status === 502 || response.status === 503) {
+    throw new PriceError('upstream', 'Market data is unavailable right now.', {
+      status: response.status,
+    })
+  }
+
+  throw new PriceError('server', `The ticker service returned ${response.status}.`, {
+    status: response.status,
+  })
 }

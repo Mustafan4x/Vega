@@ -138,6 +138,12 @@ G. **Reputation**: the project is linked from a resume. Visible compromise (defa
 
 **Residual risk**: yfinance internally hits Yahoo endpoints we do not control. Compromise of Yahoo could feed bogus prices to the user. Mitigated only by sanity checks on numeric ranges (Risk Reviewer's domain).
 
+**Phase 8 v1 implementation notes** (Security Engineer review, 2026-05-03):
+
+* The 1 MB response size cap is **not** enforced in the v1 implementation. yfinance buffers the entire payload internally and we never see the raw bytes. Accepted residual risk for v1: yfinance only hits hard coded Yahoo URLs; Yahoo's quoteSummary and chart payloads are single digit KB; the worst case is a memory pressure issue, not an exfiltration path. Concrete remediation if revisited: pass a custom `requests.Session` whose `send` reads the body in chunks with a hard byte ceiling, then `yf.Ticker(symbol, session=...)`.
+* The 5 second hard timeout uses `concurrent.futures.future.result(timeout=...)`, which surfaces 504 to the client but does not actually cancel the worker thread (Python threads cannot be interrupted while blocked in C extensions or socket reads). The `ticker-lookup` ThreadPoolExecutor has 4 workers; under sustained Yahoo slowness the pool can fill with zombie workers and subsequent lookups block. Accepted residual risk for v1: the slowapi 60/minute per IP global limit bounds the abuse, and the cache absorbs the common case. Concrete remediation if observability later shows stalling: bake a per request `timeout=` into the requests Session passed to yfinance so the worker thread unblocks at the socket level.
+* The "no outbound redirects to private address ranges" control is **not** enforced. yfinance is hard coded to Yahoo URLs and we never pass it a user URL, so the original SSRF attack surface this control addressed does not exist in v1. Accepted residual risk: a Yahoo redirect to `169.254.169.254` is implausible. Any future change that accepts a URL parameter (instead of a ticker symbol) is a Security Engineer review trigger; see the Phase 8 entry in `agents/08-security-engineer.md`.
+
 **Owner**: Backend Developer, Security Engineer.
 
 ### T7. Broken access control

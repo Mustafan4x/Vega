@@ -277,14 +277,12 @@ URL state: `active === 'history'`.
 * Clicking a row (or pressing Enter on a focused row) calls `onLoad(row)`; the parent App writes the row's S, K, T, r, sigma into Pricing inputs and switches the active screen to Pricing.
 * No sort, no filter, no pagination in v1. Phase 6 introduces persistence; this screen will then load from the backend.
 
-## Open design questions to relay to the user
+## Design decisions (resolved with the user 2026-05-02)
 
-These questions came up while extracting the design and are not answered by the HTML or by SPEC.md. The PM should relay them to the user before Phase 3 starts.
+The five questions raised during extraction were resolved with the user during the Phase 0 check-in. Frontend Developer should treat the answers below as authoritative starting in Phase 3.
 
-1. **Heat map legend.** The HTML does not render a legend. Should v1 ship without one, or should the Frontend Developer add a `[data-component="HeatMap"] [data-element="legend"]` showing the color stops?
-2. **Light theme.** The Top bar has a Theme icon button. Is light mode in scope for v1, or is the icon a placeholder until later?
-3. **Model selector interactivity.** In v1 the three model columns are read only. Should the user be able to hide a model (checkbox, eye icon) or is the comparison always all three?
-4. **History action column.** The reload icon in the last column duplicates the row click target. Keep it for clarity, or drop it to avoid double action confusion?
-5. **Backtest "Run" button semantics.** In v1 the curve is reactive; the Run button is a noop. Should the React MVP make Run an explicit trigger (the default state is empty until clicked), or keep the reactive behavior?
-
-These do not block extraction; the Frontend Developer can default to "match the HTML behavior" for any unanswered item.
+1. **Heat map legend.** Ship a legend in v1. Add `[data-component="HeatMap"] [data-element="legend"]` showing the active color stops, sized to fit beside the heat map without crowding the cells.
+2. **Light theme.** Light theme **is in scope for v1**. The Top bar moon icon is a working theme toggle, not a placeholder. The toggle persists the user's choice (localStorage). The canonical HTML is dark only, so a light variant of the Oxblood palette must be produced before Phase 3 starts; the production approach (Claude Design round trip versus deriving from the existing tokens) is a Phase 3 prep decision.
+3. **Model selector interactivity.** Always show all three models (Black Scholes, binomial, Monte Carlo) side by side. No hide/show toggle in v1.
+4. **History row action icon.** Keep the reload icon as is. Both the icon and the row click target remain valid entry points; intentional redundancy.
+5. **Backtest "Run" button semantics.** Run is an explicit trigger. The chart is empty until the user clicks Run; reactive recomputation on input change is dropped from the v1 spec.

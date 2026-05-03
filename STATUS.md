@@ -2,11 +2,11 @@
 
 Single source of truth for which phase is next. Read this file when the user says "work on the next phase" or any equivalent. Update this file when a phase changes state. The Project Manager session owns it.
 
-**Last updated**: 2026-05-02 (Phase 0 closed)
+**Last updated**: 2026-05-02 (Phase 1 opened, solo; user at 47% usage so Phase 2 deferred to next window).
 
 ## Next phase
 
-**Phase 1: Python REPL Black Scholes** (likely bundled with Phase 2: FastAPI backend in the same window).
+**Phase 1: Python REPL Black Scholes.** In progress.
 
 If you are reading this file because the user just said "work on the next phase", do the following:
 
@@ -23,7 +23,7 @@ Status values: `not started`, `in progress`, `completed`, `bundled with phase N`
 | # | Phase | Status | Completed on | Window cost | Notes |
 |---|---|---|---|---|---|
 | 0 | Foundations | completed | 2026-05-02 | ~95% | scaffolds, plan, threat model, design tokens, ADRs all landed; first commit on `main` is c47e561 |
-| 1 | Python REPL Black Scholes | not started | | ~30% alone | bundle candidate with Phase 2 |
+| 1 | Python REPL Black Scholes | in progress | | ~30% alone | running solo; Phase 2 deferred to next window per user check-in |
 | 2 | FastAPI backend | not started | | ~60% alone, ~95% with Phase 1 | |
 | 3 | React frontend MVP | not started | | ~95% | |
 | 4 | Heat map visualization | not started | | ~90% | |

@@ -25,13 +25,49 @@ def test_price_happy_path_returns_call_and_put(client: TestClient) -> None:
 
     assert response.status_code == 200
     body = response.json()
-    assert set(body.keys()) == {"call", "put"}
+    assert set(body.keys()) == {"call", "put", "call_greeks", "put_greeks"}
     assert isinstance(body["call"], float)
     assert isinstance(body["put"], float)
     assert math.isfinite(body["call"])
     assert math.isfinite(body["put"])
     assert body["call"] > 0
     assert body["put"] > 0
+
+
+def test_price_response_includes_greeks_in_display_units(client: TestClient) -> None:
+    response = client.post("/api/price", json=VALID_PAYLOAD)
+
+    body = response.json()
+    for key in ("call_greeks", "put_greeks"):
+        g = body[key]
+        assert set(g.keys()) == {"delta", "gamma", "theta_per_day", "vega_per_pct", "rho_per_pct"}
+        for v in g.values():
+            assert math.isfinite(v)
+
+    # Reference inputs S=K=100, T=1, r=0.05, sigma=0.20:
+    # call delta ≈ 0.6368, put delta ≈ -0.3632.
+    assert body["call_greeks"]["delta"] == pytest.approx(0.6368, abs=1e-3)
+    assert body["put_greeks"]["delta"] == pytest.approx(-0.3632, abs=1e-3)
+    # Vega per 1% ≈ 0.3752 (math vega 37.52 scaled by 0.01).
+    assert body["call_greeks"]["vega_per_pct"] == pytest.approx(0.3752, abs=1e-3)
+    # Theta per day ≈ math theta / 365.
+    assert body["call_greeks"]["theta_per_day"] == pytest.approx(-6.414 / 365.0, abs=1e-4)
+
+
+def test_price_greeks_zero_at_expiry(client: TestClient) -> None:
+    response = client.post(
+        "/api/price",
+        json={**VALID_PAYLOAD, "T": 0.0},
+    )
+
+    body = response.json()
+    for key in ("call_greeks", "put_greeks"):
+        g = body[key]
+        assert g["delta"] == 0.0
+        assert g["gamma"] == 0.0
+        assert g["theta_per_day"] == 0.0
+        assert g["vega_per_pct"] == 0.0
+        assert g["rho_per_pct"] == 0.0
 
 
 def test_price_atm_call_greater_than_put_when_r_positive(client: TestClient) -> None:

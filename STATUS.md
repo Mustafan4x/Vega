@@ -2,11 +2,11 @@
 
 Single source of truth for which phase is next. Read this file when the user says "work on the next phase" or any equivalent. Update this file when a phase changes state. The Project Manager session owns it.
 
-**Last updated**: 2026-05-03 (Phase 6 closed).
+**Last updated**: 2026-05-03 (Phase 7 opened).
 
 ## Next phase
 
-**Phase 7: The Greeks.** Closed form delta, gamma, theta, vega, rho added to the Black Scholes module; `POST /api/price` returns Greeks alongside call and put; `GreeksPanel` displays them. Small phase (~40%); bundle candidate with Phase 8 (real market data via yfinance) per `SPEC.md`. Reserved for the next window.
+**Phase 7: The Greeks.** In progress at 72 percent usage; aiming to land the backend half (closed form Greeks math, tests, endpoint update) before the window cap and resume the frontend `GreeksPanel` plus Risk Reviewer in the next window.
 
 If you are reading this file because the user just said "work on the next phase", do the following:
 
@@ -29,7 +29,7 @@ Status values: `not started`, `in progress`, `completed`, `bundled with phase N`
 | 4 | Heat map visualization | completed | 2026-05-03 | ~90% | spanned two windows; backend at a6a427e, frontend follow-up; 28 endpoint tests, 50 frontend tests; canvas painter live; Security signed off |
 | 5 | P&L heat map | completed | 2026-05-03 | ~40% alone | shipped solo; 7 new tests, Risk Reviewer signed off; wireframes spec aligned |
 | 6 | Persistence | completed | 2026-05-03 | ~60% alone | shipped solo; SQLAlchemy 2.x models, Alembic migration, POST/GET /api/calculations, 13 new contract tests; Security signed off |
-| 7 | The Greeks | not started | | ~40% alone | bundle candidate with Phase 8 |
+| 7 | The Greeks | paused | | ~40% alone | backend half landed; resume notes name the next concrete frontend task |
 | 8 | Real market data | not started | | ~55% alone, ~95% with Phase 7 | |
 | 9 | Multiple pricing models | not started | | ~95% | |
 | 10 | Backtesting | not started | | ~95 to 99% | do not bundle anything else |
@@ -39,7 +39,7 @@ Status values: `not started`, `in progress`, `completed`, `bundled with phase N`
 
 If a phase was paused mid way (e.g., usage hit 90 percent), the PM writes a one paragraph note here naming the last clean commit and the resume point. Otherwise this section stays empty.
 
-(empty)
+**Phase 7 paused 2026-05-03 after the backend half.** Closed form Greeks (delta, gamma, theta, vega, rho) live in `backend/app/pricing/black_scholes.py` as `black_scholes_call_greeks` and `black_scholes_put_greeks` returning a `Greeks` dataclass in textbook math units. The API at `POST /api/price` returns `call_greeks` and `put_greeks` as nested objects in trader friendly display units (vega per 1 percent sigma, rho per 1 percent r, theta per calendar day; delta and gamma in their natural units). 37 new pricing tests cover reference values at the canonical `S=K=100, T=1, r=0.05, sigma=0.20` per Hull, put call parity, delta bounds, gamma sign and call/put identity, vega sign and call/put identity, and edge cases (T=0, sigma=0, invalid inputs). 177 backend tests pass total (was 138, +39 across the new test file and three updates to `test_price.py`). The frontend half remains: (1) extend `frontend/src/lib/api.ts` `PriceResponse` with `call_greeks` and `put_greeks` typed as the Pydantic display shape, (2) build `frontend/src/components/GreeksPanel.tsx` per the canonical reference at `docs/design/claude-design-output.html` lines 1330 to 1350 (five tile grid with Delta, Gamma, Theta, Vega, Rho, each tile carrying a glyph, value, and name; left accent border that cycles through primary, accent, amber, info, violet), (3) wire it into `PricingScreen.tsx` and `ResultPanel.tsx` so the panel renders below the call and put cards, (4) Vitest tests for the panel rendering all five values from a mocked API response, (5) live smoke test, then dispatch the Risk and Financial Correctness Reviewer for the formal Phase 7 sign off (gate Risk Reviewer per `SPEC.md`), (6) plan/STATUS/tracker updates and the mandatory check-in. Wireframes section is in `docs/design/wireframes.md` Pricing screen "Greeks panel" subsection.
 
 ## Design sync log
 

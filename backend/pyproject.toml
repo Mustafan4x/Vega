@@ -7,10 +7,13 @@ authors = [
 ]
 requires-python = ">=3.12"
 dependencies = [
+    "alembic>=1.18.4",
     "fastapi>=0.136.1",
     "numpy>=2.4.4",
+    "psycopg[binary]>=3.3.4",
     "pydantic>=2.13.3",
     "slowapi>=0.1.9",
+    "sqlalchemy>=2.0",
     "uvicorn[standard]>=0.46.0",
 ]
 
@@ -40,6 +43,8 @@ select = ["E", "F", "I", "B", "UP", "N", "W"]
 "tests/pricing/*.py" = ["N802", "N803", "N806"]
 "app/api/heatmap.py" = ["N803", "N806"]
 "tests/api/test_heatmap.py" = ["N803", "N806"]
+# FastAPI's idiomatic Depends() default is a false positive for B008.
+"app/api/calculations.py" = ["B008", "N803"]
 
 [tool.mypy]
 python_version = "3.12"

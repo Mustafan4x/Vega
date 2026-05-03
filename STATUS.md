@@ -2,11 +2,11 @@
 
 Single source of truth for which phase is next. Read this file when the user says "work on the next phase" or any equivalent. Update this file when a phase changes state. The Project Manager session owns it.
 
-**Last updated**: 2026-05-03 (Phase 5 closed).
+**Last updated**: 2026-05-03 (Phase 6 closed).
 
 ## Next phase
 
-**Phase 6: Persistence.** Postgres schema (`inputs` and `outputs` tables linked by `calculation_id`), Alembic migrations, SQLAlchemy 2.x models with parameterized queries, `GET /api/calculations/{id}`, and a Calculate-click write path on `POST /api/heatmap`. Reserved for the next window.
+**Phase 7: The Greeks.** Closed form delta, gamma, theta, vega, rho added to the Black Scholes module; `POST /api/price` returns Greeks alongside call and put; `GreeksPanel` displays them. Small phase (~40%); bundle candidate with Phase 8 (real market data via yfinance) per `SPEC.md`. Reserved for the next window.
 
 If you are reading this file because the user just said "work on the next phase", do the following:
 
@@ -28,7 +28,7 @@ Status values: `not started`, `in progress`, `completed`, `bundled with phase N`
 | 3 | React frontend MVP | completed | 2026-05-03 | ~95% | LayoutShell, InputForm, ResultPanel wired end to end against Phase 2 backend; 24 Vitest tests; Security and a11y reviews signed off |
 | 4 | Heat map visualization | completed | 2026-05-03 | ~90% | spanned two windows; backend at a6a427e, frontend follow-up; 28 endpoint tests, 50 frontend tests; canvas painter live; Security signed off |
 | 5 | P&L heat map | completed | 2026-05-03 | ~40% alone | shipped solo; 7 new tests, Risk Reviewer signed off; wireframes spec aligned |
-| 6 | Persistence | not started | | ~60% alone, ~95% with Phase 5 | |
+| 6 | Persistence | completed | 2026-05-03 | ~60% alone | shipped solo; SQLAlchemy 2.x models, Alembic migration, POST/GET /api/calculations, 13 new contract tests; Security signed off |
 | 7 | The Greeks | not started | | ~40% alone | bundle candidate with Phase 8 |
 | 8 | Real market data | not started | | ~55% alone, ~95% with Phase 7 | |
 | 9 | Multiple pricing models | not started | | ~95% | |

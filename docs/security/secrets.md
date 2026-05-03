@@ -35,7 +35,8 @@ Format: `postgresql://<user>:<password>@<host>:<port>/<dbname>?sslmode=require`.
 
 * The backend reads it via `os.environ["DATABASE_URL"]` at startup and constructs the SQLAlchemy engine. The raw value is never logged. A redaction filter is applied at the Python logging level so even if a developer accidentally logs the engine URL, the password is masked.
 * Local dev uses SQLite by default if `DATABASE_URL` is unset, so the developer does not need a real Neon connection on their workstation.
-* The DB user embedded in the production DSN has only `SELECT` and `INSERT` privileges on the `inputs` and `outputs` tables. Migrations run as a separate higher privilege role, with a one off DSN that lives only in Mustafa's dotfile shell session, never in CI.
+* The DB user embedded in the production DSN (the application role) has only `SELECT` and `INSERT` privileges on the `calculation_inputs` and `calculation_outputs` tables, scoped to those tables specifically (not schema wide). No `UPDATE`, `DELETE`, or any DDL. The production deploy procedure (Phase 11) creates this application role at the same time as it creates a separately named migration role.
+* The migration role is a different DSN with `CREATE`, `ALTER`, and `DROP` on the schema, used only by `alembic upgrade head` during deploy. The migration DSN lives only in Mustafa's dotfile shell session, never in CI, never in Render env. After each successful deploy, the deploy script does NOT keep the migration DSN in any persistent location.
 
 ### `VITE_API_BASE_URL`
 

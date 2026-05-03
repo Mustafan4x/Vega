@@ -2,7 +2,7 @@
 
 This is the per phase implementation plan, derived from `SPEC.md`. It is owned by the Project Manager and updated at every phase boundary. For "which phase is next" status, read `STATUS.md` (the single source of truth). This file is the longer plan: who does what, what ships, and what gates a phase before it closes.
 
-**Currently in flight**: Phase 6 (Persistence) reserved for the next window. Phases 0, 1, 2, 3, 4, and 5 are complete.
+**Currently in flight**: Phase 7 (The Greeks) reserved for the next window. Phases 0, 1, 2, 3, 4, 5, and 6 are complete.
 
 ## How this plan is used
 
@@ -229,25 +229,35 @@ QA, Security, Code Review, Risk Reviewer.
 
 ---
 
-## Phase 6: Persistence
+## Phase 6: Persistence [DONE]
 
 **Owners**: Data Engineer (schema), Database Administrator (migrations), Backend Developer (wire it in), Security Engineer (review).
 
-**Window cost**: ~60% alone, or ~95% bundled with Phase 5.
+**Window cost**: ~60% alone. Shipped solo.
 
 ### Deliverables
 
-* `inputs` and `outputs` tables (one input row plus N output rows per Calculate click), linked by `calculation_id` (UUID).
-* Alembic migrations with proper indexes.
-* SQLAlchemy 2.x models (parameterized queries only; manual SQL string formatting is banned).
-* `GET /api/calculations/{id}` to fetch a previous calculation.
-* Postgres in `docker-compose.yml`; CI step that runs `alembic upgrade head` plus integration tests against a real Postgres.
-* Production DB user has only the privileges it needs (no SUPERUSER, no CREATE DATABASE, no DROP TABLE).
-* DSN never committed; `gitleaks` rule verified to catch a committed DSN.
+* [x] `calculation_inputs` and `calculation_outputs` tables linked by `calculation_id` (UUID), with an index on `calculation_outputs.calculation_id` and `ondelete=CASCADE` on the FK so a future delete of an input row cleans up its grid cells.
+* [x] SQLAlchemy 2.x typed declarative models (`backend/app/db/models.py`) with parameterized queries only. No `text(...)`, no f-string SQL.
+* [x] Alembic migration (`backend/alembic/versions/9c8f64a81798_create_calculation_tables.py`) generated from the models. `alembic.ini` ships with the local SQLite default DSN (`sqlite:///./var/trader.db`); production reads `TRADER_DATABASE_URL` via `alembic/env.py`.
+* [x] `POST /api/calculations` accepts the heat map shape, computes via `black_scholes_vec`, persists 1 input row plus `rows * cols` output rows in a single transaction, and returns the heat map response plus a `calculation_id` UUID. Status 201.
+* [x] `GET /api/calculations/{id}` reconstructs the grid from the persisted rows. Anchored UUID regex gates the path parameter so SQL injection patterns return 404 before the ORM is touched.
+* [x] `docker-compose.yml` for local Postgres parity with Neon (binds `127.0.0.1:5432` only). Documented in the file's header comment.
+* [x] `backend/.env` and `backend/var/` added to `.gitignore` so a stray dev SQLite or DSN cannot be committed. The Phase 0 `gitleaks` rule still catches Postgres DSN patterns.
+* [x] Test fixture rebinds the engine to in memory SQLite via `StaticPool` per test (`tests/conftest.py` `_isolated_db` autouse), so no test run can touch the dev or production DB.
+* [x] 13 new contract tests on `/api/calculations` covering happy write, persisted input row, persisted N output rows, GET round trip, 404 on unknown UUID, 404 on non UUID, path injection patterns rejected at the UUID gate, oversized grid rejection, extra field rejection, two writes have different IDs, and path traversal attempts.
+* [x] `docs/security/secrets.md` hardened: production application role gets only `SELECT, INSERT` on the two calculation tables specifically (not schema wide), migration role is a separately named DSN with DDL privileges used only during `alembic upgrade head`, never persisted in CI or Render env.
 
 ### Gates
 
-QA, Security (SQL injection surface, secrets, least privilege), Code Review.
+* [x] QA: 138 backend + 57 frontend tests pass. tsc, eslint, prettier, ruff, mypy clean.
+* [x] Security: Phase 6 review run by Security Engineer subagent. Sign off received with no critical or high severity findings; one low severity recommendation on production role wording was applied this phase (`docs/security/secrets.md`).
+* [x] Code Review: PM session reviewed the diff. No simplifications outstanding.
+
+### Notes for Phase 11
+
+* The production deploy creates two roles (application + migration) per the threat model wording. The application DSN goes in Render env vars; the migration DSN never leaves Mustafa's dotfile shell session.
+* CI integration test against a real Postgres (matrix the test suite over SQLite + Postgres) is deferred to Phase 11 because it requires CI environment changes; the in memory SQLite suite covers the ORM contract today.
 
 ---
 

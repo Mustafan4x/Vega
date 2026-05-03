@@ -2,7 +2,7 @@
 
 This is the per phase implementation plan, derived from `SPEC.md`. It is owned by the Project Manager and updated at every phase boundary. For "which phase is next" status, read `STATUS.md` (the single source of truth). This file is the longer plan: who does what, what ships, and what gates a phase before it closes.
 
-**Currently in flight**: Phase 0 (Foundations).
+**Currently in flight**: Phase 3 (React frontend MVP) reserved for the next window. Phases 0, 1, and 2 are complete.
 
 ## How this plan is used
 
@@ -119,26 +119,31 @@ QA, Security, Code Review, Risk Reviewer.
 
 ---
 
-## Phase 2: FastAPI backend
+## Phase 2: FastAPI backend [DONE]
 
 **Owners**: Backend Developer (lead), Security Engineer (review), Observability Engineer, QA Engineer.
 
-**Window cost**: ~60% alone, or ~95% bundled with Phase 1.
+**Window cost**: ~60% alone, or ~95% bundled with Phase 1. Shipped solo in its own window since Phase 1 closed under budget.
 
 ### Deliverables
 
-* `backend/app/main.py`, `backend/app/api/`, `backend/app/core/config.py`.
-* `GET /health` (liveness).
-* `POST /api/price` accepts the five inputs, returns call and put. Pydantic models validate inputs strictly (no `extra = "allow"`).
-* CORS allow list set to the local frontend dev origin (`http://localhost:5173`); production origin added in Phase 11.
-* HTTP security headers (HSTS, X-Content-Type-Options, X-Frame-Options or CSP frame-ancestors, Referrer-Policy).
-* Application layer rate limiting (`slowapi`).
-* Structured logging plus request tracing (Observability Engineer).
-* Contract tests covering happy path, validation failures, and at least one edge case per endpoint.
+* [x] `backend/app/main.py` (factory `build_app`), `backend/app/api/price.py`, `backend/app/core/config.py`, `backend/app/core/logging.py`, `backend/app/middleware.py`, `backend/app/serve.py`.
+* [x] `GET /health` (liveness).
+* [x] `POST /api/price` accepts the five inputs, returns call and put. Pydantic models validate inputs strictly (`extra="forbid"`, `allow_inf_nan=False`, mathematical bounds enforced before the pricing module is called).
+* [x] CORS allow list set to the local frontend dev origin (`http://localhost:5173`), `allow_credentials=False`, no wildcards. Production origin added in Phase 11.
+* [x] HTTP security headers on every response: `Strict-Transport-Security`, `X-Content-Type-Options`, `Referrer-Policy`, `Permissions-Policy`, `Content-Security-Policy: frame-ancestors 'none'`, `Cross-Origin-Opener-Policy`, `Cross-Origin-Resource-Policy`. Uvicorn `Server` header suppressed via `trader-serve`.
+* [x] Application layer rate limiting via `slowapi`. Default `60/minute` per IP; override via `TRADER_RATE_LIMIT_DEFAULT`.
+* [x] 32 KB body size cap at the middleware layer (rejects oversized `Content-Length` with HTTP 413).
+* [x] Sanitized validation handler: 422 responses do not echo input values, library internals, or stack traces.
+* [x] OpenAPI docs (`/docs`, `/openapi.json`) gated on `TRADER_ENVIRONMENT`; hidden in production, served in development.
+* [x] Structured JSON access logger (`app.access`) with `request_id`, `method`, `path`, `status`, `duration_ms` per request. `X-Request-Id` echoed on every response.
+* [x] 85 tests pass: contract tests on `POST /api/price` (happy path, validation failures, missing fields, extra fields, non finite values, oversized body, error body shape), security headers, CORS preflight, rate limit burst, structured logging shape, environment dependent behavior, plus the carried over Phase 1 pricing math suite.
 
 ### Gates
 
-QA, Security, Code Review.
+* [x] QA: 85 tests green via `uv run pytest`.
+* [x] Security: Phase 2 review run by Security Engineer subagent. Sign off received with one medium severity finding (production OpenAPI exposure) addressed in this phase, plus one low severity finding (assert under `python -O`) addressed; remaining low and info severity items accepted and documented in the review report.
+* [x] Code Review: PM session reviewed the diff before commit. No simplifications outstanding.
 
 ---
 

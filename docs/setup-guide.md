@@ -16,7 +16,8 @@ All three services have free tiers that cover this project comfortably.
 2. **Cloudflare**: <https://dash.cloudflare.com/sign-up>.
 3. **Render**: <https://render.com/>.
 4. **Neon**: <https://neon.tech/>.
-5. **Optional**: a domain registrar if you want a custom domain.
+5. **Auth0**: <https://manage.auth0.com>.
+6. **Optional**: a domain registrar if you want a custom domain.
 
 ## Hosting choice rationale
 
@@ -171,6 +172,12 @@ Every secret used by the project is listed here. Never paste a real value into t
 | `VEGA_DATABASE_URL` | Render env vars (production), local `.env` (dev only) | Postgres connection string for the **application** role at Neon. Limited to `SELECT, INSERT` on `calculation_inputs` and `calculation_outputs`. |
 | `VEGA_CORS_ORIGINS` | Render env vars (production), local `.env` (dev only) | Comma separated list of allowed frontend origins. Production fail loud rejects empty values, wildcards, and HTTP origins. |
 | `VITE_API_BASE_URL` | Cloudflare Pages env vars (production), local `.env.local` (dev only) | Public URL of the Render backend. Baked into the frontend bundle at build time. Production fail loud rejects empty and localhost values. |
+| `VITE_AUTH0_DOMAIN` | Cloudflare Pages env vars (production), local `.env.local` (dev only) | Auth0 tenant domain (e.g., `<tenant>.us.auth0.com`). Baked into the frontend bundle at build time. Production fail loud rejects empty values. |
+| `VITE_AUTH0_CLIENT_ID` | Cloudflare Pages env vars (production), local `.env.local` (dev only) | Auth0 SPA application client ID. Baked into the frontend bundle at build time. Production fail loud rejects empty values. |
+| `VITE_AUTH0_AUDIENCE` | Cloudflare Pages env vars (production), local `.env.local` (dev only) | Auth0 API identifier (`vega-api`). Sent in the SDK's `audience` parameter so issued tokens carry the right `aud` claim. |
+| `VITE_AUTH0_REDIRECT_URI` | Cloudflare Pages env vars (production), local `.env.local` (dev only) | Full callback URL (e.g., `https://vega-2rd.pages.dev/callback`). Must match an Allowed Callback URL in the Auth0 SPA application. |
+| `VEGA_AUTH0_DOMAIN` | Render env vars (production), local shell env (dev only) | Auth0 tenant domain. The backend fetches the JWKS from `https://<this>/.well-known/jwks.json` to verify JWT signatures. Production fail loud rejects empty values. |
+| `VEGA_AUTH0_AUDIENCE` | Render env vars (production), local shell env (dev only) | Auth0 API identifier (`vega-api`). The backend rejects any JWT whose `aud` claim does not match. Production fail loud rejects empty values. |
 
 The owner DSN at Neon (DDL privileges) never goes into Render. Migrations run from a developer's shell during a maintenance window.
 

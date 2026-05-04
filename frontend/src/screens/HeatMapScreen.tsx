@@ -12,6 +12,7 @@
  */
 
 import { useCallback, useRef, useState, type JSX } from 'react'
+import { useAuth0 } from '@auth0/auth0-react'
 
 import { HeatMap } from '../components/HeatMap'
 import { HeatMapControls, type HeatMapControlsState } from '../components/HeatMapControls'
@@ -20,6 +21,7 @@ import {
   fetchHeatmap,
   PriceError,
   saveCalculation,
+  type HeatmapRequest,
   type HeatmapResponse,
   type PriceRequest,
 } from '../lib/api'
@@ -54,6 +56,7 @@ type SaveStatus =
   | { kind: 'error'; message: string }
 
 export function HeatMapScreen(): JSX.Element {
+  const { isAuthenticated, getAccessTokenSilently, loginWithRedirect } = useAuth0()
   const [inputs, setInputs] = useState<PriceRequest>(INITIAL_INPUTS)
   const [controls, setControls] = useState<HeatMapControlsState>(INITIAL_CONTROLS)
   const [response, setResponse] = useState<HeatmapResponse | null>(null)
@@ -103,23 +106,30 @@ export function HeatMapScreen(): JSX.Element {
   }, [inputs, controls])
 
   const onSave = useCallback(async () => {
+    if (response === null) return
+    const request: HeatmapRequest = {
+      ...inputs,
+      vol_shock: controls.volShock,
+      spot_shock: controls.spotShock,
+      rows: controls.resolution,
+      cols: controls.resolution,
+    }
+    if (!isAuthenticated) {
+      await loginWithRedirect({
+        appState: { pendingSave: { request, response } },
+      })
+      return
+    }
     inFlightSave.current?.abort()
     const controller = new AbortController()
     inFlightSave.current = controller
-
     setSaveStatus({ kind: 'saving' })
-
     try {
-      const result = await saveCalculation(
-        {
-          ...inputs,
-          vol_shock: controls.volShock,
-          spot_shock: controls.spotShock,
-          rows: controls.resolution,
-          cols: controls.resolution,
-        },
-        { signal: controller.signal },
-      )
+      const token = await getAccessTokenSilently()
+      const result = await saveCalculation(request, {
+        signal: controller.signal,
+        bearerToken: token,
+      })
       if (controller.signal.aborted) return
       setSaveStatus({ kind: 'saved', calculationId: result.calculation_id })
     } catch (err) {
@@ -127,7 +137,7 @@ export function HeatMapScreen(): JSX.Element {
       const message = err instanceof PriceError ? err.message : 'Could not save the calculation.'
       setSaveStatus({ kind: 'error', message })
     }
-  }, [inputs, controls])
+  }, [inputs, controls, response, isAuthenticated, getAccessTokenSilently, loginWithRedirect])
 
   const callGrid = response?.call ?? []
   const putGrid = response?.put ?? []
@@ -138,8 +148,13 @@ export function HeatMapScreen(): JSX.Element {
   const infoMessage = status.kind === 'error' ? '' : statusMessage(status)
 
   const canSave = status.kind === 'ready' && saveStatus.kind !== 'saving' && response !== null
-  const saveLabel =
-    saveStatus.kind === 'saving' ? 'Saving...' : saveStatus.kind === 'saved' ? 'Saved' : 'Save'
+  const saveLabel = !isAuthenticated
+    ? 'Sign in to save'
+    : saveStatus.kind === 'saving'
+      ? 'Saving...'
+      : saveStatus.kind === 'saved'
+        ? 'Saved'
+        : 'Save'
   const saveFeedback = saveStatusMessage(saveStatus)
 
   return (

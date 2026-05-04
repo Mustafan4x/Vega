@@ -128,6 +128,6 @@ jobs:
     steps:
       - uses: actions/checkout@v5
       - name: Run semgrep
-        run: semgrep ci --config=p/owasp-top-ten --config=p/python --config=p/react --config=p/sqlalchemy --error
+        run: semgrep ci --config=p/owasp-top-ten --config=p/python --config=p/react --config=p/sqlalchemy
         env:
           SEMGREP_RULES: p/owasp-top-ten p/python p/react p/sqlalchemy

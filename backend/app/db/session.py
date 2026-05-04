@@ -65,7 +65,13 @@ def _build_engine(url: str) -> Engine:
 def get_engine() -> Engine:
     global _engine
     if _engine is None:
-        url = os.environ.get("TRADER_DATABASE_URL", _default_sqlite_url())
+        # Lazy evaluation: ``os.environ.get(KEY, default)`` evaluates the
+        # default eagerly. ``_default_sqlite_url()`` does a mkdir under
+        # the project tree, which crashes inside the production
+        # container (non root user, read only WORKDIR) even when
+        # TRADER_DATABASE_URL is set. Compute the SQLite fallback only
+        # if the env var is missing or empty.
+        url = os.environ.get("TRADER_DATABASE_URL") or _default_sqlite_url()
         _engine = _build_engine(url)
     return _engine
 
@@ -84,9 +90,12 @@ def reset_engine_for_tests(url: str | None = None) -> Engine:
     so tests do not touch the dev or production database.
     """
     global _engine, _SessionFactory
-    target_url = (
-        url if url is not None else os.environ.get("TRADER_DATABASE_URL", _default_sqlite_url())
-    )
+    if url is not None:
+        target_url = url
+    else:
+        # Same lazy evaluation reasoning as get_engine: do not call
+        # _default_sqlite_url unless we genuinely need it.
+        target_url = os.environ.get("TRADER_DATABASE_URL") or _default_sqlite_url()
     _engine = _build_engine(target_url)
     _SessionFactory = sessionmaker(bind=_engine, expire_on_commit=False, future=True)
     return _engine

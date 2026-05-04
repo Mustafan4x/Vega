@@ -379,8 +379,14 @@ QA, Security, Code Review, Risk Reviewer.
 ### Code deliverables (landed)
 
 * [x] Per route slowapi limits, deferred from Phases 4 / 8 / 10:
-  `/api/heatmap` 12/minute, `/api/tickers/{symbol}` 30/minute, `/api/backtest` 10/minute.
+  `/api/heatmap` 12/minute, `/api/tickers/{symbol}` 30/minute, `/api/backtest` 10/minute, plus `POST /api/calculations` 12/minute and `GET /api/calculations[/{id}]` 60/minute.
   New module `backend/app/core/rate_limit.py` holds the singleton `Limiter` so the per route decorators reference one instance; `application_limits` reads the env per request so existing rate limit tests continue to honor `TRADER_RATE_LIMIT_DEFAULT`.
+* [x] **Compare and History screens** finished as full features (the dead Phase 3 nav placeholders shipped in earlier phases; this phase wires them end to end):
+  - `GET /api/calculations` paginated list endpoint (newest first, `limit`/`offset` query params, response cap of 50 per page).
+  - `CalculationInput.created_at` switched to a Python side default so SQLite (second precision) sorts fast successive writes correctly; Postgres still has `server_default=func.now()` for raw SQL writes.
+  - Frontend: `saveCalculation`, `fetchCalculations`, `fetchCalculation` in `src/lib/api.ts`. Save button on Heat Map screen. New `HistoryScreen` with list and detail panes. Compare reuses `PricingScreen` with a new `initialCompare` prop and a distinct React `key` so the dedicated nav lands the user in compare mode and switching back to Pricing resets to single mode.
+  - 9 new backend tests (list endpoint shape, pagination, ordering, validation, per route write cap) and 6 new frontend tests (HistoryScreen empty/list/detail/error states; App.test routing for Compare and History).
+* [x] **DSN normalization defensive fix** (`backend/app/db/session.py::normalize_database_url`): rewrites bare `postgresql://` (the form Neon's "Connect manually" string hands you) to `postgresql+psycopg://` so a verbatim Neon paste does not crash production with `ModuleNotFoundError: No module named 'psycopg2'`. Alembic's env.py shares the helper.
 * [x] 4 new backend tests for the per route caps (heatmap exhausts at 12, tickers at 30, backtest at 10, health stays 200). 295 backend tests pass (was 290).
 * [x] Production fail loud on missing or unsafe `TRADER_CORS_ORIGINS`: empty, wildcard, or HTTP origins now raise `ConfigError` at boot in `backend/app/core/config.py`. 5 new env tests cover the matrix. Existing production fixture updated to provide a valid HTTPS origin.
 * [x] Frontend production fail loud on missing or localhost `VITE_API_BASE_URL`: `readApiBaseUrl` in `frontend/src/lib/api.ts` throws on the first request when running a production bundle without a real backend URL. 3 new tests cover the matrix. 114 frontend tests pass (was 111).

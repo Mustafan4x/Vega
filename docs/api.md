@@ -30,8 +30,9 @@ Two layers of limits:
 |---|---|---|
 | `POST /api/price` | inherits global | Cheap closed form math; ~1 ms server cost. |
 | `POST /api/heatmap` | `12/minute` | Heaviest pure compute; up to 441 cell prices on the binomial / Monte Carlo paths. |
-| `POST /api/calculations` | inherits global | Same compute as `/api/heatmap` plus a DB write of `rows * cols` rows. |
-| `GET  /api/calculations/{id}` | inherits global | Single indexed read. |
+| `POST /api/calculations` | `12/minute` | Same compute as `/api/heatmap` plus a DB write of `rows * cols` rows. |
+| `GET  /api/calculations` | `60/minute` | Paginated list scan; capped at 50 per page. |
+| `GET  /api/calculations/{id}` | `60/minute` | Single indexed read. |
 | `GET  /api/tickers/{symbol}` | `30/minute` | Each cache miss issues a yfinance call. |
 | `POST /api/backtest` | `10/minute` | Up to 5 years of daily prices fetched plus engine run. |
 
@@ -137,6 +138,35 @@ The 21x21 cap is threat model T12 (server cost ceiling).
 Run the same heat map computation as `/api/heatmap` and persist it. Returns the heat map plus a `calculation_id` (UUID) for later retrieval. Status `201`.
 
 Same request shape as `/api/heatmap`. Response augments the heat map response with `calculation_id`.
+
+### `GET /api/calculations`
+
+Paginated list of saved calculations, newest first. Drives the History screen.
+
+**Query parameters**
+
+| Field | Type | Range | Default |
+|---|---|---|---|
+| `limit` | int | `[1, 50]` | `20` |
+| `offset` | int | `[0, 10000]` | `0` |
+
+**Response**
+
+```json
+{
+  "items": [
+    {
+      "calculation_id": "9c8f64a8-...",
+      "created_at": "2026-05-04T03:32:21.000+00:00",
+      "s": 100.0, "k": 100.0, "t": 1.0, "r": 0.05, "sigma": 0.2,
+      "rows": 9, "cols": 9
+    }
+  ],
+  "total": 12, "limit": 20, "offset": 0
+}
+```
+
+`items` carries the input parameters at a glance; the full grid lives at `GET /api/calculations/{id}`.
 
 ### `GET /api/calculations/{id}`
 

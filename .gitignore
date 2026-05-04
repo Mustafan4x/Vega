@@ -64,6 +64,9 @@ id_ecdsa.*
 .gcp/
 gha-creds-*.json
 
+# Claude Code session state (per-checkout, not part of the repo).
+.claude/
+
 # OS
 .DS_Store
 .DS_Store?

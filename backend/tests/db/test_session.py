@@ -40,3 +40,32 @@ from app.db.session import normalize_database_url
 )
 def test_normalize_database_url(given: str, expected: str) -> None:
     assert normalize_database_url(given) == expected
+
+
+def test_get_engine_does_not_touch_default_when_env_is_set(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """Regression: the dev SQLite default helper does a mkdir on the
+    project tree. ``os.environ.get(KEY, default)`` evaluates the default
+    eagerly, so an unguarded call would still mkdir even when
+    ``TRADER_DATABASE_URL`` is set. The production container runs as a
+    non root user with no write access to the WORKDIR, so the mkdir
+    raises PermissionError there. This test pins the lazy fallback so
+    that bug cannot regress.
+    """
+
+    from app.db import session
+
+    sentinel = {"called": False}
+
+    def fail() -> str:
+        sentinel["called"] = True
+        raise AssertionError("_default_sqlite_url should not be called when env is set")
+
+    monkeypatch.setattr(session, "_default_sqlite_url", fail)
+    monkeypatch.setattr(session, "_engine", None, raising=False)
+    monkeypatch.setenv("TRADER_DATABASE_URL", "sqlite://")
+
+    session.get_engine()
+
+    assert sentinel["called"] is False

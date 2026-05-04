@@ -41,4 +41,4 @@ For the abridged version, see "Local development setup" in [`docs/setup-guide.md
 
 ## Status
 
-v1 is unauthenticated by design (every visitor sees the same calculation history). The deferred per user history plan is captured in [`docs/future-ideas.md`](docs/future-ideas.md).
+v1 is unauthenticated by design (every visitor sees the same calculation history). The deferred per user history plan is captured in the maintainer's private notes for a future release.

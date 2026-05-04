@@ -80,7 +80,7 @@ That single instruction is enough for the Project Manager session to take over a
 | Frontend package manager | `pnpm` | Fast and disk efficient. |
 | Containerization | Docker plus docker-compose | Owned by the DevOps engineer. |
 | CI/CD | GitHub Actions | Tests on every PR, deploy on tag. |
-| Auth | None for v1 | See `docs/future-ideas.md` for the deferred plan. |
+| Auth | None for v1 | A per user auth plan is tracked privately for a future release. |
 | Market data | `yfinance` | Free, no API key required. |
 | Charts | Raw Canvas + SVG (current Oxblood reference uses these) or Recharts/Plotly | The Oxblood HTML implements heat maps as `<canvas>` and line charts inline with SVG, no third party library. Frontend Developer may keep that pattern or adopt Recharts/Plotly if they materially improve maintainability. Decide in Phase 4. |
 
@@ -210,5 +210,5 @@ Each link points to a file in `agents/`.
 4. Security Engineer has veto power on any change that touches authn, secrets, third party calls, or user input.
 5. Risk Reviewer has veto power on any change that touches the pricing math or P&L calculation.
 6. Documentation Engineer updates `docs/` whenever a phase completes.
-7. Future ideas (anything out of scope for v1) are written to `docs/future-ideas.md` and not implemented.
+7. Future ideas (anything out of scope for v1) are written to the maintainer's private notes outside this repo (gitignored at the repo root) and not implemented in v1.
 8. **Mandatory check-in after every phase.** The PM session must stop, summarize what shipped, ask the user for current Max plan usage and reset window, and wait for explicit confirmation before starting the next phase. See `CLAUDE.md` "Pacing rule" for the exact protocol. This rule is not optional, even in auto mode.

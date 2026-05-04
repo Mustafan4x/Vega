@@ -4,7 +4,7 @@
 
 This document fixes the mathematical model and the numerical conventions used by the project's pricing core. It is the canonical reference for any agent working on `app.pricing.black_scholes` and any downstream module that consumes its outputs (Greeks, heat map, P&L, persistence, backtest).
 
-The model implemented in v1 is the standard Black Scholes formula for European call and put options on a non dividend paying underlying. Dividend yield is not modeled in v1; see `docs/future-ideas.md` for the deferred plan.
+The model implemented in v1 is the standard Black Scholes formula for European call and put options on a non dividend paying underlying. Dividend yield is not modeled in v1; the deferred extension plan is tracked privately.
 
 ## The formula
 
@@ -155,7 +155,7 @@ Phase 1 ships pure unit tests on `black_scholes_call` and `black_scholes_put`. P
 
 ## Out of scope for v1
 
-The following are explicitly NOT implemented in v1 and are tracked in `docs/future-ideas.md`:
+The following are explicitly NOT implemented in v1 and are tracked in the maintainer's private notes:
 
 * Dividend yield `q` (continuous or discrete).
 * American exercise.

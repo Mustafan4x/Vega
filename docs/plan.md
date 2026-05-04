@@ -9,7 +9,7 @@ This is the per phase implementation plan, derived from `SPEC.md`. It is owned b
 * The PM session reads `STATUS.md` to find the current phase, then reads the corresponding section here for the deliverable and gating detail.
 * When a phase closes, the PM checks the box on each deliverable in this file, marks the phase done, and runs the mandatory check-in protocol from `CLAUDE.md`.
 * When a phase pauses mid window, the PM writes a Resume note in `STATUS.md` (not here).
-* If a phase reveals new work that does not fit, it goes to `docs/future-ideas.md` with the format prescribed there.
+* If a phase reveals new work that does not fit, it goes to the maintainer's private notes outside this repo (gitignored at the repo root) with the format prescribed there.
 
 ## Cross phase quality gates
 
@@ -419,7 +419,7 @@ Branch protection plus Dependabot plus CodeQL are still optional follow ups on t
 * [x] Security (live): HSTS preload eligibility verified on both Render and Cloudflare; production CSP from Cloudflare Pages, frame-ancestors from backend; no stack trace leak from the production error path; CORS allow list locked to the exact Pages origin; Neon `vega_app` role limited to `SELECT, INSERT` on the two calculation tables, password rotated.
 * [x] Documentation Engineer: `docs/setup-guide.md` walked through end to end during the live deploy; `docs/api.md` published.
 
-After Phase 11 closed, design changes follow the two flows in `CLAUDE.md` ("Design change workflow") and any new feature work goes through `docs/future-ideas.md`.
+After Phase 11 closed, design changes follow the two flows in `CLAUDE.md` ("Design change workflow") and any new feature work is captured in the maintainer's private notes (gitignored, outside the public repo).
 
 ---
 

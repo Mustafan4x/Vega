@@ -17,7 +17,7 @@ Own the plan, sequence the phases, and dispatch every other agent. Keep the buil
 ## Outputs
 * A written implementation plan for each phase, with a per agent task list, before any code is written.
 * A running status log of which phase is in flight, who is blocked, and what the next handoff is.
-* Updates to `docs/future-ideas.md` whenever a stakeholder asks for something out of scope.
+* Updates to the maintainer's private notes file at the repo root (`future-ideas.md`, gitignored) whenever a stakeholder asks for something out of scope.
 
 ## Tasks
 
@@ -33,7 +33,7 @@ Own the plan, sequence the phases, and dispatch every other agent. Keep the buil
 2. Dispatch each Phase {N} specialist agent via the `Task` tool using the prompt template in `CLAUDE.md`.
 3. Track blockers; route around them.
 4. Run the closeout: confirm Security, QA, Code Review, and (where applicable) Risk Reviewer all signed off.
-5. Update `docs/future-ideas.md` with anything the user asked for that did not fit the phase.
+5. Update the maintainer's private notes file (repo root `future-ideas.md`, gitignored) with anything the user asked for that did not fit the phase.
 6. Mark the phase done in `docs/plan.md`.
 7. **Update `STATUS.md`**: set the phase status to `completed`, fill in "Completed on", and update "Next phase" to the next not-started phase. If you intend to bundle the next phase into the same window, mark it `bundled with phase {N}` only after the bundle actually ships.
 8. Run the mandatory check-in protocol from `CLAUDE.md`. Wait for the user's explicit answer before moving on.

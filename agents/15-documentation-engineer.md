@@ -19,7 +19,7 @@ The user has explicitly asked that this role produce a setup guide covering ever
 * `docs/architecture.md`: high level diagram (text or mermaid) of how the pieces fit together.
 * `docs/adr/`: one Architecture Decision Record per non obvious decision, named `NNNN-decision-title.md`.
 * `docs/api.md`: backend API reference, generated from the FastAPI OpenAPI schema if practical.
-* `docs/future-ideas.md`: maintained alongside the Project Manager.
+* Out of scope captures: maintained privately by the Project Manager outside this repo (the file is gitignored and lives at the repo root as `future-ideas.md`).
 
 ## Tasks
 

@@ -4,9 +4,7 @@ In production the OpenAPI docs and schema are not served; in development
 they are. The production env loader also fails loud on missing or
 unsafe ``VEGA_CORS_ORIGINS``. This suite exercises both modes by
 toggling ``VEGA_ENVIRONMENT`` (and the matching CORS env) before
-building the app, and pins the legacy ``TRADER_*`` fallback so the
-project rename rollover does not break a running production deploy
-that still has the old env var names set.
+building the app.
 """
 
 from __future__ import annotations
@@ -67,7 +65,6 @@ def test_development_serves_swagger_docs(client: TestClient) -> None:
 def test_production_requires_cors_origins(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setenv("VEGA_ENVIRONMENT", "production")
     monkeypatch.delenv("VEGA_CORS_ORIGINS", raising=False)
-    monkeypatch.delenv("TRADER_CORS_ORIGINS", raising=False)
 
     with pytest.raises(ConfigError, match="VEGA_CORS_ORIGINS"):
         load_settings()
@@ -106,40 +103,20 @@ def test_production_accepts_multiple_https_origins(monkeypatch: pytest.MonkeyPat
 def test_development_allows_localhost_cors(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setenv("VEGA_ENVIRONMENT", "development")
     monkeypatch.delenv("VEGA_CORS_ORIGINS", raising=False)
-    monkeypatch.delenv("TRADER_CORS_ORIGINS", raising=False)
 
     settings = load_settings()
     # Development falls back to localhost. No fail loud in dev.
     assert settings.cors_origins == ("http://localhost:5173",)
 
 
-# ---------- Legacy TRADER_* fallback ---------------------------------------
-
-
-def test_legacy_trader_env_fallback(monkeypatch: pytest.MonkeyPatch) -> None:
-    """The rename keeps the ``TRADER_*`` env vars working as a fallback so
-    a Render deploy of the rename does not interrupt a running production
-    container that still has the old keys set. The fallback is removed
-    after the env var update lands in Render."""
-
-    monkeypatch.setenv("TRADER_ENVIRONMENT", "production")
-    monkeypatch.setenv("TRADER_CORS_ORIGINS", "https://legacy.pages.dev")
-    monkeypatch.delenv("VEGA_ENVIRONMENT", raising=False)
-    monkeypatch.delenv("VEGA_CORS_ORIGINS", raising=False)
-
-    settings = load_settings()
-    assert settings.environment == "production"
-    assert settings.cors_origins == ("https://legacy.pages.dev",)
-
-
-def test_vega_takes_precedence_over_trader(monkeypatch: pytest.MonkeyPatch) -> None:
-    """When both env vars are set, the new ``VEGA_*`` value wins so a
-    half migrated environment converges on the new names."""
+def test_legacy_trader_env_is_ignored(monkeypatch: pytest.MonkeyPatch) -> None:
+    """The legacy ``TRADER_*`` fallback was removed after the project
+    rename. Setting only ``TRADER_*`` in production must fail loud just
+    like leaving the env unset."""
 
     monkeypatch.setenv("VEGA_ENVIRONMENT", "production")
-    monkeypatch.setenv("VEGA_CORS_ORIGINS", "https://new.pages.dev")
-    monkeypatch.setenv("TRADER_ENVIRONMENT", "production")
-    monkeypatch.setenv("TRADER_CORS_ORIGINS", "https://old.pages.dev")
+    monkeypatch.delenv("VEGA_CORS_ORIGINS", raising=False)
+    monkeypatch.setenv("TRADER_CORS_ORIGINS", "https://legacy.pages.dev")
 
-    settings = load_settings()
-    assert settings.cors_origins == ("https://new.pages.dev",)
+    with pytest.raises(ConfigError, match="VEGA_CORS_ORIGINS"):
+        load_settings()

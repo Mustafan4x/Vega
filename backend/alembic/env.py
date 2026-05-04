@@ -2,9 +2,7 @@
 
 Reads the database URL from ``VEGA_DATABASE_URL`` (the same env var
 the FastAPI service reads in :mod:`app.db.session`) so a single source
-of truth governs both the running app and the migration runner. The
-legacy ``TRADER_DATABASE_URL`` name is also accepted as a fallback
-during the project rename rollover.
+of truth governs both the running app and the migration runner.
 """
 
 from __future__ import annotations

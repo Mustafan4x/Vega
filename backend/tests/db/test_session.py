@@ -71,14 +71,19 @@ def test_get_engine_does_not_touch_default_when_env_is_set(
     assert sentinel["called"] is False
 
 
-def test_legacy_trader_database_url_still_works(monkeypatch: pytest.MonkeyPatch) -> None:
-    """The rename keeps ``TRADER_DATABASE_URL`` honored as a fallback."""
+def test_legacy_trader_database_url_is_ignored(monkeypatch: pytest.MonkeyPatch) -> None:
+    """The legacy ``TRADER_DATABASE_URL`` fallback was removed after the
+    project rename. Only ``VEGA_DATABASE_URL`` is read; setting
+    ``TRADER_DATABASE_URL`` has no effect."""
 
     from app.db import session
 
     monkeypatch.setattr(session, "_engine", None, raising=False)
     monkeypatch.delenv("VEGA_DATABASE_URL", raising=False)
-    monkeypatch.setenv("TRADER_DATABASE_URL", "sqlite://")
+    monkeypatch.setenv("TRADER_DATABASE_URL", "sqlite:///should-be-ignored.db")
 
     engine = session.get_engine()
-    assert "sqlite" in engine.url.drivername
+    # Falls back to the dev SQLite default (vega.db) under backend/var,
+    # not the TRADER_DATABASE_URL value above.
+    assert "should-be-ignored" not in str(engine.url)
+    assert "vega.db" in str(engine.url)

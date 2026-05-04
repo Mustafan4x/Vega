@@ -1,11 +1,9 @@
 """Database engine and session factory.
 
 DSN comes from ``VEGA_DATABASE_URL`` (default: a local SQLite file
-under ``backend/var/vega.db`` for dev). The legacy ``TRADER_DATABASE_URL``
-name is still honored as a fallback during the project rename
-rollover. Production uses Postgres on Neon (set in the Render service
-env in Phase 11). Never commit a production DSN; the ``gitleaks``
-rule from Phase 0 catches them.
+under ``backend/var/vega.db`` for dev). Production uses Postgres on
+Neon (set in the Render service env in Phase 11). Never commit a
+production DSN; the ``gitleaks`` rule from Phase 0 catches them.
 
 DSN normalization: bare ``postgresql://`` URLs (the form Neon's
 dashboard hands you) make SQLAlchemy 2.x try the ``psycopg2`` driver,

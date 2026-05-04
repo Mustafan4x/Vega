@@ -1,5 +1,5 @@
-// Trader · Oxblood · Tailwind theme.extend snippet
-// Source of truth: /home/mustafa/src/trader/docs/design/claude-design-output.html
+// Vega · Oxblood · Tailwind theme.extend snippet
+// Source of truth: /home/mustafa/src/vega/docs/design/claude-design-output.html
 // (specifically the JSON `tailwindSketch` inside <script type="application/json" id="design-manifest">).
 //
 // DevOps: drop the object below into `frontend/tailwind.config.ts` under

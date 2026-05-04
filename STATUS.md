@@ -2,19 +2,11 @@
 
 Single source of truth for which phase is next. Read this file when the user says "work on the next phase" or any equivalent. Update this file when a phase changes state. The Project Manager session owns it.
 
-**Last updated**: 2026-05-03 (Phase 11 opened).
+**Last updated**: 2026-05-04 (Phase 11 closed; v1 shipped).
 
 ## Next phase
 
-**Phase 11: Production deployment** is **in progress** in this session. Deploy frontend to Cloudflare Pages, backend to Render, Postgres on Neon. Final security hardening (HTTPS, HSTS, CSP, secret rotation, dependency scan), per-route slowapi limits on `/api/tickers/{symbol}`, `/api/heatmap`, and `/api/backtest` (deferred from Phases 8 and 10), polished `docs/setup-guide.md`. The deploy step requires the user to click through three dashboards.
-
-If you are reading this file because the user just said "work on the next phase", do the following:
-
-1. Confirm that "Phase 0" is still listed as next (the value above), in case this file has drifted from the table below.
-2. Read `CLAUDE.md` for the session role rules and the pacing protocol.
-3. Read `SPEC.md` for the phase scope and the window cost estimate.
-4. Read `agents/00-project-manager.md` for the Project Manager brief.
-5. Begin the phase per the PM brief.
+**v1 is shipped.** Frontend at <https://vega-2rd.pages.dev/>, backend at <https://vega-backend-1wm0.onrender.com>, Postgres on Neon. There is no next phase from the spec; design changes follow the two flows in `CLAUDE.md` ("Design change workflow") and any new feature work goes through `docs/future-ideas.md`.
 
 ## Phase status table
 
@@ -33,7 +25,7 @@ Status values: `not started`, `in progress`, `completed`, `bundled with phase N`
 | 8 | Real market data | completed | 2026-05-03 | ~55% alone | shipped solo; 25 new backend tests + 19 new frontend tests; live AAPL smoke test green; Security Engineer conditional pass (no blockers); three T6 residual risks documented |
 | 9 | Multiple pricing models | completed | 2026-05-03 | ~70% (well under budget) | binomial CRR + Monte Carlo (antithetic) added; `model` param on price and heatmap; ModelSelector + ComparePanel; 67 new backend tests + 8 new frontend tests; live three-model convergence verified; Risk Reviewer clean sign-off |
 | 10 | Backtesting | completed | 2026-05-03 | ~50% (well under budget) | shipped solo; pure backtest engine + yfinance historical service + POST /api/backtest + frontend BacktestForm/BacktestChart/BacktestScreen; 41 new backend tests + 20 new frontend tests; live AAPL smoke test green; Risk Reviewer + Performance Engineer both signed off (per-route rate limit deferred to Phase 11) |
-| 11 | Production deployment | in progress | | ~90% | code work first (rate limits, CORS, Render IaC, CF Pages headers, docs); then user dashboard clicks |
+| 11 | Production deployment | completed | 2026-05-04 | ~95% | per-route rate limits closed (heatmap 12/min, tickers 30/min, backtest 10/min, calculations write 12/min, read 60/min); production fail-loud on missing CORS and missing API base URL; render.yaml + Dockerfile (uv multi-stage, non-root); CF Pages _headers (CSP, HSTS) + _redirects (SPA fallback); docs/api.md and end-to-end docs/setup-guide.md polished; pip-audit and pnpm audit clean; live deploy at vega-2rd.pages.dev / vega-backend-1wm0.onrender.com / Neon; project-wide rename Trader -> Vega including code, env vars, docs, GitHub repo, Render service, CF Pages project, Neon application role (vega_app), Neon password rotated, local folder /home/mustafa/src/vega/; 312 backend + 120 frontend tests pass |
 
 ## Resume notes
 

@@ -72,13 +72,13 @@ The order matters. Each step verifies the previous one. **Do not skip ahead**: a
    `postgresql://<user>:<pwd>@<host>.us-east-2.aws.neon.tech/<db>?sslmode=require`
 4. **Create the application role** (least privilege; do not use the owner role at runtime). In the Neon SQL editor:
    ```sql
-   CREATE ROLE trader_app WITH LOGIN PASSWORD '<paste a strong password>';
-   GRANT CONNECT ON DATABASE neondb TO trader_app;
-   GRANT USAGE ON SCHEMA public TO trader_app;
-   GRANT SELECT, INSERT ON calculation_inputs, calculation_outputs TO trader_app;
-   GRANT USAGE, SELECT ON ALL SEQUENCES IN SCHEMA public TO trader_app;
+   CREATE ROLE vega_app WITH LOGIN PASSWORD '<paste a strong password>';
+   GRANT CONNECT ON DATABASE neondb TO vega_app;
+   GRANT USAGE ON SCHEMA public TO vega_app;
+   GRANT SELECT, INSERT ON calculation_inputs, calculation_outputs TO vega_app;
+   GRANT USAGE, SELECT ON ALL SEQUENCES IN SCHEMA public TO vega_app;
    ```
-   Construct the application DSN by replacing the user and password in the connection string from step 3 with `trader_app:<password>`.
+   Construct the application DSN by replacing the user and password in the connection string from step 3 with `vega_app:<password>`.
 5. **Run the schema migration locally** using the OWNER role's DSN (the one from step 3, not the application role):
    ```bash
    cd backend
@@ -87,7 +87,7 @@ The order matters. Each step verifies the previous one. **Do not skip ahead**: a
    You should see `INFO  [alembic.runtime.migration] Running upgrade -> 9c8f64a81798`.
 6. **Verify** that `\dt` from the Neon SQL console lists `calculation_inputs` and `calculation_outputs`. The application DSN now has only `SELECT, INSERT` on those two tables.
 
-The owner DSN never leaves your local shell history. The `trader_app` DSN goes to Render in the next step.
+The owner DSN never leaves your local shell history. The `vega_app` DSN goes to Render in the next step.
 
 ### Step 2. Backend (Render)
 
@@ -96,7 +96,7 @@ The owner DSN never leaves your local shell history. The `trader_app` DSN goes t
 3. Render will offer to create a service named `vega-backend` (Docker, free plan, Oregon). Accept.
 4. **Set the env vars** Render flagged as `sync: false` (these are not in `render.yaml`):
    * `VEGA_CORS_ORIGINS`: paste the eventual Cloudflare Pages URL. You do not have it yet, so leave a placeholder like `https://placeholder.pages.dev`. We come back here at the end.
-   * `VEGA_DATABASE_URL`: paste the **trader_app** DSN from Step 1.4 (not the owner DSN).
+   * `VEGA_DATABASE_URL`: paste the **vega_app** DSN from Step 1.4 (not the owner DSN).
 5. **Deploy**. Render builds the Docker image (4-6 minutes for a cold build, 1-2 minutes after the first), then starts the service. Watch the build log.
 6. **Verify the deploy**:
    ```bash

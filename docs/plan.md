@@ -2,7 +2,7 @@
 
 This is the per phase implementation plan, derived from `SPEC.md`. It is owned by the Project Manager and updated at every phase boundary. For "which phase is next" status, read `STATUS.md` (the single source of truth). This file is the longer plan: who does what, what ships, and what gates a phase before it closes.
 
-**Currently in flight**: Phase 11 (Production deployment). Code work landed on `main`; user is walking through Cloudflare Pages + Render + Neon dashboards. Phases 0 through 10 are complete.
+**Status**: v1 shipped. All eleven phases complete. Live at <https://vega-2rd.pages.dev/> (frontend) and <https://vega-backend-1wm0.onrender.com> (backend, Neon Postgres).
 
 ## How this plan is used
 
@@ -370,7 +370,7 @@ QA, Security, Code Review, Risk Reviewer.
 
 ---
 
-## Phase 11: Production deployment [IN FLIGHT]
+## Phase 11: Production deployment [DONE]
 
 **Owners**: DevOps Engineer (lead), Security Engineer (final hardening), Documentation Engineer (setup guide).
 
@@ -396,30 +396,30 @@ QA, Security, Code Review, Risk Reviewer.
 * [x] `frontend/public/_redirects`: `/* /index.html 200` so a hard refresh on a non root path serves the SPA.
 * [x] `docs/api.md`: hand edited reference page for the seven endpoints, with rate limit table, error response shape table, and example request/response bodies.
 * [x] `docs/setup-guide.md`: rewritten end to end. Step 1 Neon (least privilege role creation in SQL), step 2 Render (Blueprint connect, paste two env vars), step 3 Cloudflare Pages (build settings, env vars), step 4 tie the loop closed, plus optional custom domain and a troubleshooting matrix.
-* [x] `docs/security/secrets.md`: env var names match the actual code (`TRADER_*`), production fail loud paths documented, application vs migration role distinction tightened.
+* [x] `docs/security/secrets.md`: env var names match the actual code (`VEGA_*`), production fail loud paths documented, application vs migration role distinction tightened.
 * [x] Dependency audit clean: `pip-audit` and `pnpm audit --prod` both report `No known vulnerabilities found`.
 * [x] Backend production smoke test (locally with `VEGA_ENVIRONMENT=production` and a valid HTTPS CORS origin) returns 200 on `/health` and `/api/price`, 404 on `/docs` and `/openapi.json`, and refuses to boot when `VEGA_CORS_ORIGINS` is missing.
 
-### User dashboard work (pending)
+### User dashboard work (done)
 
-These steps live in `docs/setup-guide.md`. They cannot be done by the PM session.
+* [x] Neon project created; `vega_app` application role with `SELECT, INSERT` only on the two calculation tables; password rotated mid Phase 11; owner DSN never persisted in CI or Render.
+* [x] Render Blueprint connected; backend service `vega-backend` (final URL `https://vega-backend-1wm0.onrender.com`); env vars `VEGA_DATABASE_URL`, `VEGA_CORS_ORIGINS`, `VEGA_ENVIRONMENT=production`, `VEGA_LOG_LEVEL=INFO`, `VEGA_RATE_LIMIT_DEFAULT=60/minute`.
+* [x] Cloudflare Pages connected; project `vega-2rd` (final URL `https://vega-2rd.pages.dev`); env vars `VITE_API_BASE_URL`, `NODE_VERSION=22`, `PNPM_VERSION=10`.
+* [x] Render `VEGA_CORS_ORIGINS` set to the live Pages URL.
+* [x] Live smoke test: `/health`, `POST /api/price`, `POST /api/heatmap`, `GET /api/calculations`, `POST /api/calculations`, CORS preflight from `https://vega-2rd.pages.dev` all 200; old `trader-backend-xsud` service deleted.
+* [x] Project wide rename Trader -> Vega: GitHub repo `Mustafan4x/Vega`, Render service `vega-backend`, Cloudflare Pages `vega-2rd`, Postgres role `vega_app`, env vars `VEGA_*`, local working directory `/home/mustafa/src/vega/`. Greek `vega` in the math layer preserved.
+* [x] Backward compat shim removed after Render env was on `VEGA_*` and the legacy `TRADER_*` env vars were deleted.
 
-* [ ] Sign up Cloudflare, Render, Neon.
-* [ ] Create the Neon project; copy the owner DSN; create the `trader_app` application role with `SELECT, INSERT` on the two calculation tables; run `alembic upgrade head` against the owner DSN locally.
-* [ ] Connect the GitHub repo to Render via Blueprint; paste `VEGA_CORS_ORIGINS` (placeholder) and `VEGA_DATABASE_URL` (`trader_app` DSN); verify `/health` returns 200 at the new Render URL.
-* [ ] Connect the GitHub repo to Cloudflare Pages; set `VITE_API_BASE_URL` to the Render URL; verify the deployed Pages URL loads and POSTs `/api/price` cleanly.
-* [ ] Update Render's `VEGA_CORS_ORIGINS` to the exact Pages URL; redeploy; smoke test all five screens (Pricing, Heat Map, Compare, Backtest, History).
-* [ ] Optional: custom domain.
-* [ ] Apply branch protection rules and enable Dependabot + CodeQL on the GitHub repo (per `docs/setup-guide.md`).
+Branch protection plus Dependabot plus CodeQL are still optional follow ups on the GitHub repo; documented in `docs/setup-guide.md`.
 
 ### Gates
 
-* [x] QA: 295 backend + 114 frontend tests pass; ruff, mypy, eslint, prettier, tsc all clean; Vite build green (33 KB CSS, 233 KB JS, 71 KB gzip).
+* [x] QA: 312 backend + 120 frontend tests pass; ruff, mypy, eslint, prettier, tsc all clean; Vite build green.
 * [x] Security (code level): production fail loud paths land for both CORS and the frontend API base URL; per route rate limits close the deferred Phase 4 / 8 / 10 findings; `pip-audit` and `pnpm audit --prod` clean.
-* [ ] Security (live): final hardening verified after deploy (HSTS preload eligibility, CSP, frame ancestors, no stack trace leak from production error path). Pending the user's dashboard work.
-* [ ] Documentation Engineer: `docs/setup-guide.md` walked through end to end on a fresh clone. Pending the user's dashboard work.
+* [x] Security (live): HSTS preload eligibility verified on both Render and Cloudflare; production CSP from Cloudflare Pages, frame-ancestors from backend; no stack trace leak from the production error path; CORS allow list locked to the exact Pages origin; Neon `vega_app` role limited to `SELECT, INSERT` on the two calculation tables, password rotated.
+* [x] Documentation Engineer: `docs/setup-guide.md` walked through end to end during the live deploy; `docs/api.md` published.
 
-After Phase 11 closes, the PM offers a `/schedule` agent to revisit the deployed app for any rot or follow ups in a few weeks.
+After Phase 11 closed, design changes follow the two flows in `CLAUDE.md` ("Design change workflow") and any new feature work goes through `docs/future-ideas.md`.
 
 ---
 

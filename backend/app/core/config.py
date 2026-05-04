@@ -3,13 +3,7 @@
 Defaults are local development safe. Production overrides come from the
 host's environment (Render service env vars in Phase 11).
 
-Env var names use the ``VEGA_*`` prefix as of the project rename. For
-the duration of the rollover the loader also accepts the legacy
-``TRADER_*`` names (logged as deprecated). The fallback exists so a
-push of the rename does not interrupt a running production deploy
-that still has the old env var names set; once Render is updated to
-``VEGA_*`` and the user deletes the legacy keys, the fallback can be
-removed in a follow up.
+All env var keys use the ``VEGA_*`` prefix.
 
 Production hardening: when ``VEGA_ENVIRONMENT=production`` the loader
 fails loud on a missing or wildcard ``VEGA_CORS_ORIGINS``. A wildcard
@@ -21,11 +15,8 @@ scope. See ``docs/security/threat-model.md``.
 
 from __future__ import annotations
 
-import logging
 import os
 from dataclasses import dataclass
-
-logger = logging.getLogger("app.config")
 
 DEFAULT_CORS_ORIGINS = ("http://localhost:5173",)
 DEFAULT_RATE_LIMIT = "60/minute"
@@ -35,23 +26,13 @@ DEFAULT_ENVIRONMENT = "development"
 
 
 def read_env(name: str, default: str | None = None) -> str | None:
-    """Read ``VEGA_<name>`` first, falling back to ``TRADER_<name>``.
+    """Read ``VEGA_<name>`` from the environment, returning ``default`` if unset.
 
-    The return value is the raw string from ``os.environ`` (or the
-    given default). The fallback exists so the rename of env var
-    keys can be deployed without coordinating a Render env edit at
-    the same instant; once production is on ``VEGA_*``, the fallback
-    can be removed.
+    Kept as a tiny indirection so config call sites read by short
+    name and the prefix is in one place.
     """
 
-    primary = f"VEGA_{name}"
-    legacy = f"TRADER_{name}"
-    if primary in os.environ:
-        return os.environ[primary]
-    if legacy in os.environ:
-        logger.warning("env_legacy_key in_use legacy=%s preferred=%s", legacy, primary)
-        return os.environ[legacy]
-    return default
+    return os.environ.get(f"VEGA_{name}", default)
 
 
 class ConfigError(RuntimeError):

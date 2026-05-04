@@ -1,6 +1,6 @@
-# Trader · Oxblood wireframes
+# Vega · Oxblood wireframes
 
-This document describes the layout and interaction model for each of the five screens in the Trader app. The canonical visual ground truth is `/home/mustafa/src/trader/docs/design/claude-design-output.html`. This file is a written description of what already exists there, anchored to the `data-component` and `data-element` selectors used in the HTML.
+This document describes the layout and interaction model for each of the five screens in the Vega app. The canonical visual ground truth is `/home/mustafa/src/vega/docs/design/claude-design-output.html`. This file is a written description of what already exists there, anchored to the `data-component` and `data-element` selectors used in the HTML.
 
 When the Frontend Developer scaffolds React components in Phase 3, they should match these `data-component` names and `data-element` parts so the canonical HTML remains useful as a reference.
 
@@ -16,7 +16,7 @@ The shell is the same on every screen.
 
 * Width 232 px on desktop, collapses to 64 px (icons only) below 768 px.
 * Background `rgba(14, 26, 44, 0.92)` with a thin oxblood soft border on the right.
-* Vertical stack: `[data-element="brand"]` (logo plus "Trader" wordmark in IBM Plex Serif italic bold), `[data-element="nav"]` (five nav buttons), `[data-element="footer"]` (status dot plus live timestamp in JetBrains Mono).
+* Vertical stack: `[data-element="brand"]` (logo plus "Vega" wordmark in IBM Plex Serif italic bold), `[data-element="nav"]` (five nav buttons), `[data-element="footer"]` (status dot plus live timestamp in JetBrains Mono).
 * Each `[data-element="navItem"]` is a button with an icon and a label in IBM Plex Serif italic. Active item: `data-active="true"` swaps background to `--color-primary-soft` and text color to `--color-primary-500`, weight bumps to bold.
 * The five nav items: Pricing (calculator icon), Heat Map (grid icon), Model Comparison (git compare icon), Backtest (activity icon), History (clock icon).
 
@@ -24,7 +24,7 @@ The shell is the same on every screen.
 
 * Height 56 px, full width minus sidebar.
 * Background `rgba(14, 26, 44, 0.85)` with `backdrop-filter: blur(8px)`; bottom border in `--color-border`.
-* Left: breadcrumbs `[data-element="crumbs"]` of the form `Trader / <screen label>`, where `Trader` is `[data-element="crumbMuted"]` and the active screen is `[data-element="crumb"]`.
+* Left: breadcrumbs `[data-element="crumbs"]` of the form `Vega / <screen label>`, where `Vega` is `[data-element="crumbMuted"]` and the active screen is `[data-element="crumb"]`.
 * Right: `[data-element="actions"]` containing two icon buttons (Theme, Settings) and a circular avatar `[data-element="avatar"]` showing initials.
 
 ### Page content slot

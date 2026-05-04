@@ -22,15 +22,15 @@ A scratch list of features that are out of scope for v1 but worth picking up lat
 
 **Notes for the implementer**: the convention is documented in `docs/risk/conventions.md` (dividends assumed zero in v1). The Quant Domain Validator owns the formula change and the new reference values. Risk Reviewer must update sanity cases. Backend Developer adds an optional `q: float = 0.0` parameter to the function signature so existing callers keep working. Frontend Developer adds the input field and the percent to decimal conversion. Default to `q = 0` everywhere so the v1 behavior is preserved.
 
-## Project name and logo
+## Logo and favicon
 
-**Idea**: replace the working title "Trader" with a real product name and a small wordmark or logo. The current name is a generic placeholder; a real name plus a logo will look better on the resume link, in the deployed site's `<title>`, and as the favicon.
+**Idea**: design a Vega wordmark / logo and replace the Vite default favicon with a custom SVG that matches the Oxblood palette. The project name was renamed from "Trader" to "Vega" during Phase 11; the visual mark is the natural follow up.
 
-**Why deferred**: naming and brand work is creative and personal; it does not block the engineering build, and the wrong name now would just have to be ripped out later. The Oxblood visual identity is locked in (per ADR 0004), so a logo can be designed against that palette whenever the user is ready.
+**Why deferred**: naming landed; brand work is creative and personal and does not block the engineering build.
 
-**When to revisit**: any time before Phase 11 (production deployment), so the deployed site, the GitHub repo description, and the resume link all use the same name. Easiest moment is right before Phase 11 opens.
+**When to revisit**: any time after Phase 11 ships, especially before sharing the deployed link on a resume.
 
-**Notes for the implementer**: places the name appears today as "Trader" or "trader": the GitHub repo name (`Mustafan4x/Trader`), `README.md`, `SPEC.md`, `STATUS.md`, `docs/architecture.md`, the four ADRs, `frontend/index.html` `<title>`, `frontend/src/App.tsx` placeholder text, `backend/pyproject.toml` (`name = "trader-backend"`), `backend/app/repl.py` startup banner, and the local working directory `/home/mustafa/src/trader/`. Renaming is a find and replace pass plus a `gh repo rename` (which preserves the old URL as a redirect). The local directory rename is optional. Logo work belongs to a UI/UX Designer pass; the Oxblood palette and IBM Plex Serif italic display from `docs/design/tokens.md` are the constraints. Favicon at `frontend/public/favicon.svg` is currently the Vite default.
+**Notes for the implementer**: Logo work belongs to a UI/UX Designer pass; the Oxblood palette and IBM Plex Serif italic display from `docs/design/tokens.md` are the constraints. Favicon at `frontend/public/favicon.svg` is currently the Vite default. The brand mark renders in `frontend/src/components/LayoutShell.tsx` as an inline SVG; replace with the new asset.
 
 ## Other deferred ideas
 

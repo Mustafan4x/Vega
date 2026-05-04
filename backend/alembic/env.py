@@ -1,18 +1,20 @@
 """Alembic environment.
 
-Reads the database URL from ``TRADER_DATABASE_URL`` (the same env var
+Reads the database URL from ``VEGA_DATABASE_URL`` (the same env var
 the FastAPI service reads in :mod:`app.db.session`) so a single source
-of truth governs both the running app and the migration runner.
+of truth governs both the running app and the migration runner. The
+legacy ``TRADER_DATABASE_URL`` name is also accepted as a fallback
+during the project rename rollover.
 """
 
 from __future__ import annotations
 
-import os
 from logging.config import fileConfig
 
 from sqlalchemy import engine_from_config, pool
 
 from alembic import context
+from app.core.config import read_env
 from app.db.models import Base
 from app.db.session import normalize_database_url
 
@@ -21,7 +23,7 @@ config = context.config
 if config.config_file_name is not None:
     fileConfig(config.config_file_name)
 
-env_url = os.environ.get("TRADER_DATABASE_URL")
+env_url = read_env("DATABASE_URL")
 if env_url:
     config.set_main_option("sqlalchemy.url", normalize_database_url(env_url))
 

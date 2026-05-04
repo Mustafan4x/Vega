@@ -1,7 +1,7 @@
 [project]
-name = "trader-backend"
+name = "vega-backend"
 version = "0.1.0"
-description = "Trader backend, FastAPI service for the Black Scholes options pricer."
+description = "Vega backend, FastAPI service for the Black Scholes options pricer."
 authors = [
     { name = "Mustafan4x", email = "Mustafa421670@gmail.com" }
 ]
@@ -19,8 +19,8 @@ dependencies = [
 ]
 
 [project.scripts]
-trader-repl = "app.repl:main"
-trader-serve = "app.serve:main"
+vega-repl = "app.repl:main"
+vega-serve = "app.serve:main"
 
 [build-system]
 requires = ["hatchling"]

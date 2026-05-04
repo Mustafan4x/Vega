@@ -1,4 +1,4 @@
-# Trader project: instructions for Claude Code
+# Vega project: instructions for Claude Code
 
 This file is auto loaded into every Claude Code session opened in this directory. Read it before doing anything else, then read `SPEC.md`, then read `agents/00-project-manager.md`.
 
@@ -6,7 +6,7 @@ This file is auto loaded into every Claude Code session opened in this directory
 
 A full stack Black Scholes options pricer pet project, built up across 11 phases. The full spec is in `SPEC.md`. Each role of the build (frontend, backend, security, QA, etc.) has a dedicated brief in `agents/`.
 
-GitHub: https://github.com/Mustafan4x/Trader (the user has already created this remote repo). The local working directory `/home/mustafa/src/trader/` is a plain folder, not yet a git repo on first session. The DevOps Engineer agent's Phase 0 job is to run `git init` here, add the GitHub repo as `origin`, stage the existing files, commit, and push. Do not clone the GitHub repo elsewhere or wipe anything.
+GitHub: https://github.com/Mustafan4x/Vega (the user has already created this remote repo). The local working directory `/home/mustafa/src/vega/` is a plain folder, not yet a git repo on first session. The DevOps Engineer agent's Phase 0 job is to run `git init` here, add the GitHub repo as `origin`, stage the existing files, commit, and push. Do not clone the GitHub repo elsewhere or wipe anything.
 
 ## Your role in this session
 
@@ -23,7 +23,7 @@ GitHub: https://github.com/Mustafan4x/Trader (the user has already created this 
 
 If the user says "work on the next phase" or any equivalent ("continue", "keep going", "next one", "let's do the next phase"), do this:
 
-1. Read `/home/mustafa/src/trader/STATUS.md`.
+1. Read `/home/mustafa/src/vega/STATUS.md`.
 2. Identify the phase named in the "Next phase" section.
 3. Confirm with the user once: "STATUS.md says the next phase is Phase **{N}: {name}**. Window cost: {budget}. Starting now unless you say otherwise."
 4. If the user does not object within their next message, begin the phase.
@@ -63,11 +63,11 @@ If the file does not exist yet (first PM session after the file was deleted), re
 Use the `Task` tool. The prompt template:
 
 ```
-You are the [Role] agent for the Trader project at /home/mustafa/src/trader.
+You are the [Role] agent for the Vega project at /home/mustafa/src/vega.
 
 Read these files first:
-- /home/mustafa/src/trader/SPEC.md
-- /home/mustafa/src/trader/agents/NN-role.md
+- /home/mustafa/src/vega/SPEC.md
+- /home/mustafa/src/vega/agents/NN-role.md
 
 Execute the [Phase X] tasks listed in your agent file. Use the plugins listed in the "Plugins to use" section by invoking them with the Skill tool. Stay strictly in the role of [Role]; do not take on tasks that belong to other agents (route those back to the Project Manager).
 
@@ -159,7 +159,7 @@ Never burn the last few percent of a window on a half finished change that canno
 ## Directory layout
 
 ```
-/home/mustafa/src/trader/
+/home/mustafa/src/vega/
 ├── CLAUDE.md                  # This file. Auto loaded.
 ├── STATUS.md                  # Single source of truth: which phase is next, which are done.
 ├── SPEC.md                    # The full project spec.
@@ -189,11 +189,11 @@ Never burn the last few percent of a window on a half finished change that canno
 └── frontend/                  # React app. Created in Phase 3 by Frontend Developer.
 ```
 
-Always use absolute paths when referring to files in this project. `/home/mustafa/src/trader/...` is the canonical prefix.
+Always use absolute paths when referring to files in this project. `/home/mustafa/src/vega/...` is the canonical prefix.
 
 ## Visual design source of truth
 
-The Claude Design output lives at `/home/mustafa/src/trader/docs/design/claude-design-output.html`. The theme is **Oxblood** (dark surface, oxblood `#C03A3A` primary, sea green `#34D399` accent, IBM Plex Serif italic display, Newsreader for numbers, Manrope for UI text, JetBrains Mono for code). This file is the visual ground truth for the project. It is openable in any browser, edited by the user (and by Claude Design when the user asks for revisions), and tracked in git. The implemented React frontend is expected to match its visual personality, design tokens, and component anatomy.
+The Claude Design output lives at `/home/mustafa/src/vega/docs/design/claude-design-output.html`. The theme is **Oxblood** (dark surface, oxblood `#C03A3A` primary, sea green `#34D399` accent, IBM Plex Serif italic display, Newsreader for numbers, Manrope for UI text, JetBrains Mono for code). This file is the visual ground truth for the project. It is openable in any browser, edited by the user (and by Claude Design when the user asks for revisions), and tracked in git. The implemented React frontend is expected to match its visual personality, design tokens, and component anatomy.
 
 The implementation is React plus Vite plus Tailwind, NOT this HTML directly. Treat the HTML as a design reference, not a runtime artifact.
 
@@ -246,7 +246,7 @@ Neither requires a new "phase". Both are in place edit cycles. Pick the flow tha
 
 ### When the HTML does not exist yet
 
-The Frontend Developer agent's Phase 3 onward depends on this file. If you reach Phase 3 and `docs/design/claude-design-output.html` is missing, stop and ask the user: "Where is the Claude Design output? I need it to start frontend implementation. Save it to `/home/mustafa/src/trader/docs/design/claude-design-output.html` or paste the contents here." Do not guess at design choices.
+The Frontend Developer agent's Phase 3 onward depends on this file. If you reach Phase 3 and `docs/design/claude-design-output.html` is missing, stop and ask the user: "Where is the Claude Design output? I need it to start frontend implementation. Save it to `/home/mustafa/src/vega/docs/design/claude-design-output.html` or paste the contents here." Do not guess at design choices.
 
 ## Coding conventions
 
@@ -298,7 +298,7 @@ This is the canonical list of which skills are used where. Each agent file resta
 * **A subagent returned vague or wrong work**: re prompt with the agent file path and a specific correction, or take over the role yourself in this session.
 * **A skill listed in an agent file is not available in this session**: tell the user; do not silently substitute.
 * **A decision affects multiple agents**: route it through the PM (you, by default) and capture it in `docs/adr/`.
-* **You need the source video transcript**: read `/home/mustafa/src/trader/docs/source/transcript.md`. The project goes beyond the transcript in places; SPEC.md is the canonical scope.
+* **You need the source video transcript**: read `/home/mustafa/src/vega/docs/source/transcript.md`. The project goes beyond the transcript in places; SPEC.md is the canonical scope.
 * **You are unsure of any user preference**: ask. Per the user's global CLAUDE.md, do not guess personal or subjective answers.
 
 ## First session entry point

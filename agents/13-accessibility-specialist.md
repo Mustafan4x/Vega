@@ -9,7 +9,7 @@ Make sure the app is usable with a keyboard alone, a screen reader, and at WCAG 
 ## Inputs
 * Wireframes and design system from the UI/UX Designer.
 * Implemented components from the Frontend Developer.
-* `/home/mustafa/src/trader/docs/design/claude-design-output.html` (the Oxblood theme): use this to verify color contrast at the token level before any code is written.
+* `/home/mustafa/src/vega/docs/design/claude-design-output.html` (the Oxblood theme): use this to verify color contrast at the token level before any code is written.
 
 ## Outputs
 * `docs/a11y/checklist.md` with the per phase a11y checklist.

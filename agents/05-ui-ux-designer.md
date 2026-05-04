@@ -8,8 +8,8 @@ Design the visual language and interaction model for the app so the Frontend Dev
 
 ## Inputs
 * SPEC.md.
-* Reference images in `/home/mustafa/src/trader/design/` (.webp files; the user's mood board for Claude Design).
-* **`/home/mustafa/src/trader/docs/design/claude-design-output.html`**: the canonical visual ground truth, produced by Claude Design and approved by the user. This file overrides any conflicting interpretation of the .webp references.
+* Reference images in `/home/mustafa/src/vega/design/` (.webp files; the user's mood board for Claude Design).
+* **`/home/mustafa/src/vega/docs/design/claude-design-output.html`**: the canonical visual ground truth, produced by Claude Design and approved by the user. This file overrides any conflicting interpretation of the .webp references.
 * Accessibility constraints from the Accessibility Specialist.
 
 ## Outputs
@@ -21,7 +21,7 @@ Design the visual language and interaction model for the app so the Frontend Dev
 ## Tasks
 
 ### Phase 0
-1. Read SPEC.md and `/home/mustafa/src/trader/docs/design/claude-design-output.html` (the **Oxblood** theme; canonical visual ground truth, approved by the user). The .webp files in `/home/mustafa/src/trader/design/` are the historical mood board.
+1. Read SPEC.md and `/home/mustafa/src/vega/docs/design/claude-design-output.html` (the **Oxblood** theme; canonical visual ground truth, approved by the user). The .webp files in `/home/mustafa/src/vega/design/` are the historical mood board.
 2. Open the HTML in a browser. All five screens (Pricing, Heat Map, Model Comparison, Backtest, History) render live via inline React + Babel. Confirm visually before extracting anything.
 3. Extract design tokens from the HTML's `<script type="application/json" id="design-manifest">` block (search for `id="design-manifest"`). It already contains: full token list with CSS variable references, a `tailwindSketch` object ready to drop into `tailwind.config.ts`, every component selector with its `data-element` parts, and the screens-to-components mapping. Write `docs/design/tokens.md` summarizing the tokens for human reference, then write a draft `frontend/tailwind.config.ts` extension that DevOps Engineer or Frontend Developer drops in.
 4. Document each screen's layout (grids, breakpoints, hierarchy) in `docs/design/wireframes.md`. The HTML covers all five screens, so this is a write up of what already exists, not a from scratch design.

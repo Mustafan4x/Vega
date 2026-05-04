@@ -1,6 +1,6 @@
 """Interactive REPL for the Black Scholes pricer.
 
-Run as ``python -m app.repl`` (or ``trader-repl`` once installed). Prompts for
+Run as ``python -m app.repl`` (or ``vega-repl`` once installed). Prompts for
 the five inputs (S, K, T, r, sigma) and prints the call and put prices to
 four decimal places.
 """
@@ -33,7 +33,7 @@ def _read_float(label: str, prompt: str, require_non_negative: bool) -> float:
 
 
 def main() -> int:
-    print("Trader Black Scholes REPL. Enter the five inputs:")
+    print("Vega Black Scholes REPL. Enter the five inputs:")
     inputs: dict[str, float] = {}
     for label, prompt, require_non_negative in _PROMPTS:
         inputs[label] = _read_float(label, prompt, require_non_negative)

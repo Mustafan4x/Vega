@@ -1,4 +1,4 @@
-# Trader project status
+# Vega project status
 
 Single source of truth for which phase is next. Read this file when the user says "work on the next phase" or any equivalent. Update this file when a phase changes state. The Project Manager session owns it.
 

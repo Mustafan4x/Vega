@@ -1,6 +1,6 @@
 # Architecture
 
-This document describes how the Trader system is wired together end to end. It is the canonical answer to "where does request X go and why". For the per phase delivery plan, see [`plan.md`](plan.md). For the visual reference, see [`design/claude-design-output.html`](design/claude-design-output.html). For the user facing deployment walkthrough, see [`setup-guide.md`](setup-guide.md).
+This document describes how the Vega system is wired together end to end. It is the canonical answer to "where does request X go and why". For the per phase delivery plan, see [`plan.md`](plan.md). For the visual reference, see [`design/claude-design-output.html`](design/claude-design-output.html). For the user facing deployment walkthrough, see [`setup-guide.md`](setup-guide.md).
 
 ## System diagram
 

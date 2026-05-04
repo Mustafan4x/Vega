@@ -2,9 +2,9 @@
 #
 # Usage:
 #   docker compose up -d
-#   export TRADER_DATABASE_URL=postgresql+psycopg://trader:trader@localhost:5432/trader
+#   export VEGA_DATABASE_URL=postgresql+psycopg://vega:vega@localhost:5432/vega
 #   uv --project backend run alembic upgrade head
-#   uv --project backend run trader-serve
+#   uv --project backend run vega-serve
 #
 # The default password here is intentionally weak: this stack listens on
 # 127.0.0.1 only and is for local dev. Production uses the managed Neon
@@ -13,21 +13,21 @@
 services:
   postgres:
     image: postgres:16-alpine
-    container_name: trader-postgres
+    container_name: vega-postgres
     restart: unless-stopped
     environment:
-      POSTGRES_USER: trader
-      POSTGRES_PASSWORD: trader
-      POSTGRES_DB: trader
+      POSTGRES_USER: vega
+      POSTGRES_PASSWORD: vega
+      POSTGRES_DB: vega
     ports:
       - "127.0.0.1:5432:5432"
     volumes:
-      - trader-pg-data:/var/lib/postgresql/data
+      - vega-pg-data:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U trader -d trader"]
+      test: ["CMD-SHELL", "pg_isready -U vega -d vega"]
       interval: 5s
       timeout: 3s
       retries: 5
 
 volumes:
-  trader-pg-data:
+  vega-pg-data:

@@ -1,4 +1,4 @@
-# Trader: implementation plan
+# Vega: implementation plan
 
 This is the per phase implementation plan, derived from `SPEC.md`. It is owned by the Project Manager and updated at every phase boundary. For "which phase is next" status, read `STATUS.md` (the single source of truth). This file is the longer plan: who does what, what ships, and what gates a phase before it closes.
 
@@ -62,9 +62,9 @@ Input: `SPEC.md`, `agents/08-security-engineer.md`.
 
 Input: `SPEC.md`, `agents/09-devops-engineer.md`, `docs/design/claude-design-output.html`.
 
-* [ ] `git init` in `/home/mustafa/src/trader/`.
+* [ ] `git init` in `/home/mustafa/src/vega/`.
 * [ ] `.gitignore` covering Python (`__pycache__`, `.venv`, `*.pyc`), Node (`node_modules`, `dist`), OS (`.DS_Store`), editor (`.idea`, `.vscode`), env files (`.env`, `.env.local`).
-* [ ] `origin` set to `git@github.com:Mustafan4x/Trader.git` (SSH; both SSH and HTTPS auth confirmed working).
+* [ ] `origin` set to `git@github.com:Mustafan4x/Vega.git` (SSH; both SSH and HTTPS auth confirmed working).
 * [ ] First commit staged with the existing files (`SPEC.md`, `CLAUDE.md`, `GETTING-STARTED.md`, `STATUS.md`, `agents/`, `docs/`, `design/`) and pushed to `main`.
 * [ ] `backend/` scaffolded with `uv init`, `pyproject.toml` configured for FastAPI (FastAPI, uvicorn, pydantic, pytest, httpx, ruff, mypy as initial deps).
 * [ ] `frontend/` scaffolded with `pnpm create vite frontend --template react-ts`, Tailwind installed per the official Vite + Tailwind setup, `frontend/tailwind.config.ts` populated with the `tailwindSketch.theme.extend` block from the Oxblood design manifest, `frontend/src/styles/tokens.css` populated with the CSS variables from the HTML's `:root` block.
@@ -87,7 +87,7 @@ Input: `SPEC.md`, `agents/15-documentation-engineer.md`.
 
 * PM verifies all four subagent reports against their respective agent files.
 * Security Engineer's threat model is published and the recommended branch protection rules are flagged for the user to apply on GitHub (this requires a browser click, so the user does it; the PM lists the exact settings).
-* `git push` of the first commit succeeded; the `Mustafan4x/Trader` repo on GitHub now holds the spec, agents, and design.
+* `git push` of the first commit succeeded; the `Mustafan4x/Vega` repo on GitHub now holds the spec, agents, and design.
 * `frontend/` and `backend/` scaffolds are present and lint clean.
 
 ### Phase 0 user actions (the PM lists these in the end of phase summary)
@@ -131,11 +131,11 @@ QA, Security, Code Review, Risk Reviewer.
 * [x] `GET /health` (liveness).
 * [x] `POST /api/price` accepts the five inputs, returns call and put. Pydantic models validate inputs strictly (`extra="forbid"`, `allow_inf_nan=False`, mathematical bounds enforced before the pricing module is called).
 * [x] CORS allow list set to the local frontend dev origin (`http://localhost:5173`), `allow_credentials=False`, no wildcards. Production origin added in Phase 11.
-* [x] HTTP security headers on every response: `Strict-Transport-Security`, `X-Content-Type-Options`, `Referrer-Policy`, `Permissions-Policy`, `Content-Security-Policy: frame-ancestors 'none'`, `Cross-Origin-Opener-Policy`, `Cross-Origin-Resource-Policy`. Uvicorn `Server` header suppressed via `trader-serve`.
-* [x] Application layer rate limiting via `slowapi`. Default `60/minute` per IP; override via `TRADER_RATE_LIMIT_DEFAULT`.
+* [x] HTTP security headers on every response: `Strict-Transport-Security`, `X-Content-Type-Options`, `Referrer-Policy`, `Permissions-Policy`, `Content-Security-Policy: frame-ancestors 'none'`, `Cross-Origin-Opener-Policy`, `Cross-Origin-Resource-Policy`. Uvicorn `Server` header suppressed via `vega-serve`.
+* [x] Application layer rate limiting via `slowapi`. Default `60/minute` per IP; override via `VEGA_RATE_LIMIT_DEFAULT`.
 * [x] 32 KB body size cap at the middleware layer (rejects oversized `Content-Length` with HTTP 413).
 * [x] Sanitized validation handler: 422 responses do not echo input values, library internals, or stack traces.
-* [x] OpenAPI docs (`/docs`, `/openapi.json`) gated on `TRADER_ENVIRONMENT`; hidden in production, served in development.
+* [x] OpenAPI docs (`/docs`, `/openapi.json`) gated on `VEGA_ENVIRONMENT`; hidden in production, served in development.
 * [x] Structured JSON access logger (`app.access`) with `request_id`, `method`, `path`, `status`, `duration_ms` per request. `X-Request-Id` echoed on every response.
 * [x] 85 tests pass: contract tests on `POST /api/price` (happy path, validation failures, missing fields, extra fields, non finite values, oversized body, error body shape), security headers, CORS preflight, rate limit burst, structured logging shape, environment dependent behavior, plus the carried over Phase 1 pricing math suite.
 
@@ -170,7 +170,7 @@ QA, Security, Code Review, Risk Reviewer.
 * [x] Security: Phase 3 review run by Security Engineer subagent. Sign off received with no critical or high severity findings. Two info severity items deferred (production fail loud on missing `VITE_API_BASE_URL`, CSP and security headers wired at Cloudflare Pages in Phase 11).
 * [x] a11y: Phase 3 audit run by Accessibility Specialist subagent. Two contrast blockers (call hero, OTM tag, error status text) addressed by switching to the `--color-primary-300`/`--color-primary-200` tints. Major items addressed: ITM/OTM tag accessible name, avatar role and label, status/alert role split, sidebar nav `aria-label` for icon only mode, sr-only `<h1>` per screen, sidebar status accessible name. Remaining minor items (focus ring thickness on icon buttons, color-scheme dark+light when the theme toggle ships) deferred to a follow up.
 * [x] Code Review: PM session reviewed the diff. No simplifications outstanding.
-* [x] Live smoke test: backend `trader-serve` plus frontend `vite preview` exchanged a happy path `/api/price` call from the `localhost:5173` origin.
+* [x] Live smoke test: backend `vega-serve` plus frontend `vite preview` exchanged a happy path `/api/price` call from the `localhost:5173` origin.
 
 ---
 
@@ -199,7 +199,7 @@ QA, Security, Code Review, Risk Reviewer.
 * [x] Security: Phase 4 review run by Security Engineer subagent. Sign off received with no critical or high findings. Medium finding (unbounded `r` and `T` causing OverflowError on `math.exp`) addressed in this phase by adding sane upper bounds on `S`, `K`, `T`, `r`, `sigma` to both `PriceRequest` and `HeatmapRequest`. Low note (per route rate limits) deferred to Phase 10 (backtest).
 * [x] Code Review: PM session reviewed the diff. No simplifications outstanding.
 * [x] Performance: 21 by 21 grid call+put math in 0.4 ms cold, far under the SPEC's "well under one second" bar. Performance Engineer dispatch deferred since the budget is so loose.
-* [x] Live smoke test: `trader-serve` exchanged a 9 by 9 heat map call from `localhost:5173` and a 22 by 22 rejection with clean field level error.
+* [x] Live smoke test: `vega-serve` exchanged a 9 by 9 heat map call from `localhost:5173` and a 22 by 22 rejection with clean field level error.
 
 ---
 
@@ -225,7 +225,7 @@ QA, Security, Code Review, Risk Reviewer.
 * [x] Security: no new endpoints; the Phase 4 review still applies.
 * [x] Code Review: PM session reviewed the diff. No simplifications outstanding.
 * [x] Risk Reviewer: subagent signed off with no blockers. Confirmed sign correctness on a centered grid (call = 10.45, put = 5.57 at the canonical reference inputs match `docs/risk/sanity-cases.md` Case 1), monotonicity along the spot axis (call rises with spot, put falls), maximum loss bounded by basis, and screen reader sign disambiguation.
-* [x] Live smoke test: `trader-serve` exchanged a 5x5 P&L grid; confirmed the center cell at the at the money basis comes out to $0.00, and the corners reach the expected ±premium magnitudes.
+* [x] Live smoke test: `vega-serve` exchanged a 5x5 P&L grid; confirmed the center cell at the at the money basis comes out to $0.00, and the corners reach the expected ±premium magnitudes.
 
 ---
 
@@ -239,7 +239,7 @@ QA, Security, Code Review, Risk Reviewer.
 
 * [x] `calculation_inputs` and `calculation_outputs` tables linked by `calculation_id` (UUID), with an index on `calculation_outputs.calculation_id` and `ondelete=CASCADE` on the FK so a future delete of an input row cleans up its grid cells.
 * [x] SQLAlchemy 2.x typed declarative models (`backend/app/db/models.py`) with parameterized queries only. No `text(...)`, no f-string SQL.
-* [x] Alembic migration (`backend/alembic/versions/9c8f64a81798_create_calculation_tables.py`) generated from the models. `alembic.ini` ships with the local SQLite default DSN (`sqlite:///./var/trader.db`); production reads `TRADER_DATABASE_URL` via `alembic/env.py`.
+* [x] Alembic migration (`backend/alembic/versions/9c8f64a81798_create_calculation_tables.py`) generated from the models. `alembic.ini` ships with the local SQLite default DSN (`sqlite:///./var/vega.db`); production reads `VEGA_DATABASE_URL` via `alembic/env.py`.
 * [x] `POST /api/calculations` accepts the heat map shape, computes via `black_scholes_vec`, persists 1 input row plus `rows * cols` output rows in a single transaction, and returns the heat map response plus a `calculation_id` UUID. Status 201.
 * [x] `GET /api/calculations/{id}` reconstructs the grid from the persisted rows. Anchored UUID regex gates the path parameter so SQL injection patterns return 404 before the ORM is touched.
 * [x] `docker-compose.yml` for local Postgres parity with Neon (binds `127.0.0.1:5432` only). Documented in the file's header comment.
@@ -282,7 +282,7 @@ QA, Security, Code Review, Risk Reviewer.
 * [x] Security: no new endpoints; the Phase 4/6 reviews still apply. `GreeksDisplay` type guard rejects malformed responses with `kind: 'server'`.
 * [x] Code Review: PM session reviewed the diff. No simplifications outstanding.
 * [x] Risk and Financial Correctness Reviewer: subagent signed off with no blockers. Confirmed reference values at Hull canonical inputs (call delta 0.6368, put delta -0.3632, gamma 0.01876, vega per pct 0.3752, theta per day -0.01757 for call), sign conventions (long holder perspective), identities (gamma and vega equal across legs, delta sum equals 1), edge case handling, and unit scaling. One minor doc nit applied: documented the Greeks-at-deterministic-limits convention in `conventions.md`.
-* [x] Live smoke test: `trader-serve` returned the full Greeks payload at canonical inputs matching Hull to 4+ decimals.
+* [x] Live smoke test: `vega-serve` returned the full Greeks payload at canonical inputs matching Hull to 4+ decimals.
 
 ---
 
@@ -380,7 +380,7 @@ QA, Security, Code Review, Risk Reviewer.
 
 * [x] Per route slowapi limits, deferred from Phases 4 / 8 / 10:
   `/api/heatmap` 12/minute, `/api/tickers/{symbol}` 30/minute, `/api/backtest` 10/minute, plus `POST /api/calculations` 12/minute and `GET /api/calculations[/{id}]` 60/minute.
-  New module `backend/app/core/rate_limit.py` holds the singleton `Limiter` so the per route decorators reference one instance; `application_limits` reads the env per request so existing rate limit tests continue to honor `TRADER_RATE_LIMIT_DEFAULT`.
+  New module `backend/app/core/rate_limit.py` holds the singleton `Limiter` so the per route decorators reference one instance; `application_limits` reads the env per request so existing rate limit tests continue to honor `VEGA_RATE_LIMIT_DEFAULT`.
 * [x] **Compare and History screens** finished as full features (the dead Phase 3 nav placeholders shipped in earlier phases; this phase wires them end to end):
   - `GET /api/calculations` paginated list endpoint (newest first, `limit`/`offset` query params, response cap of 50 per page).
   - `CalculationInput.created_at` switched to a Python side default so SQLite (second precision) sorts fast successive writes correctly; Postgres still has `server_default=func.now()` for raw SQL writes.
@@ -388,17 +388,17 @@ QA, Security, Code Review, Risk Reviewer.
   - 9 new backend tests (list endpoint shape, pagination, ordering, validation, per route write cap) and 6 new frontend tests (HistoryScreen empty/list/detail/error states; App.test routing for Compare and History).
 * [x] **DSN normalization defensive fix** (`backend/app/db/session.py::normalize_database_url`): rewrites bare `postgresql://` (the form Neon's "Connect manually" string hands you) to `postgresql+psycopg://` so a verbatim Neon paste does not crash production with `ModuleNotFoundError: No module named 'psycopg2'`. Alembic's env.py shares the helper.
 * [x] 4 new backend tests for the per route caps (heatmap exhausts at 12, tickers at 30, backtest at 10, health stays 200). 295 backend tests pass (was 290).
-* [x] Production fail loud on missing or unsafe `TRADER_CORS_ORIGINS`: empty, wildcard, or HTTP origins now raise `ConfigError` at boot in `backend/app/core/config.py`. 5 new env tests cover the matrix. Existing production fixture updated to provide a valid HTTPS origin.
+* [x] Production fail loud on missing or unsafe `VEGA_CORS_ORIGINS`: empty, wildcard, or HTTP origins now raise `ConfigError` at boot in `backend/app/core/config.py`. 5 new env tests cover the matrix. Existing production fixture updated to provide a valid HTTPS origin.
 * [x] Frontend production fail loud on missing or localhost `VITE_API_BASE_URL`: `readApiBaseUrl` in `frontend/src/lib/api.ts` throws on the first request when running a production bundle without a real backend URL. 3 new tests cover the matrix. 114 frontend tests pass (was 111).
-* [x] `backend/Dockerfile`: multi stage build with uv, drops to a non root `trader` user, `trader-serve` as CMD. Pinned uv version for reproducibility.
-* [x] `render.yaml` Blueprint at the repo root: web service `trader-backend`, docker runtime, free plan, Oregon, `/health` health check, env vars (production, log level, rate limit) plus `sync: false` placeholders for the two secrets the user pastes in the dashboard (`TRADER_CORS_ORIGINS`, `TRADER_DATABASE_URL`).
+* [x] `backend/Dockerfile`: multi stage build with uv, drops to a non root `vega` user, `vega-serve` as CMD. Pinned uv version for reproducibility.
+* [x] `render.yaml` Blueprint at the repo root: web service `vega-backend`, docker runtime, free plan, Oregon, `/health` health check, env vars (production, log level, rate limit) plus `sync: false` placeholders for the two secrets the user pastes in the dashboard (`VEGA_CORS_ORIGINS`, `VEGA_DATABASE_URL`).
 * [x] `frontend/public/_headers`: production CSP plus HSTS plus the same security headers the backend emits, plus aggressive `Cache-Control: immutable` on `/assets/*` and `must-revalidate` on `/index.html`. Verified the file lands in `dist/` after `pnpm build`.
 * [x] `frontend/public/_redirects`: `/* /index.html 200` so a hard refresh on a non root path serves the SPA.
 * [x] `docs/api.md`: hand edited reference page for the seven endpoints, with rate limit table, error response shape table, and example request/response bodies.
 * [x] `docs/setup-guide.md`: rewritten end to end. Step 1 Neon (least privilege role creation in SQL), step 2 Render (Blueprint connect, paste two env vars), step 3 Cloudflare Pages (build settings, env vars), step 4 tie the loop closed, plus optional custom domain and a troubleshooting matrix.
 * [x] `docs/security/secrets.md`: env var names match the actual code (`TRADER_*`), production fail loud paths documented, application vs migration role distinction tightened.
 * [x] Dependency audit clean: `pip-audit` and `pnpm audit --prod` both report `No known vulnerabilities found`.
-* [x] Backend production smoke test (locally with `TRADER_ENVIRONMENT=production` and a valid HTTPS CORS origin) returns 200 on `/health` and `/api/price`, 404 on `/docs` and `/openapi.json`, and refuses to boot when `TRADER_CORS_ORIGINS` is missing.
+* [x] Backend production smoke test (locally with `VEGA_ENVIRONMENT=production` and a valid HTTPS CORS origin) returns 200 on `/health` and `/api/price`, 404 on `/docs` and `/openapi.json`, and refuses to boot when `VEGA_CORS_ORIGINS` is missing.
 
 ### User dashboard work (pending)
 
@@ -406,9 +406,9 @@ These steps live in `docs/setup-guide.md`. They cannot be done by the PM session
 
 * [ ] Sign up Cloudflare, Render, Neon.
 * [ ] Create the Neon project; copy the owner DSN; create the `trader_app` application role with `SELECT, INSERT` on the two calculation tables; run `alembic upgrade head` against the owner DSN locally.
-* [ ] Connect the GitHub repo to Render via Blueprint; paste `TRADER_CORS_ORIGINS` (placeholder) and `TRADER_DATABASE_URL` (`trader_app` DSN); verify `/health` returns 200 at the new Render URL.
+* [ ] Connect the GitHub repo to Render via Blueprint; paste `VEGA_CORS_ORIGINS` (placeholder) and `VEGA_DATABASE_URL` (`trader_app` DSN); verify `/health` returns 200 at the new Render URL.
 * [ ] Connect the GitHub repo to Cloudflare Pages; set `VITE_API_BASE_URL` to the Render URL; verify the deployed Pages URL loads and POSTs `/api/price` cleanly.
-* [ ] Update Render's `TRADER_CORS_ORIGINS` to the exact Pages URL; redeploy; smoke test all five screens (Pricing, Heat Map, Compare, Backtest, History).
+* [ ] Update Render's `VEGA_CORS_ORIGINS` to the exact Pages URL; redeploy; smoke test all five screens (Pricing, Heat Map, Compare, Backtest, History).
 * [ ] Optional: custom domain.
 * [ ] Apply branch protection rules and enable Dependabot + CodeQL on the GitHub repo (per `docs/setup-guide.md`).
 

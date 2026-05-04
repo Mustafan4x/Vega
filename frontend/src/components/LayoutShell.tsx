@@ -30,7 +30,7 @@ export function LayoutShell({ active, onNav, children }: LayoutShellProps) {
               <rect x="30" y="56" width="4" height="4" fill="currentColor" opacity="0.4" />
             </svg>
           </div>
-          <span data-element="brandName">Trader</span>
+          <span data-element="brandName">Vega</span>
         </div>
         <nav data-element="nav" aria-label="Primary navigation">
           {SCREENS.map((s) => (
@@ -57,7 +57,7 @@ export function LayoutShell({ active, onNav, children }: LayoutShellProps) {
       <div className="tr-main">
         <header data-component="TopBar">
           <div data-element="crumbs">
-            <span data-element="crumbMuted">Trader</span>
+            <span data-element="crumbMuted">Vega</span>
             <span data-element="crumbSep" aria-hidden="true">
               /
             </span>
@@ -70,8 +70,8 @@ export function LayoutShell({ active, onNav, children }: LayoutShellProps) {
             <button type="button" data-element="iconBtn" aria-label="Settings">
               <Icon name="settings" size={16} />
             </button>
-            <div data-element="avatar" role="img" aria-label="Trader account">
-              <span aria-hidden="true">TR</span>
+            <div data-element="avatar" role="img" aria-label="Vega account">
+              <span aria-hidden="true">V</span>
             </div>
           </div>
         </header>

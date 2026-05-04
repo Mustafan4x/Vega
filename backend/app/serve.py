@@ -1,6 +1,6 @@
 """Production server entry point.
 
-``trader-serve`` (declared in ``pyproject.toml`` ``[project.scripts]``) launches
+``vega-serve`` (declared in ``pyproject.toml`` ``[project.scripts]``) launches
 uvicorn with the ``Server`` header disabled, so the runtime stack is not
 fingerprinted by responses. Host and port are overridable via env so the
 Render deployment can bind to whatever Render provides.

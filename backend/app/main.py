@@ -61,7 +61,7 @@ def build_app() -> FastAPI:
     docs_url = None if settings.is_production else "/docs"
     openapi_url = None if settings.is_production else "/openapi.json"
     app = FastAPI(
-        title="Trader Backend",
+        title="Vega Backend",
         version="0.1.0",
         docs_url=docs_url,
         redoc_url=None,

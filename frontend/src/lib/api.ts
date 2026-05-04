@@ -1,5 +1,5 @@
 /**
- * Typed API client for the Trader backend.
+ * Typed API client for the Vega backend.
  *
  * Wraps `POST /api/price` and `POST /api/heatmap` with strict request
  * and response types, an AbortController plus deadline so the UI never

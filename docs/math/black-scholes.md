@@ -1,4 +1,4 @@
-# Black Scholes pricing for Trader
+# Black Scholes pricing for Vega
 
 ## Scope
 

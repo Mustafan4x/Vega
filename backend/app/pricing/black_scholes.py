@@ -1,7 +1,7 @@
 """Black Scholes call and put pricing for European options on a non dividend paying stock.
 
-Canonical math reference: ``/home/mustafa/src/trader/docs/math/black-scholes.md``.
-Project conventions reference: ``/home/mustafa/src/trader/docs/risk/conventions.md``.
+Canonical math reference: ``/home/mustafa/src/vega/docs/math/black-scholes.md``.
+Project conventions reference: ``/home/mustafa/src/vega/docs/risk/conventions.md``.
 
 Pure module: no I/O, no global state, no logging. Stdlib only.
 
@@ -12,7 +12,7 @@ Greeks are returned in mathematical (textbook) units:
 * theta: per year (positive convention is time-to-expiry; theta is typically negative).
 * vega:  per unit sigma (so a vega of 37.5 means the value moves $37.5 if sigma
          goes from 0.20 to 1.20). The API layer scales to "per 1 percent sigma"
-         for trader friendly display.
+         for display friendly units.
 * rho:   per unit r (a rho of 53 means $53 move if r goes from 0.05 to 1.05).
          The API layer scales to "per 1 percent r" for display.
 

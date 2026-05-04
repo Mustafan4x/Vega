@@ -1,4 +1,4 @@
-"""Pricing models for the Trader backend.
+"""Pricing models for the Vega backend.
 
 Re exports the Black Scholes call and put pricers as a convenience for
 downstream callers (FastAPI routes, the REPL, the heat map service).

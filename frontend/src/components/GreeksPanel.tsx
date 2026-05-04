@@ -6,7 +6,7 @@
  * value (Newsreader, tabular), a name (italic serif body sm), and a
  * 3 px left accent border that cycles through five accents.
  *
- * The values come in trader friendly units from the API:
+ * The values come in display friendly units from the API:
  *
  *   delta:         dimensionless
  *   gamma:         per dollar of S

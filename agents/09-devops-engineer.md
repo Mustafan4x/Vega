@@ -23,15 +23,15 @@ Own the build, packaging, and deployment pipeline. Make every push verifiable; m
 ## Tasks
 
 ### Phase 0
-1. Wire the local working directory `/home/mustafa/src/trader/` into the existing GitHub repo `Mustafan4x/Trader`. Concretely:
-   * `cd /home/mustafa/src/trader && git init`.
+1. Wire the local working directory `/home/mustafa/src/vega/` into the existing GitHub repo `Mustafan4x/Vega`. Concretely:
+   * `cd /home/mustafa/src/vega && git init`.
    * Add `.gitignore` covering Python, Node, OS, editor, and secrets patterns.
-   * `git remote add origin git@github.com:Mustafan4x/Trader.git` (or the HTTPS URL if SSH is not configured; ask the user).
+   * `git remote add origin git@github.com:Mustafan4x/Vega.git` (or the HTTPS URL if SSH is not configured; ask the user).
    * Stage all existing files (`SPEC.md`, `CLAUDE.md`, `GETTING-STARTED.md`, `agents/`, `docs/`, `design/`).
    * Create the first commit and push to `main`.
    * Do NOT clone the GitHub repo elsewhere; the local files are canonical.
 2. Scaffold the empty `backend/` project: `cd backend && uv init` and configure `pyproject.toml` for FastAPI.
-3. Scaffold the empty `frontend/` project: `pnpm create vite frontend --template react-ts` then add Tailwind CSS per the official Vite plus Tailwind setup. Leave the components empty; the Frontend Developer fills them in Phase 3. **Drop the Tailwind config sketch from `/home/mustafa/src/trader/docs/design/claude-design-output.html` into `frontend/tailwind.config.ts`**: open the HTML file, find the `<script type="application/json" id="design-manifest">` block at the bottom, and copy the `tailwindSketch.theme.extend` object into the `theme.extend` of the Tailwind config. Also create `frontend/src/styles/tokens.css` with the CSS variables from the HTML's `:root` block so the Tailwind tokens resolve to real values.
+3. Scaffold the empty `frontend/` project: `pnpm create vite frontend --template react-ts` then add Tailwind CSS per the official Vite plus Tailwind setup. Leave the components empty; the Frontend Developer fills them in Phase 3. **Drop the Tailwind config sketch from `/home/mustafa/src/vega/docs/design/claude-design-output.html` into `frontend/tailwind.config.ts`**: open the HTML file, find the `<script type="application/json" id="design-manifest">` block at the bottom, and copy the `tailwindSketch.theme.extend` object into the `theme.extend` of the Tailwind config. Also create `frontend/src/styles/tokens.css` with the CSS variables from the HTML's `:root` block so the Tailwind tokens resolve to real values.
 4. Configure pre commit hooks: `ruff` (Python lint and format), `eslint` plus `prettier` (frontend), `gitleaks` (secrets).
 5. Stand up the CI workflow that runs lint, type check (`mypy` plus `tsc --noEmit`), and tests on every PR.
 

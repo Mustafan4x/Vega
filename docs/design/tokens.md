@@ -1,6 +1,6 @@
-# Trader · Oxblood design tokens
+# Vega · Oxblood design tokens
 
-This document is the human readable summary of the design tokens defined in `/home/mustafa/src/trader/docs/design/claude-design-output.html`. The HTML is the visual ground truth; this file restates the tokens for easy reference.
+This document is the human readable summary of the design tokens defined in `/home/mustafa/src/vega/docs/design/claude-design-output.html`. The HTML is the visual ground truth; this file restates the tokens for easy reference.
 
 All values come from the `:root` CSS variables (top of the HTML's `<style>` block) and the JSON design manifest at the bottom of the HTML (`<script type="application/json" id="design-manifest">`).
 
@@ -224,4 +224,4 @@ Plain English phrases map to these tokens (full glossary lives at the top of the
 
 ## How tokens flow into Tailwind
 
-A drop in Tailwind extension lives at `/home/mustafa/src/trader/docs/design/tailwind-extension.snippet.ts`. The DevOps Engineer inserts that snippet under `theme.extend` in `frontend/tailwind.config.ts` during the Phase 0 frontend scaffold. The extension references the CSS variables above so Tailwind utilities and raw CSS stay in sync; reskinning the app is a single `:root` edit.
+A drop in Tailwind extension lives at `/home/mustafa/src/vega/docs/design/tailwind-extension.snippet.ts`. The DevOps Engineer inserts that snippet under `theme.extend` in `frontend/tailwind.config.ts` during the Phase 0 frontend scaffold. The extension references the CSS variables above so Tailwind utilities and raw CSS stay in sync; reskinning the app is a single `:root` edit.

@@ -27,7 +27,7 @@ Own the test plan and the regression suite. Verify every phase actually works th
 2. Tests for HTTP status codes and error body shape.
 
 ### Phase 3
-1. Component tests for `InputForm` and `ResultPanel`. Use the `data-component` and `data-element` selectors defined in `/home/mustafa/src/trader/docs/design/claude-design-output.html` so tests survive markup refactors.
+1. Component tests for `InputForm` and `ResultPanel`. Use the `data-component` and `data-element` selectors defined in `/home/mustafa/src/vega/docs/design/claude-design-output.html` so tests survive markup refactors.
 2. End to end test: submit the form, expect call and put values to render.
 
 ### Phase 4 and 5

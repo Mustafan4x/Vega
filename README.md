@@ -1,8 +1,8 @@
-# Trader
+# Vega
 
 A full stack Black Scholes options pricer built as a quant interview pet project. The app prices European calls and puts from five inputs (asset price, strike, time to expiry, risk free rate, volatility), renders heat maps of value and P&L over volatility and price shocks, exposes the Greeks, looks up live prices via yfinance, compares Black Scholes against a binomial tree and a Monte Carlo pricer, and runs simple option strategy backtests over historical data. The finished build is deployed to the public internet so it can be linked from a resume.
 
-GitHub: https://github.com/Mustafan4x/Trader
+GitHub: https://github.com/Mustafan4x/Vega
 
 ## Visual theme
 

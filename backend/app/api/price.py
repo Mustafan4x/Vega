@@ -61,7 +61,7 @@ class PriceRequest(BaseModel):
 
 
 class GreeksDisplay(BaseModel):
-    """Greeks scaled for trader friendly display.
+    """Greeks scaled for display friendly units.
 
     The math layer (`app.pricing.black_scholes.Greeks`) returns textbook
     units (per unit sigma, per unit r, per year). The API rescales:

@@ -1,6 +1,6 @@
 # DevOps runbook
 
-This document covers how to run the Trader stack locally, what CI does on every pull request, and where the build pipeline lives. Subsequent phases will extend it with Docker, Postgres, and production deployment to Cloudflare Pages plus Render plus Neon.
+This document covers how to run the Vega stack locally, what CI does on every pull request, and where the build pipeline lives. Subsequent phases will extend it with Docker, Postgres, and production deployment to Cloudflare Pages plus Render plus Neon.
 
 ## Tooling required on the developer machine
 
@@ -18,7 +18,7 @@ If `pnpm` is missing, run `corepack enable --install-directory ~/.local/bin` and
 ## Repository layout (Phase 0 baseline)
 
 ```
-/home/mustafa/src/trader/
+/home/mustafa/src/vega/
   backend/            FastAPI service (uv project)
     app/              Application package (main.py with /health endpoint)
     tests/            Pytest tests
@@ -91,7 +91,7 @@ The Tailwind tokens resolve to CSS variables defined in `src/styles/tokens.css`.
 
 ## Pre commit hooks
 
-Hooks are managed by the `pre-commit` framework. Configuration lives in `/home/mustafa/src/trader/.pre-commit-config.yaml` and includes:
+Hooks are managed by the `pre-commit` framework. Configuration lives in `/home/mustafa/src/vega/.pre-commit-config.yaml` and includes:
 
 * `ruff` (Python lint plus format) on `backend/`.
 * `prettier` on frontend source files.
@@ -139,7 +139,7 @@ Both write a lock file (`uv.lock` and `pnpm-lock.yaml`) that must be committed.
 
 ## Deployment (placeholder for Phase 11)
 
-Cloudflare Pages for the frontend, Render for the backend, Neon for Postgres. The detailed deployment steps land in `/home/mustafa/src/trader/docs/setup-guide.md` and `render.yaml` during Phase 11. For now this section is a stub.
+Cloudflare Pages for the frontend, Render for the backend, Neon for Postgres. The detailed deployment steps land in `/home/mustafa/src/vega/docs/setup-guide.md` and `render.yaml` during Phase 11. For now this section is a stub.
 
 ## Troubleshooting
 

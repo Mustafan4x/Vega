@@ -1,18 +1,18 @@
-# Trader: Black Scholes Options Pricer
+# Vega: Black Scholes Options Pricer
 
 ## Project summary
 
 A full stack Black Scholes options pricer built as a quant interview pet project. The build follows the incremental path described in the source video (REPL, then GUI, then heat map, then P&L heat map, then database persistence) and extends it with the Greeks, real market data, multiple pricing models, and backtesting. The finished product is deployed to the public internet so it can be linked from a resume.
 
-GitHub repository: https://github.com/Mustafan4x/Trader
+GitHub repository: https://github.com/Mustafan4x/Vega
 
-Visual direction: the canonical visual ground truth for the project is `/home/mustafa/src/trader/docs/design/claude-design-output.html` (the "Oxblood" theme: dark surface, oxblood `#C03A3A` primary, sea green accent, IBM Plex Serif italic display, Newsreader for numbers, Manrope for UI text, JetBrains Mono for code). Open the file in a browser to see all five screens (Pricing, Heat Map, Model Comparison, Backtest, History) rendered live via inline React + Babel. Every design token is exposed as a CSS variable at `:root`, every visual region is labeled with `data-component`, and a JSON design manifest at the bottom of the file enumerates tokens, components, screens, and a Tailwind config sketch.
+Visual direction: the canonical visual ground truth for the project is `/home/mustafa/src/vega/docs/design/claude-design-output.html` (the "Oxblood" theme: dark surface, oxblood `#C03A3A` primary, sea green accent, IBM Plex Serif italic display, Newsreader for numbers, Manrope for UI text, JetBrains Mono for code). Open the file in a browser to see all five screens (Pricing, Heat Map, Model Comparison, Backtest, History) rendered live via inline React + Babel. Every design token is exposed as a CSS variable at `:root`, every visual region is labeled with `data-component`, and a JSON design manifest at the bottom of the file enumerates tokens, components, screens, and a Tailwind config sketch.
 
 The `design/` folder at the project root holds the original user .webp mood board (historical reference). The `docs/design/` folder holds the canonical Claude Design HTML, wireframes, and tokens.
 
 ## Source material
 
-This spec was written from a YouTube transcript describing the recommended pet project for a quant trader candidate, plus the user's preferences captured during the brainstorming phase. The full transcript is stored at `/home/mustafa/src/trader/docs/source/transcript.md` for any future Claude session that needs to reread it. The original video URL is https://www.youtube.com/watch?v=lY-NP4X455U.
+This spec was written from a YouTube transcript describing the recommended pet project for a quant trader candidate, plus the user's preferences captured during the brainstorming phase. The full transcript is stored at `/home/mustafa/src/vega/docs/source/transcript.md` for any future Claude session that needs to reread it. The original video URL is https://www.youtube.com/watch?v=lY-NP4X455U.
 
 ## How this spec is meant to be used
 
@@ -36,13 +36,13 @@ The files in `agents/` are not just documentation. Each one is a self contained 
 
 ### Recommended deployment pattern
 
-1. **Start a fresh Claude Code session in `/home/mustafa/src/trader`.** `CLAUDE.md` auto loads and tells the session it is the Project Manager. The PM reads `SPEC.md` and `agents/00-project-manager.md`, then invokes `superpowers:brainstorming` and `superpowers:writing-plans` to produce the per phase implementation plan in `docs/plan.md`.
+1. **Start a fresh Claude Code session in `/home/mustafa/src/vega`.** `CLAUDE.md` auto loads and tells the session it is the Project Manager. The PM reads `SPEC.md` and `agents/00-project-manager.md`, then invokes `superpowers:brainstorming` and `superpowers:writing-plans` to produce the per phase implementation plan in `docs/plan.md`.
 
 2. **For each phase**, the Project Manager session dispatches the agents whose tasks are listed for that phase. Two ways to dispatch:
 
-   * **Subagent (recommended for parallel, scoped work).** Use the `Task` tool with `subagent_type: "general-purpose"` and a prompt that says "You are the [Role] agent for the Trader project. Read `/home/mustafa/src/trader/SPEC.md` and `/home/mustafa/src/trader/agents/NN-role.md` and execute the Phase X tasks listed there. Use the plugins listed in the agent file." Subagents are best for agents whose work does not depend on a long running conversation (e.g., Code Reviewer, Security Engineer review pass, QA test writing, Performance Engineer profiling).
+   * **Subagent (recommended for parallel, scoped work).** Use the `Task` tool with `subagent_type: "general-purpose"` and a prompt that says "You are the [Role] agent for the Vega project. Read `/home/mustafa/src/vega/SPEC.md` and `/home/mustafa/src/vega/agents/NN-role.md` and execute the Phase X tasks listed there. Use the plugins listed in the agent file." Subagents are best for agents whose work does not depend on a long running conversation (e.g., Code Reviewer, Security Engineer review pass, QA test writing, Performance Engineer profiling).
 
-   * **Separate Claude Code session (recommended for agents that own a long lived stream of work).** Open a new terminal in `/home/mustafa/src/trader`, start `claude`, and have that session play one role for the duration of the phase. Best for the Backend Developer, Frontend Developer, and DevOps Engineer, where the agent benefits from accumulating context across many edits.
+   * **Separate Claude Code session (recommended for agents that own a long lived stream of work).** Open a new terminal in `/home/mustafa/src/vega`, start `claude`, and have that session play one role for the duration of the phase. Best for the Backend Developer, Frontend Developer, and DevOps Engineer, where the agent benefits from accumulating context across many edits.
 
 3. **Each agent uses the plugins listed in its file.** For example, the Frontend Developer invokes `frontend-design`, `vercel-react-best-practices`, and `superpowers:test-driven-development`. The Project Manager invokes `superpowers:brainstorming`, `superpowers:writing-plans`, and `superpowers:dispatching-parallel-agents`. The Security Engineer invokes `security-review`. Do not skip these; they are how the agent stays in role.
 
@@ -52,7 +52,7 @@ The files in `agents/` are not just documentation. Each one is a self contained 
 
 ### Example: starting Phase 0
 
-In a Claude Code session in `/home/mustafa/src/trader`, the user (Mustafa) says:
+In a Claude Code session in `/home/mustafa/src/vega`, the user (Mustafa) says:
 
 > Read `SPEC.md` and `agents/00-project-manager.md`. You are the Project Manager. Run `superpowers:brainstorming` to confirm Phase 0 scope, then `superpowers:writing-plans` to produce `docs/plan.md`. Then dispatch the Phase 0 agents in parallel via the `Task` tool: UI/UX Designer, Security Engineer (threat model), DevOps Engineer (repo init), Documentation Engineer (initial README and architecture doc).
 
@@ -97,7 +97,7 @@ When a phase comes in well under budget, the PM may bundle the next short phase 
 ### Phase 0: Foundations
 **Window cost: ~95 percent of one Max 5x window.** Heavy planning, parallel agent dispatches, repo init, frontend and backend scaffolds, threat model, wireframes, README, and architecture doc all happen here.
 
-Project Manager runs brainstorming and writes the implementation plan in `docs/plan.md`. UI/UX Designer reads the canonical Claude Design HTML at `docs/design/claude-design-output.html` (the Oxblood theme, already approved by the user), extracts tokens to `docs/design/tokens.md` and a draft `frontend/tailwind.config.ts` extension, and writes screen layout descriptions to `docs/design/wireframes.md`. Security Engineer publishes the threat model and baseline. DevOps Engineer wires the local working directory `/home/mustafa/src/trader/` into the existing GitHub repo `Mustafan4x/Trader` (run `git init` locally, add the GitHub repo as `origin`, push the existing files as the first commit), then scaffolds the `uv` project under `backend/` and the `pnpm` plus Vite plus React plus TypeScript plus Tailwind project under `frontend/`, dropping the Tailwind config sketch from the Oxblood HTML's design manifest into `frontend/tailwind.config.ts`. Documentation Engineer writes the initial README and architecture overview.
+Project Manager runs brainstorming and writes the implementation plan in `docs/plan.md`. UI/UX Designer reads the canonical Claude Design HTML at `docs/design/claude-design-output.html` (the Oxblood theme, already approved by the user), extracts tokens to `docs/design/tokens.md` and a draft `frontend/tailwind.config.ts` extension, and writes screen layout descriptions to `docs/design/wireframes.md`. Security Engineer publishes the threat model and baseline. DevOps Engineer wires the local working directory `/home/mustafa/src/vega/` into the existing GitHub repo `Mustafan4x/Vega` (run `git init` locally, add the GitHub repo as `origin`, push the existing files as the first commit), then scaffolds the `uv` project under `backend/` and the `pnpm` plus Vite plus React plus TypeScript plus Tailwind project under `frontend/`, dropping the Tailwind config sketch from the Oxblood HTML's design manifest into `frontend/tailwind.config.ts`. Documentation Engineer writes the initial README and architecture overview.
 
 **End of phase**: PM runs the mandatory check-in protocol from `CLAUDE.md`.
 

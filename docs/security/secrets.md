@@ -18,12 +18,12 @@ The frontend uses Vite, which inlines any env var prefixed with `VITE_` into the
 
 | Name | Type | Where it lives (production) | Where it lives (local dev) | Who has access | Introduced in phase | Rotation policy |
 |---|---|---|---|---|---|---|
-| `TRADER_DATABASE_URL` | Secret (DSN with embedded password) | Render web service env var | `backend/.env` (gitignored) | Mustafa, Render runtime, Neon. | Phase 6. | Rotate immediately if the value appears in any log, screenshot, or repo. Otherwise rotate annually as hygiene. Procedure: regenerate the password in the Neon dashboard, update Render env, redeploy. |
-| `TRADER_CORS_ORIGINS` | Public config (comma separated origin list) | Render web service env var | `backend/.env` (dev only; defaults to `http://localhost:5173`) | Mustafa, Render runtime. | Phase 2; production fail loud added in Phase 11. | No rotation. Update when the frontend domain changes. Production refuses empty, wildcard, or HTTP origins at boot. |
+| `VEGA_DATABASE_URL` | Secret (DSN with embedded password) | Render web service env var | `backend/.env` (gitignored) | Mustafa, Render runtime, Neon. | Phase 6. | Rotate immediately if the value appears in any log, screenshot, or repo. Otherwise rotate annually as hygiene. Procedure: regenerate the password in the Neon dashboard, update Render env, redeploy. |
+| `VEGA_CORS_ORIGINS` | Public config (comma separated origin list) | Render web service env var | `backend/.env` (dev only; defaults to `http://localhost:5173`) | Mustafa, Render runtime. | Phase 2; production fail loud added in Phase 11. | No rotation. Update when the frontend domain changes. Production refuses empty, wildcard, or HTTP origins at boot. |
 | `VITE_API_BASE_URL` | Public config (URL string) | Cloudflare Pages env var | `frontend/.env.local` (gitignored) | Public (baked into JS bundle). | Phase 3; production fail loud added in Phase 11. | No rotation; this is just the production backend URL. Production refuses empty or localhost values at first request. |
 | `SENTRY_DSN` | Low sensitivity (event submission only) | Render web service env var | `backend/.env` optional (gitignored) | Mustafa, Render runtime, Sentry. | Phase 2 or Phase 11 (Observability Engineer's call; not adopted in v1). | Rotate if the project changes Sentry organization or if abuse is suspected. Otherwise no scheduled rotation. |
-| `TRADER_ENVIRONMENT` | Public config (string `"production"` / `"development"`) | Render web service env var | `backend/.env` | Public. | Phase 2. | No rotation. |
-| `TRADER_RATE_LIMIT_DEFAULT` | Public config (rate spec, e.g., `60/minute`) | Render web service env var | `backend/.env` (optional) | Public. | Phase 2. | No rotation. |
+| `VEGA_ENVIRONMENT` | Public config (string `"production"` / `"development"`) | Render web service env var | `backend/.env` | Public. | Phase 2. | No rotation. |
+| `VEGA_RATE_LIMIT_DEFAULT` | Public config (rate spec, e.g., `60/minute`) | Render web service env var | `backend/.env` (optional) | Public. | Phase 2. | No rotation. |
 | `GITHUB_TOKEN` | Ephemeral CI secret | GitHub Actions runtime (auto provisioned per job) | n/a | GitHub Actions per job. | Phase 0. | Auto rotated by GitHub on every workflow run. The project does not store or persist this token. |
 | `CLOUDFLARE_API_TOKEN` | Secret (only if CLI deploys are chosen) | GitHub Actions secret `CLOUDFLARE_API_TOKEN` | n/a | Mustafa, the workflow that uses it. | Phase 11 (only if CLI deploys; the default in this repo uses the Cloudflare Pages GitHub integration which does not store a token). | Rotate every 90 days while in use. Procedure: revoke the token at https://dash.cloudflare.com/profile/api-tokens, create a new one with the same scope, update the GitHub Actions secret. |
 | `RENDER_API_KEY` | Secret (only if CLI deploys are chosen) | GitHub Actions secret `RENDER_API_KEY` | n/a | Mustafa, the workflow that uses it. | Phase 11 (only if CLI deploys; Render's GitHub integration auto deploys via Blueprint without a stored key). | Rotate every 90 days while in use. |
@@ -31,27 +31,27 @@ The frontend uses Vite, which inlines any env var prefixed with `VITE_` into the
 
 ## Notes on each secret
 
-### `TRADER_DATABASE_URL`
+### `VEGA_DATABASE_URL`
 
 Format: `postgresql+psycopg://<user>:<password>@<host>:<port>/<dbname>?sslmode=require`. SSL is required by Neon; the connection string includes `sslmode=require`.
 
-* The backend reads it via `os.environ["TRADER_DATABASE_URL"]` at startup and constructs the SQLAlchemy engine. The raw value is never logged. A redaction filter is applied at the Python logging level so even if a developer accidentally logs the engine URL, the password is masked.
-* Local dev uses SQLite by default if `TRADER_DATABASE_URL` is unset, so the developer does not need a real Neon connection on their workstation.
+* The backend reads it via `os.environ["VEGA_DATABASE_URL"]` at startup and constructs the SQLAlchemy engine. The raw value is never logged. A redaction filter is applied at the Python logging level so even if a developer accidentally logs the engine URL, the password is masked.
+* Local dev uses SQLite by default if `VEGA_DATABASE_URL` is unset, so the developer does not need a real Neon connection on their workstation.
 * The DB user embedded in the production DSN (the **application** role, named `trader_app` in `docs/setup-guide.md`) has only `SELECT` and `INSERT` privileges on the `calculation_inputs` and `calculation_outputs` tables, scoped to those tables specifically (not schema wide). No `UPDATE`, `DELETE`, or any DDL. The production deploy procedure (Phase 11) creates this application role at the same time as it creates a separately named migration role.
 * The migration role is the **owner** DSN (the one Neon hands you on project creation) with `CREATE`, `ALTER`, and `DROP` on the schema, used only by `alembic upgrade head` during deploy. The migration DSN lives only in Mustafa's local shell session, never in CI, never in Render env. After each successful deploy, the deploy script does NOT keep the migration DSN in any persistent location.
 
 ### `VITE_API_BASE_URL`
 
-Format: `https://<backend host>` (no trailing slash). Example: `https://trader-backend.onrender.com`.
+Format: `https://<backend host>` (no trailing slash). Example: `https://vega-backend.onrender.com`.
 
 * Inlined into the frontend bundle at build time. Anyone who views the deployed site source can read it. This is fine; the backend is independently public.
 * The frontend's `readApiBaseUrl` function (in `src/lib/api.ts`) refuses to make calls in a production bundle (`import.meta.env.PROD === true`) when the value is empty or starts with `http://localhost`. A misconfigured deploy throws on the first request with a clear message pointing at this guide. See `frontend/src/lib/api.test.ts` for the assertions.
 
-### `TRADER_CORS_ORIGINS`
+### `VEGA_CORS_ORIGINS`
 
-Format: comma separated list of origins, each in `https://...` form. Example: `https://trader.pages.dev,https://api.trader.example.com`.
+Format: comma separated list of origins, each in `https://...` form. Example: `https://vega.pages.dev,https://api.vega.example.com`.
 
-* The backend reads it at startup. In production (`TRADER_ENVIRONMENT=production`) the loader fails loud and refuses to boot when the value is empty, contains `*`, or contains any non https origin (`app/core/config.py`, `_validate_production`). See `backend/tests/api/test_environment.py` for the assertions.
+* The backend reads it at startup. In production (`VEGA_ENVIRONMENT=production`) the loader fails loud and refuses to boot when the value is empty, contains `*`, or contains any non https origin (`app/core/config.py`, `_validate_production`). See `backend/tests/api/test_environment.py` for the assertions.
 * Dev defaults to `http://localhost:5173` only when the loader is not in production mode. A wildcard would defeat the threat model T8 protection against arbitrary cross origin reads of the API.
 
 ### `SENTRY_DSN`
@@ -62,16 +62,16 @@ Format: `https://<key>@<org>.ingest.sentry.io/<project>`.
 * If Sentry is wired into the frontend (the Observability Engineer may decide either way), the DSN goes into `VITE_SENTRY_DSN` and is treated as public. If only the backend uses Sentry, it stays in `SENTRY_DSN` (server side env).
 * Optional in v1; the Observability Engineer makes the call in Phase 2 or Phase 11.
 
-### `TRADER_ENVIRONMENT`
+### `VEGA_ENVIRONMENT`
 
 Toggles behavior:
 
-* `TRADER_ENVIRONMENT=development` (default) enables `/docs` and `/openapi.json` (FastAPI's OpenAPI UI) and accepts a localhost CORS fallback.
-* `TRADER_ENVIRONMENT=production` disables `/docs` and `/openapi.json`, enforces fail loud CORS validation, and enforces the generic error responses described in the Phase 2 checklist.
+* `VEGA_ENVIRONMENT=development` (default) enables `/docs` and `/openapi.json` (FastAPI's OpenAPI UI) and accepts a localhost CORS fallback.
+* `VEGA_ENVIRONMENT=production` disables `/docs` and `/openapi.json`, enforces fail loud CORS validation, and enforces the generic error responses described in the Phase 2 checklist.
 
 Not a secret, but it lives in the env block alongside secrets and is documented here for completeness.
 
-### `TRADER_RATE_LIMIT_DEFAULT`
+### `VEGA_RATE_LIMIT_DEFAULT`
 
 Application wide per IP rate limit applied across every endpoint via `application_limits` on the slowapi limiter. Default `60/minute`. Per route caps on heavier endpoints (heatmap, tickers, backtest) are tighter and live in code, not env. See `docs/api.md`.
 

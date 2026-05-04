@@ -54,7 +54,7 @@ Phase 0 deliverables (per SPEC.md):
 * Project Manager runs brainstorming and writes `docs/plan.md`. (Already done in Step 3.)
 * UI/UX Designer drafts wireframes (output to `docs/design/wireframes.md`) and the design system. Reads visual references from `design/` at the project root.
 * Security Engineer publishes the threat model and baseline.
-* DevOps Engineer wires the local working directory into the existing GitHub repo `Mustafan4x/Trader`: runs `git init` in `/home/mustafa/src/trader/`, adds the repo as `origin`, pushes existing files as the first commit, then scaffolds `backend/` (uv) and `frontend/` (Vite plus React plus TypeScript plus Tailwind).
+* DevOps Engineer wires the local working directory into the existing GitHub repo `Mustafan4x/Vega`: runs `git init` in `/home/mustafa/src/vega/`, adds the repo as `origin`, pushes existing files as the first commit, then scaffolds `backend/` (uv) and `frontend/` (Vite plus React plus TypeScript plus Tailwind).
 * Documentation Engineer writes the initial README and `docs/architecture.md`.
 
 These can run in parallel. Use `superpowers:dispatching-parallel-agents` and dispatch each via the `Task` tool. Use the prompt template in `CLAUDE.md` under "How to dispatch a specialist agent".
@@ -65,14 +65,14 @@ Concrete example for the Security Engineer dispatch:
 Task(
   description="Security: Phase 0 threat model",
   subagent_type="general-purpose",
-  prompt="""You are the Security Engineer agent for the Trader project at /home/mustafa/src/trader.
+  prompt="""You are the Security Engineer agent for the Vega project at /home/mustafa/src/vega.
 
 Read these files first:
-- /home/mustafa/src/trader/SPEC.md
-- /home/mustafa/src/trader/CLAUDE.md
-- /home/mustafa/src/trader/agents/08-security-engineer.md
+- /home/mustafa/src/vega/SPEC.md
+- /home/mustafa/src/vega/CLAUDE.md
+- /home/mustafa/src/vega/agents/08-security-engineer.md
 
-Execute the Phase 0 tasks listed in your agent file. Specifically: write the threat model to /home/mustafa/src/trader/docs/security/threat-model.md, write the per phase hardening checklist to /home/mustafa/src/trader/docs/security/checklist.md, and stub out /home/mustafa/src/trader/docs/security/secrets.md.
+Execute the Phase 0 tasks listed in your agent file. Specifically: write the threat model to /home/mustafa/src/vega/docs/security/threat-model.md, write the per phase hardening checklist to /home/mustafa/src/vega/docs/security/checklist.md, and stub out /home/mustafa/src/vega/docs/security/secrets.md.
 
 Use the security-review skill via the Skill tool when forming the threat model. Stay strictly in the Security Engineer role.
 
@@ -122,7 +122,7 @@ Wait for the user's explicit answer. Do not auto advance, even in auto mode.
 ## What success looks like at the end of Phase 0
 
 ```
-/home/mustafa/src/trader/
+/home/mustafa/src/vega/
 ├── .git/                                      # Created by DevOps Engineer (git init)
 ├── .gitignore                                 # Created by DevOps Engineer
 ├── README.md                                  # Written by Documentation Engineer

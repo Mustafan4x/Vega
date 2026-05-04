@@ -1,4 +1,4 @@
-"""ASGI middleware for the Trader backend.
+"""ASGI middleware for the Vega backend.
 
 Three responsibilities, each in its own middleware class so the wiring in
 ``app.main.build_app`` reads top to bottom in the order the layers run:

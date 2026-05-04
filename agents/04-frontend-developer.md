@@ -9,10 +9,10 @@ Build the React plus Vite plus TypeScript app that renders the pricing form, res
 ## Inputs
 * SPEC.md.
 * UI/UX Designer's wireframes (`docs/design/wireframes.md`), Tailwind tokens (`docs/design/tokens.md`), and `frontend/tailwind.config.ts` extension.
-* **`/home/mustafa/src/trader/docs/design/claude-design-output.html`**: the canonical visual ground truth. When wireframes and HTML disagree, the HTML wins; report the disagreement back to the PM so the UI/UX Designer can reconcile.
+* **`/home/mustafa/src/vega/docs/design/claude-design-output.html`**: the canonical visual ground truth. When wireframes and HTML disagree, the HTML wins; report the disagreement back to the PM so the UI/UX Designer can reconcile.
 * Backend API contract from the Backend Developer.
 * Accessibility requirements from the Accessibility Specialist.
-* User reference images in `/home/mustafa/src/trader/design/` (.webp files; mostly historical now that the HTML exists).
+* User reference images in `/home/mustafa/src/vega/design/` (.webp files; mostly historical now that the HTML exists).
 
 ## Outputs
 * `frontend/` directory with a Vite plus React plus TypeScript project (already scaffolded by DevOps in Phase 0).
@@ -32,7 +32,7 @@ Build the React plus Vite plus TypeScript app that renders the pricing form, res
 ### Phase 0
 You are not active in Phase 0 implementation. The DevOps Engineer scaffolds the empty Vite plus React plus TypeScript plus Tailwind project under `frontend/` so you can start populating it in Phase 3. The UI/UX Designer produces the wireframes and the Tailwind token config; the PM relays them to the user for sign off.
 
-When you do start in Phase 3, your visual ground truth is `/home/mustafa/src/trader/docs/design/claude-design-output.html` (the **Oxblood** theme). Open this file in a browser to see all five screens rendered live via inline React + Babel. Use the JSON design manifest at the bottom of the file (search `id="design-manifest"`) to extract the exact Tailwind config and component structure. The .webp files in `/home/mustafa/src/trader/design/` are the historical mood board.
+When you do start in Phase 3, your visual ground truth is `/home/mustafa/src/vega/docs/design/claude-design-output.html` (the **Oxblood** theme). Open this file in a browser to see all five screens rendered live via inline React + Babel. Use the JSON design manifest at the bottom of the file (search `id="design-manifest"`) to extract the exact Tailwind config and component structure. The .webp files in `/home/mustafa/src/vega/design/` are the historical mood board.
 
 ### Phase 3
 The `frontend/` project already exists from Phase 0 (Vite plus React plus TypeScript plus Tailwind, scaffolded by DevOps). Do not re-run `pnpm create vite`. Your job in Phase 3 is to add the application components on top of the existing scaffold.

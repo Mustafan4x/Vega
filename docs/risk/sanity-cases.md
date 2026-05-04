@@ -1,6 +1,6 @@
 # Black Scholes sanity cases
 
-This document is the canonical set of hand calculated reference values for the Trader pricing service. The Backend Developer's pricing module must reproduce every price below to within one cent (two decimal places) when given the same inputs. The Quant Domain Validator's test suite uses these values directly.
+This document is the canonical set of hand calculated reference values for the Vega pricing service. The Backend Developer's pricing module must reproduce every price below to within one cent (two decimal places) when given the same inputs. The Quant Domain Validator's test suite uses these values directly.
 
 All cases assume the textbook Black Scholes model on a non dividend paying stock, with the conventions documented in `docs/risk/conventions.md`:
 * T in years.

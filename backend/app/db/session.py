@@ -1,9 +1,11 @@
 """Database engine and session factory.
 
-DSN comes from ``TRADER_DATABASE_URL`` (default: a local SQLite file
-under ``backend/var/trader.db`` for dev).  Production uses Postgres on
-Neon (set in the Render service env in Phase 11). Never commit a
-production DSN; the ``gitleaks`` rule from Phase 0 catches them.
+DSN comes from ``VEGA_DATABASE_URL`` (default: a local SQLite file
+under ``backend/var/vega.db`` for dev). The legacy ``TRADER_DATABASE_URL``
+name is still honored as a fallback during the project rename
+rollover. Production uses Postgres on Neon (set in the Render service
+env in Phase 11). Never commit a production DSN; the ``gitleaks``
+rule from Phase 0 catches them.
 
 DSN normalization: bare ``postgresql://`` URLs (the form Neon's
 dashboard hands you) make SQLAlchemy 2.x try the ``psycopg2`` driver,
@@ -16,19 +18,20 @@ touch. Alembic shares the same helper via :mod:`alembic.env`.
 
 from __future__ import annotations
 
-import os
 from collections.abc import Iterator
 from pathlib import Path
 
 from sqlalchemy import Engine, create_engine
 from sqlalchemy.orm import Session, sessionmaker
 
+from app.core.config import read_env
+
 
 def _default_sqlite_url() -> str:
     backend_root = Path(__file__).resolve().parent.parent.parent
     var_dir = backend_root / "var"
     var_dir.mkdir(exist_ok=True)
-    return f"sqlite:///{var_dir / 'trader.db'}"
+    return f"sqlite:///{var_dir / 'vega.db'}"
 
 
 def normalize_database_url(url: str) -> str:
@@ -65,13 +68,13 @@ def _build_engine(url: str) -> Engine:
 def get_engine() -> Engine:
     global _engine
     if _engine is None:
-        # Lazy evaluation: ``os.environ.get(KEY, default)`` evaluates the
-        # default eagerly. ``_default_sqlite_url()`` does a mkdir under
-        # the project tree, which crashes inside the production
-        # container (non root user, read only WORKDIR) even when
-        # TRADER_DATABASE_URL is set. Compute the SQLite fallback only
-        # if the env var is missing or empty.
-        url = os.environ.get("TRADER_DATABASE_URL") or _default_sqlite_url()
+        # Lazy evaluation: a default that does a mkdir under the
+        # project tree would crash inside the production container
+        # (non root user, read only WORKDIR) every time the DSN env
+        # var is set. Compute the SQLite fallback only if the env var
+        # is missing or empty. ``read_env`` checks VEGA_DATABASE_URL
+        # first and falls back to the legacy TRADER_DATABASE_URL.
+        url = read_env("DATABASE_URL") or _default_sqlite_url()
         _engine = _build_engine(url)
     return _engine
 
@@ -95,7 +98,7 @@ def reset_engine_for_tests(url: str | None = None) -> Engine:
     else:
         # Same lazy evaluation reasoning as get_engine: do not call
         # _default_sqlite_url unless we genuinely need it.
-        target_url = os.environ.get("TRADER_DATABASE_URL") or _default_sqlite_url()
+        target_url = read_env("DATABASE_URL") or _default_sqlite_url()
     _engine = _build_engine(target_url)
     _SessionFactory = sessionmaker(bind=_engine, expire_on_commit=False, future=True)
     return _engine

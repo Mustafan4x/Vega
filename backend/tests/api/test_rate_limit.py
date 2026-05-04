@@ -25,7 +25,7 @@ from app.services.tickers import TickerQuote
 def low_limit_client(monkeypatch: pytest.MonkeyPatch) -> Iterator[TestClient]:
     """Client with a deliberately tight global rate limit so tests run in milliseconds."""
 
-    monkeypatch.setenv("TRADER_RATE_LIMIT_DEFAULT", "5/minute")
+    monkeypatch.setenv("VEGA_RATE_LIMIT_DEFAULT", "5/minute")
 
     from app.main import build_app
 

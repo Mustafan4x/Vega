@@ -7,9 +7,9 @@ so tests do not leak counter state across cases.
 
 The application wide cap (a per IP budget across every endpoint) is wired
 via ``application_limits`` and reads the current env on every request,
-so test fixtures that monkeypatch ``TRADER_RATE_LIMIT_DEFAULT`` before
-calling ``build_app`` continue to work without reconstructing the
-limiter.
+so test fixtures that monkeypatch ``VEGA_RATE_LIMIT_DEFAULT`` (or the
+legacy ``TRADER_RATE_LIMIT_DEFAULT``) before calling ``build_app``
+continue to work without reconstructing the limiter.
 """
 
 from __future__ import annotations
@@ -24,7 +24,8 @@ def get_default_limit() -> str:
     """Return the per IP global cap from the current environment.
 
     Used as the dynamic ``application_limits`` callable so the limiter
-    picks up changes to ``TRADER_RATE_LIMIT_DEFAULT`` at request time.
+    picks up changes to ``VEGA_RATE_LIMIT_DEFAULT`` (or the legacy
+    ``TRADER_RATE_LIMIT_DEFAULT`` fallback) at request time.
     """
 
     return load_settings().rate_limit_default

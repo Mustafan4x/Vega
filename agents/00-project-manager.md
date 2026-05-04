@@ -1,18 +1,18 @@
 # 00. Project Manager
 
-> **Important for Claude Code**: a fresh session opened in `/home/mustafa/src/trader` is, by default, this agent. You do not dispatch a separate "PM" subagent; you simply act as the PM in your current session. You dispatch other specialists (Backend Developer, Security Engineer, etc.) via the `Task` tool per `CLAUDE.md`.
+> **Important for Claude Code**: a fresh session opened in `/home/mustafa/src/vega` is, by default, this agent. You do not dispatch a separate "PM" subagent; you simply act as the PM in your current session. You dispatch other specialists (Backend Developer, Security Engineer, etc.) via the `Task` tool per `CLAUDE.md`.
 
 ## Mission
 Own the plan, sequence the phases, and dispatch every other agent. Keep the build moving without letting any phase ship until its quality gates pass.
 
 ## Inputs
-* `/home/mustafa/src/trader/SPEC.md`.
-* `/home/mustafa/src/trader/CLAUDE.md`.
-* `/home/mustafa/src/trader/STATUS.md` (single source of truth for phase status).
+* `/home/mustafa/src/vega/SPEC.md`.
+* `/home/mustafa/src/vega/CLAUDE.md`.
+* `/home/mustafa/src/vega/STATUS.md` (single source of truth for phase status).
 * The user's preferences captured during brainstorming (already encoded in SPEC.md).
-* Source video transcript at `/home/mustafa/src/trader/docs/source/transcript.md`.
-* **Canonical visual ground truth at `/home/mustafa/src/trader/docs/design/claude-design-output.html`** (the Oxblood theme; already approved by the user).
-* Visual reference images in `/home/mustafa/src/trader/design/` (the user's .webp mood board, historical context).
+* Source video transcript at `/home/mustafa/src/vega/docs/source/transcript.md`.
+* **Canonical visual ground truth at `/home/mustafa/src/vega/docs/design/claude-design-output.html`** (the Oxblood theme; already approved by the user).
+* Visual reference images in `/home/mustafa/src/vega/design/` (the user's .webp mood board, historical context).
 
 ## Outputs
 * A written implementation plan for each phase, with a per agent task list, before any code is written.
@@ -23,9 +23,9 @@ Own the plan, sequence the phases, and dispatch every other agent. Keep the buil
 
 ### Phase 0: Foundations
 1. Invoke the brainstorming skill to walk through SPEC.md once more and surface any missing assumptions.
-2. Invoke the writing plans skill to produce a phase by phase implementation plan at `/home/mustafa/src/trader/docs/plan.md`. If the file already exists, update it rather than overwriting.
+2. Invoke the writing plans skill to produce a phase by phase implementation plan at `/home/mustafa/src/vega/docs/plan.md`. If the file already exists, update it rather than overwriting.
 3. Dispatch each Phase 0 specialist agent via the `Task` tool using the prompt template in `CLAUDE.md`. Phase 0 specialists are: UI/UX Designer, Security Engineer, DevOps Engineer, Documentation Engineer.
-4. Confirm the DevOps Engineer has initialized the local working directory as a git repo (`git init` in `/home/mustafa/src/trader/`, GitHub repo `Mustafan4x/Trader` added as `origin`, first commit pushed).
+4. Confirm the DevOps Engineer has initialized the local working directory as a git repo (`git init` in `/home/mustafa/src/vega/`, GitHub repo `Mustafan4x/Vega` added as `origin`, first commit pushed).
 5. The visual design (Oxblood) is already approved; no user sign off is needed before Phase 3 frontend work begins. If the UI/UX Designer surfaces clarification questions in their report, relay only those to the user.
 
 ### Every subsequent phase

@@ -1,18 +1,18 @@
 # Setup guide
 
-Step by step walkthrough for deploying Trader to production. Target time on a fresh laptop: under 30 minutes. Skip the local dev section if you already have a working dev environment.
+Step by step walkthrough for deploying Vega to production. Target time on a fresh laptop: under 30 minutes. Skip the local dev section if you already have a working dev environment.
 
 ## What you will build
 
 * **Frontend** on Cloudflare Pages, served from `https://<project>.pages.dev`.
 * **Backend** on Render, served from `https://<service>.onrender.com`, behind a Docker container.
-* **Database** on Neon (managed Postgres), accessed by the backend via `TRADER_DATABASE_URL`.
+* **Database** on Neon (managed Postgres), accessed by the backend via `VEGA_DATABASE_URL`.
 
 All three services have free tiers that cover this project comfortably.
 
 ## Accounts you will need
 
-1. **GitHub**: <https://github.com/Mustafan4x/Trader> (already created).
+1. **GitHub**: <https://github.com/Mustafan4x/Vega> (already created).
 2. **Cloudflare**: <https://dash.cloudflare.com/sign-up>.
 3. **Render**: <https://render.com/>.
 4. **Neon**: <https://neon.tech/>.
@@ -26,7 +26,7 @@ All three services have free tiers that cover this project comfortably.
 
 ## Local development setup
 
-These steps run on your machine. They do not require any cloud accounts. The canonical local path is `/home/mustafa/src/trader/`.
+These steps run on your machine. They do not require any cloud accounts. The canonical local path is `/home/mustafa/src/vega/`.
 
 ```bash
 # Tooling
@@ -34,13 +34,13 @@ curl -LsSf https://astral.sh/uv/install.sh | sh
 # Install Node.js LTS plus pnpm: https://pnpm.io/installation
 
 # Backend
-cd /home/mustafa/src/trader/backend
+cd /home/mustafa/src/vega/backend
 uv sync
 uv run pytest                     # 295+ tests, all green
-uv run trader-serve               # http://localhost:8000
+uv run vega-serve               # http://localhost:8000
 
 # Frontend (in a second terminal)
-cd /home/mustafa/src/trader/frontend
+cd /home/mustafa/src/vega/frontend
 pnpm install
 pnpm test --run                   # 114+ tests, all green
 pnpm dev                          # http://localhost:5173
@@ -51,14 +51,14 @@ Open `http://localhost:5173` in a browser; the Pricing screen should load and a 
 ### Local Postgres parity (optional)
 
 ```bash
-cd /home/mustafa/src/trader
+cd /home/mustafa/src/vega
 docker compose up -d              # binds Postgres to 127.0.0.1:5432 only
 cd backend
-TRADER_DATABASE_URL=postgresql+psycopg://trader:trader@127.0.0.1:5432/trader \
+VEGA_DATABASE_URL=postgresql+psycopg://vega:vega@127.0.0.1:5432/vega \
   uv run alembic upgrade head
 ```
 
-The dev SQLite store at `backend/var/trader.db` is the default if `TRADER_DATABASE_URL` is unset.
+The dev SQLite store at `backend/var/vega.db` is the default if `VEGA_DATABASE_URL` is unset.
 
 ## First time deployment
 
@@ -67,7 +67,7 @@ The order matters. Each step verifies the previous one. **Do not skip ahead**: a
 ### Step 1. Database (Neon)
 
 1. Sign in to <https://console.neon.tech/>.
-2. **Create a project**: name it `trader`, region `US East (Ohio)` (or whichever is closest to your Render region).
+2. **Create a project**: name it `vega`, region `US East (Ohio)` (or whichever is closest to your Render region).
 3. **Copy the connection string** from the dashboard's "Connection details" pane. It looks like:
    `postgresql://<user>:<pwd>@<host>.us-east-2.aws.neon.tech/<db>?sslmode=require`
 4. **Create the application role** (least privilege; do not use the owner role at runtime). In the Neon SQL editor:
@@ -82,7 +82,7 @@ The order matters. Each step verifies the previous one. **Do not skip ahead**: a
 5. **Run the schema migration locally** using the OWNER role's DSN (the one from step 3, not the application role):
    ```bash
    cd backend
-   TRADER_DATABASE_URL='<owner DSN from step 3>' uv run alembic upgrade head
+   VEGA_DATABASE_URL='<owner DSN from step 3>' uv run alembic upgrade head
    ```
    You should see `INFO  [alembic.runtime.migration] Running upgrade -> 9c8f64a81798`.
 6. **Verify** that `\dt` from the Neon SQL console lists `calculation_inputs` and `calculation_outputs`. The application DSN now has only `SELECT, INSERT` on those two tables.
@@ -92,11 +92,11 @@ The owner DSN never leaves your local shell history. The `trader_app` DSN goes t
 ### Step 2. Backend (Render)
 
 1. Sign in to <https://dashboard.render.com/>.
-2. **Connect GitHub**: top right, "New" -> "Blueprint", connect the `Mustafan4x/Trader` repo. Render reads `/render.yaml` from the repo root.
-3. Render will offer to create a service named `trader-backend` (Docker, free plan, Oregon). Accept.
+2. **Connect GitHub**: top right, "New" -> "Blueprint", connect the `Mustafan4x/Vega` repo. Render reads `/render.yaml` from the repo root.
+3. Render will offer to create a service named `vega-backend` (Docker, free plan, Oregon). Accept.
 4. **Set the env vars** Render flagged as `sync: false` (these are not in `render.yaml`):
-   * `TRADER_CORS_ORIGINS`: paste the eventual Cloudflare Pages URL. You do not have it yet, so leave a placeholder like `https://placeholder.pages.dev`. We come back here at the end.
-   * `TRADER_DATABASE_URL`: paste the **trader_app** DSN from Step 1.4 (not the owner DSN).
+   * `VEGA_CORS_ORIGINS`: paste the eventual Cloudflare Pages URL. You do not have it yet, so leave a placeholder like `https://placeholder.pages.dev`. We come back here at the end.
+   * `VEGA_DATABASE_URL`: paste the **trader_app** DSN from Step 1.4 (not the owner DSN).
 5. **Deploy**. Render builds the Docker image (4-6 minutes for a cold build, 1-2 minutes after the first), then starts the service. Watch the build log.
 6. **Verify the deploy**:
    ```bash
@@ -104,31 +104,31 @@ The owner DSN never leaves your local shell history. The `trader_app` DSN goes t
    # -> {"status":"ok"}
    ```
    If `/health` is 200, the service is live. If it 502s, Render is waking from cold start (free tier sleeps after 15 min of idle); retry once.
-7. **Note the Render URL** (e.g., `https://trader-backend-abc.onrender.com`). You will paste it into Cloudflare Pages in the next step.
+7. **Note the Render URL** (e.g., `https://vega-backend-abc.onrender.com`). You will paste it into Cloudflare Pages in the next step.
 
 ### Step 3. Frontend (Cloudflare Pages)
 
 1. Sign in to <https://dash.cloudflare.com/>.
-2. **Pages** -> **Create application** -> **Connect to Git**. Authorize Cloudflare to read the `Mustafan4x/Trader` repo.
+2. **Pages** -> **Create application** -> **Connect to Git**. Authorize Cloudflare to read the `Mustafan4x/Vega` repo.
 3. Build settings:
    * Framework preset: `None` (we want explicit control).
    * Build command: `pnpm install --frozen-lockfile && pnpm build`
    * Build output directory: `dist`
    * Root directory (advanced): `frontend`
 4. **Environment variables** (Production):
-   * `VITE_API_BASE_URL` = the Render URL from Step 2.7 (e.g., `https://trader-backend-abc.onrender.com`).
+   * `VITE_API_BASE_URL` = the Render URL from Step 2.7 (e.g., `https://vega-backend-abc.onrender.com`).
    * `NODE_VERSION` = `22`
    * `PNPM_VERSION` = `10`
 5. **Save and Deploy**. Cloudflare runs the build (~2 minutes); the result lands at `https://<project>.pages.dev`.
 6. **Verify the deploy**:
    * Open the Pages URL in a browser. The Pricing screen loads.
    * Open dev tools, Network tab. Submit the form. The request to `/api/price` should be 200.
-   * If you see a CORS error, the `TRADER_CORS_ORIGINS` value in Render is still the placeholder; go to Step 4.
+   * If you see a CORS error, the `VEGA_CORS_ORIGINS` value in Render is still the placeholder; go to Step 4.
 
 ### Step 4. Tie the loop closed
 
-1. **Copy the Cloudflare Pages URL** (e.g., `https://trader-abc.pages.dev`).
-2. **In Render** -> your service -> Environment, edit `TRADER_CORS_ORIGINS` to the exact Pages URL. Save and redeploy.
+1. **Copy the Cloudflare Pages URL** (e.g., `https://vega-abc.pages.dev`).
+2. **In Render** -> your service -> Environment, edit `VEGA_CORS_ORIGINS` to the exact Pages URL. Save and redeploy.
 3. **Wait for Render to finish redeploying** (~1 minute).
 4. **Reload the Pages URL** and submit the Pricing form. The 200 should be clean.
 5. **Smoke test** every screen: Pricing, Heat Map, Compare, Backtest, History. Each should round trip a valid request.
@@ -138,7 +138,7 @@ The owner DSN never leaves your local shell history. The `trader_app` DSN goes t
 1. Buy a domain at any registrar (Cloudflare Registrar is sold at wholesale).
 2. **Cloudflare Pages** -> your project -> Custom domains -> Add custom domain. Cloudflare auto provisions DNS if the domain is on Cloudflare.
 3. **Add the apex domain to Render** (optional, for a custom backend URL): Render -> service -> Settings -> Custom Domains. Verify ownership via TXT record.
-4. **Update `TRADER_CORS_ORIGINS`** in Render to include the custom frontend domain.
+4. **Update `VEGA_CORS_ORIGINS`** in Render to include the custom frontend domain.
 5. **Update `VITE_API_BASE_URL`** in Cloudflare Pages to the custom backend domain (if you set one).
 6. **Update `_headers`** in `frontend/public/_headers` to swap `https://*.onrender.com` for the custom backend domain in the `connect-src` directive. Commit and let Cloudflare Pages redeploy.
 
@@ -152,7 +152,7 @@ The owner DSN never leaves your local shell history. The `trader_app` DSN goes t
 
 ## Branch protection (recommended after first deploy)
 
-Apply on GitHub at <https://github.com/Mustafan4x/Trader/settings/branches>:
+Apply on GitHub at <https://github.com/Mustafan4x/Vega/settings/branches>:
 
 * Require a pull request before merging to `main`.
 * Require at least one approving review.
@@ -168,8 +168,8 @@ Every secret used by the project is listed here. Never paste a real value into t
 
 | Name | Where it lives | What it is |
 |---|---|---|
-| `TRADER_DATABASE_URL` | Render env vars (production), local `.env` (dev only) | Postgres connection string for the **application** role at Neon. Limited to `SELECT, INSERT` on `calculation_inputs` and `calculation_outputs`. |
-| `TRADER_CORS_ORIGINS` | Render env vars (production), local `.env` (dev only) | Comma separated list of allowed frontend origins. Production fail loud rejects empty values, wildcards, and HTTP origins. |
+| `VEGA_DATABASE_URL` | Render env vars (production), local `.env` (dev only) | Postgres connection string for the **application** role at Neon. Limited to `SELECT, INSERT` on `calculation_inputs` and `calculation_outputs`. |
+| `VEGA_CORS_ORIGINS` | Render env vars (production), local `.env` (dev only) | Comma separated list of allowed frontend origins. Production fail loud rejects empty values, wildcards, and HTTP origins. |
 | `VITE_API_BASE_URL` | Cloudflare Pages env vars (production), local `.env.local` (dev only) | Public URL of the Render backend. Baked into the frontend bundle at build time. Production fail loud rejects empty and localhost values. |
 
 The owner DSN at Neon (DDL privileges) never goes into Render. Migrations run from a developer's shell during a maintenance window.
@@ -184,9 +184,9 @@ The owner DSN at Neon (DDL privileges) never goes into Render. Migrations run fr
 
 | Symptom | Cause | Fix |
 |---|---|---|
-| `Failed to fetch` in browser console | CORS misconfigured | Verify `TRADER_CORS_ORIGINS` in Render exactly matches the Pages URL (including https://). |
+| `Failed to fetch` in browser console | CORS misconfigured | Verify `VEGA_CORS_ORIGINS` in Render exactly matches the Pages URL (including https://). |
 | `VITE_API_BASE_URL is not set` in console | Cloudflare Pages env var missing | Set `VITE_API_BASE_URL` in Pages and trigger a redeploy. |
 | Backend returns 502 | Render free tier cold start | Wait 30 seconds and retry; or upgrade to a paid plan. |
-| 429 on every request | Rate limit hit | The default is 60/minute per IP; throttle the client or set `TRADER_RATE_LIMIT_DEFAULT` higher. Per route caps on `/api/heatmap`, `/api/tickers`, `/api/backtest` are tighter (see `docs/api.md`). |
+| 429 on every request | Rate limit hit | The default is 60/minute per IP; throttle the client or set `VEGA_RATE_LIMIT_DEFAULT` higher. Per route caps on `/api/heatmap`, `/api/tickers`, `/api/backtest` are tighter (see `docs/api.md`). |
 | Migration fails on Neon | Owner DSN wrong | Use the connection string with the OWNER role from Neon's "Connection details", not the application role. |
 | `pnpm` not found in Cloudflare build | Node setup | Cloudflare Pages auto detects `pnpm-lock.yaml`. If not, set `PNPM_VERSION=10` in env vars. |

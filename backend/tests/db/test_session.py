@@ -34,7 +34,7 @@ from app.db.session import normalize_database_url
             "postgresql+psycopg2://user:pw@host/db",
         ),
         # Non Postgres URLs pass through.
-        ("sqlite:///./var/trader.db", "sqlite:///./var/trader.db"),
+        ("sqlite:///./var/vega.db", "sqlite:///./var/vega.db"),
         ("sqlite://", "sqlite://"),
     ],
 )
@@ -48,7 +48,7 @@ def test_get_engine_does_not_touch_default_when_env_is_set(
     """Regression: the dev SQLite default helper does a mkdir on the
     project tree. ``os.environ.get(KEY, default)`` evaluates the default
     eagerly, so an unguarded call would still mkdir even when
-    ``TRADER_DATABASE_URL`` is set. The production container runs as a
+    ``VEGA_DATABASE_URL`` is set. The production container runs as a
     non root user with no write access to the WORKDIR, so the mkdir
     raises PermissionError there. This test pins the lazy fallback so
     that bug cannot regress.
@@ -64,8 +64,21 @@ def test_get_engine_does_not_touch_default_when_env_is_set(
 
     monkeypatch.setattr(session, "_default_sqlite_url", fail)
     monkeypatch.setattr(session, "_engine", None, raising=False)
-    monkeypatch.setenv("TRADER_DATABASE_URL", "sqlite://")
+    monkeypatch.setenv("VEGA_DATABASE_URL", "sqlite://")
 
     session.get_engine()
 
     assert sentinel["called"] is False
+
+
+def test_legacy_trader_database_url_still_works(monkeypatch: pytest.MonkeyPatch) -> None:
+    """The rename keeps ``TRADER_DATABASE_URL`` honored as a fallback."""
+
+    from app.db import session
+
+    monkeypatch.setattr(session, "_engine", None, raising=False)
+    monkeypatch.delenv("VEGA_DATABASE_URL", raising=False)
+    monkeypatch.setenv("TRADER_DATABASE_URL", "sqlite://")
+
+    engine = session.get_engine()
+    assert "sqlite" in engine.url.drivername

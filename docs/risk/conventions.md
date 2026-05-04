@@ -1,6 +1,6 @@
-# Finance conventions for the Trader project
+# Finance conventions for the Vega project
 
-This document is the canonical reference for the financial conventions used throughout the Trader pricing service. Every agent that touches pricing math, P&L, or the user facing input form must follow these conventions exactly. Disagreements are resolved by the Risk Reviewer in coordination with the Quant Domain Validator before code lands.
+This document is the canonical reference for the financial conventions used throughout the Vega pricing service. Every agent that touches pricing math, P&L, or the user facing input form must follow these conventions exactly. Disagreements are resolved by the Risk Reviewer in coordination with the Quant Domain Validator before code lands.
 
 The conventions here track the textbook Black Scholes model on a non dividend paying stock. They are deliberately conservative and standard so that hand calculations from any options textbook reproduce the service's outputs to two decimal places.
 
@@ -13,7 +13,7 @@ Examples:
 * One year to expiry: T = 365 / 365 = 1.0.
 * Thirty days to expiry: T = 30 / 365 ≈ 0.08219.
 
-Why 365 and not ACT/365 or ACT/360 or business day counts: this is a pet project, not a trading desk. Real desks pick the convention that matches the funding currency (ACT/360 for USD money market, ACT/365 for GBP, business day counts for some exchange traded products). The Trader project does not need that distinction. Picking 365 calendar days keeps every computation reproducible from a wall clock and avoids a dependency on a holiday calendar. If a future phase introduces multi currency support or trading day discounting, this decision is revisited and recorded as an ADR.
+Why 365 and not ACT/365 or ACT/360 or business day counts: this is a pet project, not a trading desk. Real desks pick the convention that matches the funding currency (ACT/360 for USD money market, ACT/365 for GBP, business day counts for some exchange traded products). The Vega project does not need that distinction. Picking 365 calendar days keeps every computation reproducible from a wall clock and avoids a dependency on a holiday calendar. If a future phase introduces multi currency support or trading day discounting, this decision is revisited and recorded as an ADR.
 
 ## Dividends
 
@@ -115,7 +115,7 @@ To keep notation consistent with the sanity cases doc and the pricing module:
 
 ## Pricing model selection and Greeks convention (Phase 9)
 
-The Trader service exposes three pricing models on the price and heatmap endpoints, selected by the `model` field: `black_scholes` (closed form), `binomial` (Cox Ross Rubinstein tree), and `monte_carlo` (geometric Brownian motion with antithetic variates). The choice affects the call and put values; **Greeks are always returned from the closed form Black Scholes formula regardless of the chosen pricer.** This matches market practice: dealers quote vanilla Greeks off the closed form even when their internal book runs a tree, a PDE solver, or a stochastic vol Monte Carlo. For European vanilla on a non dividend stock, the three pricers target the same underlying GBM dynamics, so the Black Scholes Greeks are the correct sensitivities of the contract the user is pricing.
+The Vega service exposes three pricing models on the price and heatmap endpoints, selected by the `model` field: `black_scholes` (closed form), `binomial` (Cox Ross Rubinstein tree), and `monte_carlo` (geometric Brownian motion with antithetic variates). The choice affects the call and put values; **Greeks are always returned from the closed form Black Scholes formula regardless of the chosen pricer.** This matches market practice: dealers quote vanilla Greeks off the closed form even when their internal book runs a tree, a PDE solver, or a stochastic vol Monte Carlo. For European vanilla on a non dividend stock, the three pricers target the same underlying GBM dynamics, so the Black Scholes Greeks are the correct sensitivities of the contract the user is pricing.
 
 **Tolerances for sign off** (canonical centered inputs S=K=100, T=1, r=0.05, sigma=0.20):
 

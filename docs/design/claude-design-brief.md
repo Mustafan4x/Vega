@@ -7,18 +7,18 @@ The current canonical design lives at `claude-design-output.html` in this folder
 This document describes how to do that refresh cleanly. The flow:
 
 1. Open Claude Design and start a new project.
-2. Upload visual references (the `.webp` files at `/home/mustafa/src/trader/design/` are still relevant; you can also upload screenshots of the current `claude-design-output.html` rendered in your browser).
+2. Upload visual references (the `.webp` files at `/home/mustafa/src/vega/design/` are still relevant; you can also upload screenshots of the current `claude-design-output.html` rendered in your browser).
 3. Paste the **Brief** section below as your prompt.
 4. After Claude Design produces variations, pick one.
 5. Ask Claude Design to package it using the **Output format** section below so the new HTML is structured the same way as the current one.
-6. Save the new HTML to `/home/mustafa/src/trader/docs/design/claude-design-output.html`, replacing the old version.
+6. Save the new HTML to `/home/mustafa/src/vega/docs/design/claude-design-output.html`, replacing the old version.
 7. In Claude Code, say "I updated the Claude Design output, sync the implementation". The PM will run Flow B per `CLAUDE.md`.
 
 ---
 
 ## Brief (paste this into Claude Design)
 
-> I'm refreshing the visual design for **Trader**, a Black Scholes options pricer for a quant interview portfolio. The implementation is React with Vite, TypeScript, and Tailwind CSS. The audience is technical (quant trading employers); the visual bar is "serious tool with personality, not a generic SaaS dashboard."
+> I'm refreshing the visual design for **Vega**, a Black Scholes options pricer for a quant interview portfolio. The implementation is React with Vite, TypeScript, and Tailwind CSS. The audience is technical (quant trading employers); the visual bar is "serious tool with personality, not a generic SaaS dashboard."
 >
 > The existing design is the **Oxblood** theme: dark surface, oxblood `#C03A3A` primary, sea green `#34D399` accent, IBM Plex Serif italic for display, Newsreader for numbers, Manrope for UI text, JetBrains Mono for code. I want a fresh exploration; you can keep elements you think work or propose something different. Tell me what you're keeping and what you're changing.
 >

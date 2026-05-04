@@ -8,7 +8,7 @@ not yet exist. The Backend Developer's job in Phase 1 is to make these tests
 pass without modifying any of the assertions or tolerances.
 
 Conventions verified by these tests are documented in
-``/home/mustafa/src/trader/docs/math/black-scholes.md``:
+``/home/mustafa/src/vega/docs/math/black-scholes.md``:
 
 * ``T`` is in years.
 * ``sigma`` is decimal annualized standard deviation.

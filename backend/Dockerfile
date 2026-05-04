@@ -1,4 +1,4 @@
-# Trader backend production image.
+# Vega backend production image.
 #
 # Multi stage so the final image has only Python plus the resolved
 # wheels. uv is used at build time only; the runtime stage runs the
@@ -44,16 +44,16 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
 # dropping privileges shrinks the blast radius of a remote code
 # execution bug. The app does not write to disk inside the container
 # (logs are stdout, sqlite is dev only), so a read only root is fine.
-RUN useradd --create-home --uid 10001 trader
+RUN useradd --create-home --uid 10001 vega
 
 WORKDIR /app
 
-COPY --from=builder --chown=trader:trader /app /app
+COPY --from=builder --chown=vega:vega /app /app
 
-USER trader
+USER vega
 
 EXPOSE 8000
 
-# trader-serve is the project's pyproject script entry; it pins the
+# vega-serve is the project's pyproject script entry; it pins the
 # uvicorn flags this service needs (server_header=False, proxy_headers=True).
-CMD ["trader-serve"]
+CMD ["vega-serve"]

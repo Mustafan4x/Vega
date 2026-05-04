@@ -1,13 +1,13 @@
-# Trader API
+# Vega API
 
-Reference for the FastAPI service that powers the Trader frontend. Generated from the FastAPI OpenAPI schema at `/openapi.json` (development only) and edited for readability. The live OpenAPI document is the authoritative source; this page summarizes the surface for humans.
+Reference for the FastAPI service that powers the Vega frontend. Generated from the FastAPI OpenAPI schema at `/openapi.json` (development only) and edited for readability. The live OpenAPI document is the authoritative source; this page summarizes the surface for humans.
 
 ## Base URL
 
 | Environment | URL |
 |---|---|
 | Local dev | `http://localhost:8000` |
-| Production | `https://trader-backend.onrender.com` (set by Render at first deploy) |
+| Production | `https://vega-backend.onrender.com` (set by Render at first deploy) |
 
 ## Authentication
 
@@ -99,7 +99,7 @@ Strict: extra fields rejected with 422; `Infinity` or `NaN` rejected.
 }
 ```
 
-Greeks are returned in trader friendly units: vega per 1 percent of sigma, rho per 1 percent of r, theta per calendar day. Delta and gamma are in natural units. See `docs/risk/conventions.md`.
+Greeks are returned in display friendly units: vega per 1 percent of sigma, rho per 1 percent of r, theta per calendar day. Delta and gamma are in natural units. See `docs/risk/conventions.md`.
 
 ### `POST /api/heatmap`
 

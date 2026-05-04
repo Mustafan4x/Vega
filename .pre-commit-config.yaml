@@ -1,4 +1,4 @@
-# Pre commit hooks for the Trader project.
+# Pre commit hooks for the Vega project.
 # Install with: pre-commit install
 # Run on the whole repo: pre-commit run --all-files
 default_install_hook_types: [pre-commit]

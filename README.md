@@ -1,8 +1,13 @@
 # Vega
 
-A full stack Black Scholes options pricer built as a quant interview pet project. The app prices European calls and puts from five inputs (asset price, strike, time to expiry, risk free rate, volatility), renders heat maps of value and P&L over volatility and price shocks, exposes the Greeks, looks up live prices via yfinance, compares Black Scholes against a binomial tree and a Monte Carlo pricer, and runs simple option strategy backtests over historical data. The finished build is deployed to the public internet so it can be linked from a resume.
+**Live demo: <https://vega-2rd.pages.dev/>**
 
-GitHub: https://github.com/Mustafan4x/Vega
+The frontend is on Cloudflare Pages; the backend lives on Render's free tier and sleeps after roughly 15 minutes of inactivity, so the very first calculation after a long idle period can take 30 to 60 seconds while the container wakes up. Subsequent requests are instant.
+
+A full stack Black Scholes options pricer built as a quant interview pet project. The app prices European calls and puts from five inputs (asset price, strike, time to expiry, risk free rate, volatility), renders heat maps of value and P&L over volatility and price shocks, exposes the Greeks, looks up live prices via yfinance, compares Black Scholes against a binomial tree and a Monte Carlo pricer, and runs simple option strategy backtests over historical data.
+
+GitHub: <https://github.com/Mustafan4x/Vega>
+Backend API: <https://vega-backend-1wm0.onrender.com> (FastAPI, see [`docs/api.md`](docs/api.md))
 
 ## Visual theme
 

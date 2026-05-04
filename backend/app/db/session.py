@@ -4,6 +4,14 @@ DSN comes from ``TRADER_DATABASE_URL`` (default: a local SQLite file
 under ``backend/var/trader.db`` for dev).  Production uses Postgres on
 Neon (set in the Render service env in Phase 11). Never commit a
 production DSN; the ``gitleaks`` rule from Phase 0 catches them.
+
+DSN normalization: bare ``postgresql://`` URLs (the form Neon's
+dashboard hands you) make SQLAlchemy 2.x try the ``psycopg2`` driver,
+which the project does not ship; only ``psycopg`` (v3) is installed.
+:func:`normalize_database_url` rewrites those URLs to the explicit
+``postgresql+psycopg://`` form before the engine is built so a
+verbatim paste from Neon does not crash production at first DB
+touch. Alembic shares the same helper via :mod:`alembic.env`.
 """
 
 from __future__ import annotations
@@ -23,11 +31,31 @@ def _default_sqlite_url() -> str:
     return f"sqlite:///{var_dir / 'trader.db'}"
 
 
+def normalize_database_url(url: str) -> str:
+    """Rewrite a bare ``postgresql://`` DSN to ``postgresql+psycopg://``.
+
+    The Neon dashboard's "Connect manually" string starts with
+    ``postgresql://`` which SQLAlchemy 2.x routes to ``psycopg2``. We
+    ship ``psycopg`` (v3), so an unmodified Neon DSN crashes at
+    engine creation with ``ModuleNotFoundError: No module named
+    'psycopg2'``. Rewriting here keeps the env var copy-paste
+    friendly. URLs that already specify a driver, or that are not
+    Postgres at all (sqlite, etc.) pass through unchanged.
+    """
+
+    if url.startswith("postgresql+"):
+        return url
+    if url.startswith("postgresql://"):
+        return "postgresql+psycopg://" + url[len("postgresql://") :]
+    return url
+
+
 _engine: Engine | None = None
 _SessionFactory: sessionmaker[Session] | None = None
 
 
 def _build_engine(url: str) -> Engine:
+    url = normalize_database_url(url)
     connect_args: dict[str, object] = {}
     if url.startswith("sqlite"):
         connect_args["check_same_thread"] = False

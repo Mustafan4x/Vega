@@ -14,6 +14,7 @@ from sqlalchemy import engine_from_config, pool
 
 from alembic import context
 from app.db.models import Base
+from app.db.session import normalize_database_url
 
 config = context.config
 
@@ -22,7 +23,7 @@ if config.config_file_name is not None:
 
 env_url = os.environ.get("TRADER_DATABASE_URL")
 if env_url:
-    config.set_main_option("sqlalchemy.url", env_url)
+    config.set_main_option("sqlalchemy.url", normalize_database_url(env_url))
 
 target_metadata = Base.metadata
 

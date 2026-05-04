@@ -32,6 +32,26 @@ A scratch list of features that are out of scope for v1 but worth picking up lat
 
 **Notes for the implementer**: Logo work belongs to a UI/UX Designer pass; the Oxblood palette and IBM Plex Serif italic display from `docs/design/tokens.md` are the constraints. Favicon at `frontend/public/favicon.svg` is currently the Vite default. The brand mark renders in `frontend/src/components/LayoutShell.tsx` as an inline SVG; replace with the new asset.
 
+## Security hardening research pass
+
+**Idea**: schedule a dedicated security research and hardening sweep on top of the baseline already shipped. The Phase 0 threat model and the Phase 11 hardening checklist (HSTS, CSP, per route rate limits, fail loud config, `pip-audit` and `pnpm audit` clean, non root container, parameterized queries, no secrets in logs) cover the obvious surface. The goal of this pass is to go beyond the obvious: research current attack patterns, look for non obvious vulnerabilities, edge cases, and defense in depth gaps, then close them so the deployed app is as hard as possible to abuse.
+
+**Why deferred**: v1 is scoped to ship and look good on a resume. A deep security pass takes focused time, requires fresh reading on current threats and tools, and is best done once the production surface is stable rather than mid build.
+
+**When to revisit**: after the live demo has been up for a few weeks and real traffic has been observed in the Cloudflare and Render logs. Worth running before the project is publicly linked from a high traffic context (resume, blog post, social).
+
+**Notes for the implementer**: this work belongs to the Security Engineer agent (`agents/08-security-engineer.md`); the Performance Engineer pairs in for any rate limit retuning. Starter checklist, in order of expected payoff:
+
+* Re run STRIDE on every endpoint (`/api/price`, `/api/heatmap`, `/api/calculations`, `/api/tickers`, `/api/backtest`) with abuse cases, not just happy path. Update `docs/security/threat-model.md`.
+* Audit `_headers` and CSP on Cloudflare Pages against current OWASP recommendations; tighten `connect-src`, add `Permissions-Policy`, and consider `Cross-Origin-Opener-Policy` plus `Cross-Origin-Embedder-Policy`.
+* Run extra dependency scanners beyond `pip-audit` and `pnpm audit`: `osv-scanner`, `trivy` on the container image, and a focused look at `yfinance` since it is a thin wrapper over Yahoo's undocumented endpoints.
+* Fuzz endpoints for unhandled input (NaN, Infinity, oversized arrays, malformed dates, ticker injection, unicode tricks).
+* Stress test the per route rate limits under realistic abuse patterns (slow drip, distributed clients, expensive heatmap and backtest payloads); tune limits based on observed traffic.
+* Verify least privilege for the `vega_app` Postgres role on Neon, and document a rotation procedure for `VEGA_DATABASE_URL` plus the Render and Cloudflare Pages env secrets in `docs/security/`.
+* Add a `SECURITY.md` at the repo root with a vulnerability disclosure contact, then run one external scanner pass (OWASP ZAP, Mozilla Observatory, Hardenize) against the live URL and capture the report in `docs/security/`.
+
+The goal is not paranoia. The goal is that anyone who pokes at the live demo, including the user during interview prep, can confidently say the deployment is buttoned up.
+
 ## Other deferred ideas
 
 (Add more here as they come up. Each entry should follow the same format: idea, why deferred, when to revisit, notes.)

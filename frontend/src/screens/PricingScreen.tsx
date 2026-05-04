@@ -48,10 +48,20 @@ const EMPTY_COMPARE: CompareResults = {
   monte_carlo: null,
 }
 
-export function PricingScreen(): JSX.Element {
+interface PricingScreenProps {
+  /**
+   * Initial value for the Compare toggle. The dedicated "Model
+   * Comparison" nav item lands the user with `initialCompare={true}`
+   * so the side by side view shows up immediately. The toggle is
+   * still on the screen so users can flip back to single mode.
+   */
+  initialCompare?: boolean
+}
+
+export function PricingScreen({ initialCompare = false }: PricingScreenProps = {}): JSX.Element {
   const [inputs, setInputs] = useState<PriceRequest>(INITIAL_INPUTS)
   const [model, setModel] = useState<PricingModel>('black_scholes')
-  const [compare, setCompare] = useState<boolean>(false)
+  const [compare, setCompare] = useState<boolean>(initialCompare)
   const [result, setResult] = useState<PriceResponse | null>(null)
   const [compareResults, setCompareResults] = useState<CompareResults>(EMPTY_COMPARE)
   const [status, setStatus] = useState<Status>({ kind: 'idle' })

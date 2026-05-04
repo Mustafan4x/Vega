@@ -161,3 +161,86 @@ def test_get_calculation_rejects_path_traversal_attempt(
 ) -> None:
     response = client.get(f"/api/calculations/{calc_id_attempt}")
     assert response.status_code in (404, 422)
+
+
+# ---------- List endpoint ----------------------------------------------------
+
+
+def test_list_empty_returns_zero_total(client: TestClient) -> None:
+    response = client.get("/api/calculations")
+    assert response.status_code == 200, response.text
+    body = response.json()
+    assert body == {"items": [], "total": 0, "limit": 20, "offset": 0}
+
+
+def test_list_returns_newest_first(client: TestClient) -> None:
+    ids = [
+        client.post("/api/calculations", json=VALID_PAYLOAD).json()["calculation_id"]
+        for _ in range(3)
+    ]
+    response = client.get("/api/calculations")
+
+    assert response.status_code == 200, response.text
+    body = response.json()
+    assert body["total"] == 3
+    assert len(body["items"]) == 3
+    # Most recent write first.
+    returned_ids = [item["calculation_id"] for item in body["items"]]
+    assert returned_ids == list(reversed(ids))
+
+
+def test_list_pagination(client: TestClient) -> None:
+    for _ in range(5):
+        client.post("/api/calculations", json=VALID_PAYLOAD)
+
+    page1 = client.get("/api/calculations?limit=2&offset=0").json()
+    page2 = client.get("/api/calculations?limit=2&offset=2").json()
+    page3 = client.get("/api/calculations?limit=2&offset=4").json()
+
+    assert page1["total"] == 5
+    assert page1["limit"] == 2
+    assert page1["offset"] == 0
+    assert len(page1["items"]) == 2
+    assert len(page2["items"]) == 2
+    assert len(page3["items"]) == 1
+    # No overlap between pages.
+    page1_ids = {item["calculation_id"] for item in page1["items"]}
+    page2_ids = {item["calculation_id"] for item in page2["items"]}
+    assert page1_ids.isdisjoint(page2_ids)
+
+
+def test_list_summary_shape(client: TestClient) -> None:
+    client.post("/api/calculations", json=VALID_PAYLOAD)
+    body = client.get("/api/calculations").json()
+
+    item = body["items"][0]
+    assert set(item.keys()) == {
+        "calculation_id",
+        "created_at",
+        "s",
+        "k",
+        "t",
+        "r",
+        "sigma",
+        "rows",
+        "cols",
+    }
+    assert item["s"] == 100.0
+    assert item["k"] == 100.0
+    assert item["rows"] == 5
+    assert item["cols"] == 5
+    # created_at is ISO 8601; just check it parses.
+    assert "T" in item["created_at"] or item["created_at"] == ""
+
+
+@pytest.mark.parametrize("bad_query", ["limit=0", "limit=51", "limit=-1", "offset=-1"])
+def test_list_rejects_invalid_pagination(client: TestClient, bad_query: str) -> None:
+    response = client.get(f"/api/calculations?{bad_query}")
+    assert response.status_code == 422
+
+
+def test_post_calculations_per_route_limit_caps_at_12(client: TestClient) -> None:
+    statuses = [client.post("/api/calculations", json=VALID_PAYLOAD).status_code for _ in range(14)]
+    assert statuses[:12] == [201] * 12, statuses
+    assert statuses[12] == 429
+    assert statuses[13] == 429

@@ -5,7 +5,10 @@
  * put) painted from the response of ``POST /api/heatmap``. The screen
  * owns its own input state for the five Black Scholes parameters so
  * a user can iterate on the heat map without touching the Pricing
- * screen state in Phase 3.
+ * screen state.
+ *
+ * The Save button (Phase 11) calls ``POST /api/calculations`` with the
+ * same payload so the History screen can list and reload it.
  */
 
 import { useCallback, useRef, useState, type JSX } from 'react'
@@ -13,7 +16,13 @@ import { useCallback, useRef, useState, type JSX } from 'react'
 import { HeatMap } from '../components/HeatMap'
 import { HeatMapControls, type HeatMapControlsState } from '../components/HeatMapControls'
 import { InputForm } from '../components/InputForm'
-import { fetchHeatmap, PriceError, type HeatmapResponse, type PriceRequest } from '../lib/api'
+import {
+  fetchHeatmap,
+  PriceError,
+  saveCalculation,
+  type HeatmapResponse,
+  type PriceRequest,
+} from '../lib/api'
 
 const INITIAL_INPUTS: PriceRequest = {
   S: 100,
@@ -38,15 +47,23 @@ type Status =
   | { kind: 'ready' }
   | { kind: 'error'; message: string }
 
+type SaveStatus =
+  | { kind: 'idle' }
+  | { kind: 'saving' }
+  | { kind: 'saved'; calculationId: string }
+  | { kind: 'error'; message: string }
+
 export function HeatMapScreen(): JSX.Element {
   const [inputs, setInputs] = useState<PriceRequest>(INITIAL_INPUTS)
   const [controls, setControls] = useState<HeatMapControlsState>(INITIAL_CONTROLS)
   const [response, setResponse] = useState<HeatmapResponse | null>(null)
   const [status, setStatus] = useState<Status>({ kind: 'idle' })
+  const [saveStatus, setSaveStatus] = useState<SaveStatus>({ kind: 'idle' })
   const [invalidFields, setInvalidFields] = useState<ReadonlySet<keyof PriceRequest>>(
     () => new Set(),
   )
   const inFlight = useRef<AbortController | null>(null)
+  const inFlightSave = useRef<AbortController | null>(null)
 
   const onRecompute = useCallback(async () => {
     inFlight.current?.abort()
@@ -55,6 +72,8 @@ export function HeatMapScreen(): JSX.Element {
 
     setStatus({ kind: 'pending' })
     setInvalidFields(new Set())
+    // A new compute invalidates the previous "saved" badge.
+    setSaveStatus({ kind: 'idle' })
 
     try {
       const result = await fetchHeatmap(
@@ -83,6 +102,33 @@ export function HeatMapScreen(): JSX.Element {
     }
   }, [inputs, controls])
 
+  const onSave = useCallback(async () => {
+    inFlightSave.current?.abort()
+    const controller = new AbortController()
+    inFlightSave.current = controller
+
+    setSaveStatus({ kind: 'saving' })
+
+    try {
+      const result = await saveCalculation(
+        {
+          ...inputs,
+          vol_shock: controls.volShock,
+          spot_shock: controls.spotShock,
+          rows: controls.resolution,
+          cols: controls.resolution,
+        },
+        { signal: controller.signal },
+      )
+      if (controller.signal.aborted) return
+      setSaveStatus({ kind: 'saved', calculationId: result.calculation_id })
+    } catch (err) {
+      if (controller.signal.aborted) return
+      const message = err instanceof PriceError ? err.message : 'Could not save the calculation.'
+      setSaveStatus({ kind: 'error', message })
+    }
+  }, [inputs, controls])
+
   const callGrid = response?.call ?? []
   const putGrid = response?.put ?? []
   const sigmaAxis = response?.sigma_axis ?? []
@@ -90,6 +136,11 @@ export function HeatMapScreen(): JSX.Element {
 
   const errorMessage = status.kind === 'error' ? status.message : ''
   const infoMessage = status.kind === 'error' ? '' : statusMessage(status)
+
+  const canSave = status.kind === 'ready' && saveStatus.kind !== 'saving' && response !== null
+  const saveLabel =
+    saveStatus.kind === 'saving' ? 'Saving...' : saveStatus.kind === 'saved' ? 'Saved' : 'Save'
+  const saveFeedback = saveStatusMessage(saveStatus)
 
   return (
     <div className="tr-heatmap-screen tr-screen-fade" data-component="HeatMapScreen">
@@ -134,6 +185,22 @@ export function HeatMapScreen(): JSX.Element {
         />
       </div>
 
+      <div className="tr-heatmap-actions" data-element="actions">
+        <button
+          type="button"
+          className="tr-btn"
+          data-element="saveButton"
+          onClick={onSave}
+          disabled={!canSave}
+          aria-busy={saveStatus.kind === 'saving'}
+        >
+          {saveLabel}
+        </button>
+        <span className="tr-status" data-element="saveStatus" aria-live="polite">
+          {saveFeedback}
+        </span>
+      </div>
+
       <p
         className="tr-status"
         role="status"
@@ -154,4 +221,11 @@ function statusMessage(status: Status): string {
   if (status.kind === 'pending') return 'Computing heat map...'
   if (status.kind === 'ready') return 'Heat map ready.'
   return 'Set inputs and shock ranges, then press Recompute.'
+}
+
+function saveStatusMessage(saveStatus: SaveStatus): string {
+  if (saveStatus.kind === 'saving') return 'Saving to history...'
+  if (saveStatus.kind === 'saved') return 'Saved. Open History to revisit.'
+  if (saveStatus.kind === 'error') return saveStatus.message
+  return ''
 }

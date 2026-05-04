@@ -777,6 +777,45 @@ button {
   grid-template-columns: 1fr 1fr;
   gap: var(--space-5);
 }
+.tr-heatmap-actions {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  margin-top: var(--space-3);
+}
+.tr-heatmap-actions [data-element='saveStatus'] {
+  color: var(--color-text-soft);
+  font-size: 13px;
+}
+
+.tr-history-screen {
+  display: grid;
+  gap: var(--space-5);
+}
+.tr-history-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 14px;
+}
+.tr-history-table th,
+.tr-history-table td {
+  padding: var(--space-2) var(--space-3);
+  border-bottom: 1px solid var(--color-border);
+  text-align: left;
+}
+.tr-history-table th {
+  color: var(--color-text-soft);
+  font-weight: 500;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  font-size: 11px;
+}
+.tr-history-table tr[data-selected='true'] {
+  background: var(--color-surface-2, rgba(255, 255, 255, 0.03));
+}
+.tr-history-table tbody tr:hover {
+  background: var(--color-surface-2, rgba(255, 255, 255, 0.03));
+}
 
 [data-component='HeatMapControls'] {
   display: flex;

@@ -97,6 +97,46 @@ export interface BacktestResponse {
   legs: BacktestLeg[]
 }
 
+// Persistence (Phase 6 backend, Phase 11 frontend wiring).
+
+export interface CalculationCreateResponse extends HeatmapResponse {
+  calculation_id: string
+}
+
+export interface CalculationSummary {
+  calculation_id: string
+  created_at: string
+  s: number
+  k: number
+  t: number
+  r: number
+  sigma: number
+  rows: number
+  cols: number
+}
+
+export interface CalculationListResponse {
+  items: CalculationSummary[]
+  total: number
+  limit: number
+  offset: number
+}
+
+export interface CalculationDetail {
+  calculation_id: string
+  s: number
+  k: number
+  t: number
+  r: number
+  sigma: number
+  rows: number
+  cols: number
+  call: number[][]
+  put: number[][]
+  sigma_axis: number[]
+  spot_axis: number[]
+}
+
 export type PriceErrorKind =
   | 'validation'
   | 'rate_limit'
@@ -520,4 +560,174 @@ export async function fetchBacktest(
   throw new PriceError('server', `The backtest service returned ${response.status}.`, {
     status: response.status,
   })
+}
+
+// ---------- Calculations (persistence) ---------------------------------------
+
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/
+
+function isCalculationCreateResponse(body: unknown): body is CalculationCreateResponse {
+  if (!isHeatmapResponse(body)) return false
+  const b = body as unknown as Record<string, unknown>
+  return typeof b.calculation_id === 'string' && UUID_RE.test(b.calculation_id)
+}
+
+function isCalculationSummary(body: unknown): body is CalculationSummary {
+  if (typeof body !== 'object' || body === null) return false
+  const b = body as Record<string, unknown>
+  return (
+    typeof b.calculation_id === 'string' &&
+    typeof b.created_at === 'string' &&
+    typeof b.s === 'number' &&
+    typeof b.k === 'number' &&
+    typeof b.t === 'number' &&
+    typeof b.r === 'number' &&
+    typeof b.sigma === 'number' &&
+    typeof b.rows === 'number' &&
+    typeof b.cols === 'number'
+  )
+}
+
+function isCalculationListResponse(body: unknown): body is CalculationListResponse {
+  if (typeof body !== 'object' || body === null) return false
+  const b = body as Record<string, unknown>
+  if (typeof b.total !== 'number' || typeof b.limit !== 'number' || typeof b.offset !== 'number') {
+    return false
+  }
+  return Array.isArray(b.items) && b.items.every(isCalculationSummary)
+}
+
+function isCalculationDetail(body: unknown): body is CalculationDetail {
+  if (typeof body !== 'object' || body === null) return false
+  const b = body as Record<string, unknown>
+  return (
+    typeof b.calculation_id === 'string' &&
+    typeof b.s === 'number' &&
+    typeof b.k === 'number' &&
+    typeof b.t === 'number' &&
+    typeof b.r === 'number' &&
+    typeof b.sigma === 'number' &&
+    typeof b.rows === 'number' &&
+    typeof b.cols === 'number' &&
+    Array.isArray(b.call) &&
+    Array.isArray(b.put) &&
+    Array.isArray(b.sigma_axis) &&
+    Array.isArray(b.spot_axis)
+  )
+}
+
+export async function saveCalculation(
+  request: HeatmapRequest,
+  options: FetchOptions = {},
+): Promise<CalculationCreateResponse> {
+  return postJson<HeatmapRequest, CalculationCreateResponse>(
+    {
+      path: '/api/calculations',
+      label: 'save calculation',
+      defaultTimeoutMs: DEFAULT_HEATMAP_TIMEOUT_MS,
+    },
+    request,
+    options,
+    isCalculationCreateResponse,
+  )
+}
+
+export interface ListCalculationsOptions extends FetchOptions {
+  limit?: number
+  offset?: number
+}
+
+async function getJson<TResponse>(
+  path: string,
+  label: string,
+  defaultTimeoutMs: number,
+  options: FetchOptions,
+  validate: (body: unknown) => body is TResponse,
+): Promise<TResponse> {
+  const baseUrl = trimTrailingSlash(options.baseUrl ?? readApiBaseUrl())
+  const timeoutMs = options.timeoutMs ?? defaultTimeoutMs
+  const controller = new AbortController()
+  combineSignals(options.signal, controller)
+  const timer = setTimeout(() => controller.abort(new Error('timeout')), timeoutMs)
+
+  let response: Response
+  try {
+    response = await fetch(`${baseUrl}${path}`, {
+      method: 'GET',
+      headers: { Accept: 'application/json' },
+      credentials: 'omit',
+      mode: 'cors',
+      signal: controller.signal,
+    })
+  } catch (err) {
+    clearTimeout(timer)
+    const isAbort =
+      (err instanceof DOMException && err.name === 'AbortError') ||
+      (err instanceof Error && err.name === 'AbortError') ||
+      controller.signal.aborted
+    if (isAbort) {
+      const reason = controller.signal.reason
+      if (reason instanceof Error && reason.message === 'timeout') {
+        throw new PriceError('timeout', `The ${label} request timed out.`)
+      }
+      throw new PriceError('aborted', `The ${label} request was cancelled.`)
+    }
+    throw new PriceError('network', `Could not reach the ${label} service.`)
+  }
+  clearTimeout(timer)
+
+  if (response.status === 200) {
+    const body = (await response.json()) as unknown
+    if (!validate(body)) {
+      throw new PriceError('server', `Unexpected response shape from ${label}.`, { status: 200 })
+    }
+    return body
+  }
+  if (response.status === 404) {
+    throw new PriceError('not_found', 'Calculation not found.', { status: 404 })
+  }
+  if (response.status === 422) {
+    throw new PriceError('validation', 'Invalid request parameters.', { status: 422 })
+  }
+  if (response.status === 429) {
+    throw new PriceError('rate_limit', 'Rate limit reached. Slow down and try again.', {
+      status: 429,
+    })
+  }
+  throw new PriceError('server', `The ${label} service returned ${response.status}.`, {
+    status: response.status,
+  })
+}
+
+export async function fetchCalculations(
+  options: ListCalculationsOptions = {},
+): Promise<CalculationListResponse> {
+  const params = new URLSearchParams()
+  if (typeof options.limit === 'number') params.set('limit', String(options.limit))
+  if (typeof options.offset === 'number') params.set('offset', String(options.offset))
+  const qs = params.toString()
+  const path = qs.length > 0 ? `/api/calculations?${qs}` : '/api/calculations'
+  return getJson<CalculationListResponse>(
+    path,
+    'calculations list',
+    DEFAULT_TIMEOUT_MS,
+    options,
+    isCalculationListResponse,
+  )
+}
+
+export async function fetchCalculation(
+  id: string,
+  options: FetchOptions = {},
+): Promise<CalculationDetail> {
+  if (!UUID_RE.test(id)) {
+    throw new PriceError('validation', 'Invalid calculation id.')
+  }
+  return getJson<CalculationDetail>(
+    `/api/calculations/${encodeURIComponent(id)}`,
+    'calculation detail',
+    DEFAULT_TIMEOUT_MS,
+    options,
+    isCalculationDetail,
+  )
 }

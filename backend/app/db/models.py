@@ -13,7 +13,7 @@ formatting of SQL is forbidden by the threat model (T1).
 
 from __future__ import annotations
 
-from datetime import datetime
+from datetime import UTC, datetime
 from typing import TYPE_CHECKING
 
 from sqlalchemy import DateTime, Float, ForeignKey, Index, Integer, String, func
@@ -43,7 +43,14 @@ class CalculationInput(Base):
     rows: Mapped[int] = mapped_column(Integer, nullable=False)
     cols: Mapped[int] = mapped_column(Integer, nullable=False)
     created_at: Mapped[datetime] = mapped_column(
-        DateTime(timezone=True), server_default=func.now(), nullable=False
+        DateTime(timezone=True),
+        # Python side default first so ORM writes get microsecond precision
+        # on every backend (SQLite's CURRENT_TIMESTAMP only has second
+        # precision, which would collapse fast successive writes onto one
+        # timestamp and break created_at ordering for the History list).
+        default=lambda: datetime.now(UTC),
+        server_default=func.now(),
+        nullable=False,
     )
 
     outputs: Mapped[list[CalculationOutput]] = relationship(

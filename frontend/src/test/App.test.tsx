@@ -30,19 +30,50 @@ describe('App', () => {
     expect(screen.getByRole('button', { name: /run backtest/i })).toBeInTheDocument()
   })
 
-  it('exposes only the implemented screens in the sidebar nav', () => {
+  it('exposes all five screens in the sidebar nav', () => {
     render(<App />)
 
     const nav = screen.getByRole('navigation', { name: /primary navigation/i })
     expect(nav).toBeInTheDocument()
-    // Pricing, Heat Map, Backtest are wired end to end. The dead
-    // "Model Comparison" and "History" nav items were removed in the
-    // Phase 11 closeout (Compare is a toggle on Pricing; History is
-    // tracked in docs/future-ideas.md).
     expect(screen.getByRole('button', { name: /pricing/i })).toBeInTheDocument()
     expect(screen.getByRole('button', { name: /heat map/i })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: /model comparison/i })).toBeInTheDocument()
     expect(screen.getByRole('button', { name: /backtest/i })).toBeInTheDocument()
-    expect(screen.queryByRole('button', { name: /model comparison/i })).toBeNull()
-    expect(screen.queryByRole('button', { name: /history/i })).toBeNull()
+    expect(screen.getByRole('button', { name: /history/i })).toBeInTheDocument()
+  })
+
+  it('renders the Compare view via the Pricing screen when Model Comparison is active', async () => {
+    const user = (await import('@testing-library/user-event')).default.setup()
+    render(<App />)
+
+    await user.click(screen.getByRole('button', { name: /model comparison/i }))
+
+    expect(document.querySelector('[data-component="PricingScreen"]')).not.toBeNull()
+    // Compare toggle starts on, so the side by side ComparePanel renders.
+    expect(document.querySelector('[data-component="ComparePanel"]')).not.toBeNull()
+  })
+
+  it('renders the History screen when History is active', async () => {
+    const user = (await import('@testing-library/user-event')).default.setup()
+    // History on mount calls fetchCalculations; stub it.
+    const fetchSpy = (await import('vitest')).vi.fn<typeof fetch>()
+    fetchSpy.mockResolvedValue(
+      new Response(JSON.stringify({ items: [], total: 0, limit: 20, offset: 0 }), {
+        status: 200,
+        headers: { 'Content-Type': 'application/json' },
+      }),
+    )
+    const { vi } = await import('vitest')
+    vi.stubGlobal('fetch', fetchSpy)
+
+    try {
+      render(<App />)
+
+      await user.click(screen.getByRole('button', { name: /history/i }))
+
+      expect(document.querySelector('[data-component="HistoryScreen"]')).not.toBeNull()
+    } finally {
+      vi.unstubAllGlobals()
+    }
   })
 })

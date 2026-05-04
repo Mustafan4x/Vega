@@ -23,7 +23,7 @@ Why 365 and not ACT/365 or ACT/360 or business day counts: this is a pet project
 
 This is an explicit modeling choice, not a bug. It is the simplest assumption that lets the whole project ship and is consistent with the source video transcript.
 
-If a future phase adds dividends, the change is captured as a new entry in `docs/future-ideas.md` and surfaces as an ADR. The expected route is to add a `q` field (continuous dividend yield) to the request payload, switch to the Black Scholes Merton form (multiply S by exp(-qT) inside the d1 numerator and the call value), and update both the conventions doc and the sanity cases.
+If a future phase adds dividends, the change is captured as a new entry in the maintainer's private notes and surfaces as an ADR. The expected route is to add a `q` field (continuous dividend yield) to the request payload, switch to the Black Scholes Merton form (multiply S by exp(-qT) inside the d1 numerator and the call value), and update both the conventions doc and the sanity cases.
 
 ## Volatility convention
 
@@ -148,4 +148,4 @@ The backtest engine in `backend/app/backtest/engine.py` makes a small set of exp
 
 * `docs/math/black-scholes.md`: the Quant Domain Validator's formula and derivation reference. The conventions in this file must agree with that one.
 * `docs/risk/sanity-cases.md`: hand calculated reference cases that the pricing module must reproduce to two decimal places. Cases 6 and 7 cover model comparison and divergence regimes; Case 8 covers the backtest engine.
-* `docs/future-ideas.md`: where the dividend yield extension will be captured if added.
+* The maintainer's private notes (gitignored): where the dividend yield extension will be captured if added.

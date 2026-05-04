@@ -171,7 +171,6 @@ Never burn the last few percent of a window on a half finished change that canno
 ├── docs/                      # All project docs. Created by agents during phases.
 │   ├── plan.md                # Detailed implementation plan; created by PM in Phase 0, updated as the build progresses. (For high level "which phase is next" status, read STATUS.md instead.)
 │   ├── setup-guide.md         # User facing deployment guide.
-│   ├── future-ideas.md        # Out of scope captures.
 │   ├── architecture.md        # Created by Documentation Engineer in Phase 0.
 │   ├── source/                # Source material (e.g., transcript.md from the original video).
 │   ├── design/                # The canonical Claude Design HTML lives here (`claude-design-output.html`),

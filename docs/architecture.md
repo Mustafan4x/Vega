@@ -63,7 +63,7 @@ If your renderer does not support mermaid, here is the equivalent ASCII view:
 ## Components
 
 ### User browser
-The user opens the deployed URL in any modern browser. There is no native app; the browser is the only client. v1 is unauthenticated, so any visitor can submit calculations and see the shared history (see [`future-ideas.md`](future-ideas.md) for the deferred per user history plan).
+The user opens the deployed URL in any modern browser. There is no native app; the browser is the only client. v1 is unauthenticated, so any visitor can submit calculations and see the shared history (the deferred per user history plan is tracked privately).
 
 ### Cloudflare WAF and CDN
 Cloudflare sits in front of the static frontend, serving cached assets from the edge and applying its baseline WAF rules (SQL injection, common bot signatures, rate limiting). Introduced in Phase 11 when the frontend is published to Cloudflare Pages; until then, all traffic is local.
@@ -75,7 +75,7 @@ Hosts the production frontend. The site is a React 18 plus Vite plus TypeScript 
 The backend is a single FastAPI service running on Python 3.12, deployed to Render. It exposes the pricing endpoints (Black Scholes, binomial, Monte Carlo), the heat map endpoint, the persistence endpoints (history list and detail), the yfinance lookup endpoint, and the backtest endpoint. Pydantic models validate every request and response. Structured logging plus request tracing are added in Phase 2 by the Observability Engineer. The pure Python pricing module lands in Phase 1, the FastAPI wrapper in Phase 2, persistence in Phase 6, the Greeks in Phase 7, the yfinance integration in Phase 8, the alternative pricing models in Phase 9, and the backtesting endpoint in Phase 10. Production deploy to Render happens in Phase 11.
 
 ### Postgres on Neon
-The persistence layer. Neon hosts a managed Postgres instance on a free tier; local development uses SQLite to avoid any cloud setup. SQLAlchemy 2.x is the ORM, Alembic owns migrations. The schema (inputs table, outputs table, calculation_id linking them) lands in Phase 6 along with the first migrations and the persistence wiring. v1 is unauthenticated, so rows are not scoped by user; per user scoping is captured in [`future-ideas.md`](future-ideas.md).
+The persistence layer. Neon hosts a managed Postgres instance on a free tier; local development uses SQLite to avoid any cloud setup. SQLAlchemy 2.x is the ORM, Alembic owns migrations. The schema (inputs table, outputs table, calculation_id linking them) lands in Phase 6 along with the first migrations and the persistence wiring. v1 is unauthenticated, so rows are not scoped by user; per user scoping is captured in the maintainer's private notes.
 
 ### yfinance (third party)
 Used to look up the current price for a ticker symbol so the asset price field can auto fill from a ticker selection. Introduced in Phase 8. The Security Engineer reviews timeouts, response size limits, and retry policy at that point. Historical price ETL for backtests (Phase 10) also pulls through yfinance.
@@ -94,7 +94,7 @@ Error tracking and performance monitoring for both the backend and the frontend.
 
 ## Authentication
 
-v1 is intentionally unauthenticated. Every visitor sees the same shared history. This is captured as a known v1 limitation in [`future-ideas.md`](future-ideas.md), where a per user history plan (OAuth, `user_id` foreign keys, IDOR review) is documented for a future release.
+v1 is intentionally unauthenticated. Every visitor sees the same shared history. This is captured as a known v1 limitation in the maintainer's private notes, where a per user history plan (OAuth, `user_id` foreign keys, IDOR review) is documented for a future release.
 
 ## Where each component is owned
 

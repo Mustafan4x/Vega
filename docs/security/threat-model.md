@@ -116,7 +116,7 @@ G. **Reputation**: the project is linked from a resume. Visible compromise (defa
 
 * The backend does not use cookie based auth. There is no end user session. State changing endpoints (Phase 6's persistence writes) are open in v1; see "Accepted residual risks" for the no auth posture.
 * CORS allow list set to the exact deployed frontend origin (e.g., `https://vega.<domain>`) once the production URL is fixed in Phase 11. No wildcards. `allow_credentials` stays `False` so even if cookies were ever introduced they would not be sent cross origin.
-* If end user auth is added later (see `docs/future-ideas.md`), CSRF tokens or `SameSite=Strict` cookies become mandatory and this section is rewritten.
+* If end user auth is added later (per a deferred plan tracked privately), CSRF tokens or `SameSite=Strict` cookies become mandatory and this section is rewritten.
 
 **Residual risk**: a malicious site can still call the backend's writes from a server side context (no browser involved). This is equivalent to anyone being able to call the API directly, which is the intentional v1 posture (see no auth section). Rate limiting bounds the abuse.
 
@@ -319,7 +319,7 @@ There is no login, no user account, no API key for end users. Anyone on the publ
 * Rate limiting (T12) bounds resource abuse.
 * The DB has no PII column. No emails, no IP addresses are persisted alongside calculations.
 * The backend logs rotate and the IP address is not joined with persisted rows; an attacker cannot reconstruct who submitted a given history entry.
-* If end user auth is ever added, the threat model is rewritten and a separate auth phase is opened. See `docs/future-ideas.md`.
+* If end user auth is ever added, the threat model is rewritten and a separate auth phase is opened (the deferred plan is tracked privately).
 
 ### A2. History is publicly readable
 

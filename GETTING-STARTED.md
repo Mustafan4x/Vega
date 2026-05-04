@@ -135,7 +135,6 @@ Wait for the user's explicit answer. Do not auto advance, even in auto mode.
 ├── docs/
 │   ├── plan.md                                # Written by you (PM) in Step 3
 │   ├── setup-guide.md                         # Already exists
-│   ├── future-ideas.md                        # Already exists
 │   ├── source/transcript.md                   # Already exists
 │   ├── architecture.md                        # Written by Documentation Engineer
 │   ├── design/wireframes.md                   # Written by UI/UX Designer

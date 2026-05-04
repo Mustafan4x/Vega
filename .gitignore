@@ -100,3 +100,7 @@ backend/var/
 tmp/
 .tmp/
 *.local
+
+# Maintainer's private notes; never commit. See repo root /future-ideas.md.
+/future-ideas.md
+docs/future-ideas.md

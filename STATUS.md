@@ -6,7 +6,7 @@ Single source of truth for which phase is next. Read this file when the user say
 
 ## Next phase
 
-**v1 is shipped.** Frontend at <https://vega-2rd.pages.dev/>, backend at <https://vega-backend-1wm0.onrender.com>, Postgres on Neon. There is no next phase from the spec; design changes follow the two flows in `CLAUDE.md` ("Design change workflow") and any new feature work goes through `docs/future-ideas.md`.
+**v1 is shipped.** Frontend at <https://vega-2rd.pages.dev/>, backend at <https://vega-backend-1wm0.onrender.com>, Postgres on Neon. There is no next phase from the spec; design changes follow the two flows in `CLAUDE.md` ("Design change workflow") and any new feature work is captured in the maintainer's private notes (gitignored, outside the public repo).
 
 ## Phase status table
 

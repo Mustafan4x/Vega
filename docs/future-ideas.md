@@ -32,6 +32,16 @@ A scratch list of features that are out of scope for v1 but worth picking up lat
 
 **Notes for the implementer**: places the name appears today as "Trader" or "trader": the GitHub repo name (`Mustafan4x/Trader`), `README.md`, `SPEC.md`, `STATUS.md`, `docs/architecture.md`, the four ADRs, `frontend/index.html` `<title>`, `frontend/src/App.tsx` placeholder text, `backend/pyproject.toml` (`name = "trader-backend"`), `backend/app/repl.py` startup banner, and the local working directory `/home/mustafa/src/trader/`. Renaming is a find and replace pass plus a `gh repo rename` (which preserves the old URL as a redirect). The local directory rename is optional. Logo work belongs to a UI/UX Designer pass; the Oxblood palette and IBM Plex Serif italic display from `docs/design/tokens.md` are the constraints. Favicon at `frontend/public/favicon.svg` is currently the Vite default.
 
+## Calculation history UI
+
+**Idea**: a History screen that lists every persisted calculation by id, timestamp, inputs at a glance, and a click through to reload the heat map. Backed by the persistence layer that already lives behind `POST /api/calculations` and `GET /api/calculations/{id}` (Phase 6).
+
+**Why deferred**: Phase 6 shipped the backend write and read endpoints but never built a list endpoint or a frontend list view. Without authentication (see "Authentication and per user history" above), a public history view would expose every visitor's inputs to every other visitor, which is poor UX even though the data is not sensitive. The Phase 11 closeout removed the dead "History" nav item so the navigation matches the implemented surface.
+
+**When to revisit**: bundled with the auth feature above. A per user history is the natural pairing: once `user_id` exists, listing "your calculations" is straightforward. Until then, the backend persistence still works (every call to `POST /api/calculations` from the heat map screen writes rows), so historical data is preserved for a future UI to read.
+
+**Notes for the implementer**: add `GET /api/calculations` (list, paginated, filtered by `user_id` once auth lands) to `backend/app/api/calculations.py`. The schema already lives in `backend/app/db/models.py`. Frontend: a new `HistoryScreen` plus a sidebar nav entry, and re add `'history'` to `frontend/src/lib/screens.ts` and `App.tsx`.
+
 ## Other deferred ideas
 
 (Add more here as they come up. Each entry should follow the same format: idea, why deferred, when to revisit, notes.)

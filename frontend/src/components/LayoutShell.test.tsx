@@ -35,13 +35,13 @@ describe('LayoutShell', () => {
 
   it('renders children and shows the active screen label in breadcrumbs', () => {
     render(
-      <LayoutShell active="history" onNav={() => {}}>
+      <LayoutShell active="backtest" onNav={() => {}}>
         <div data-testid="content">hello</div>
       </LayoutShell>,
     )
 
     expect(screen.getByTestId('content')).toBeInTheDocument()
     const crumb = document.querySelector('[data-component="TopBar"] [data-element="crumb"]')
-    expect(crumb?.textContent).toMatch(/history/i)
+    expect(crumb?.textContent).toMatch(/backtest/i)
   })
 })

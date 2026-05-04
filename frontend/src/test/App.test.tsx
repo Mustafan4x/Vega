@@ -30,12 +30,19 @@ describe('App', () => {
     expect(screen.getByRole('button', { name: /run backtest/i })).toBeInTheDocument()
   })
 
-  it('renders a placeholder when a not yet shipped nav item is active', async () => {
-    const user = (await import('@testing-library/user-event')).default.setup()
+  it('exposes only the implemented screens in the sidebar nav', () => {
     render(<App />)
 
-    await user.click(screen.getByRole('button', { name: /history/i }))
-
-    expect(screen.getByText(/coming in phase 6/i)).toBeInTheDocument()
+    const nav = screen.getByRole('navigation', { name: /primary navigation/i })
+    expect(nav).toBeInTheDocument()
+    // Pricing, Heat Map, Backtest are wired end to end. The dead
+    // "Model Comparison" and "History" nav items were removed in the
+    // Phase 11 closeout (Compare is a toggle on Pricing; History is
+    // tracked in docs/future-ideas.md).
+    expect(screen.getByRole('button', { name: /pricing/i })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: /heat map/i })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: /backtest/i })).toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: /model comparison/i })).toBeNull()
+    expect(screen.queryByRole('button', { name: /history/i })).toBeNull()
   })
 })

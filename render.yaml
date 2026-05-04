@@ -40,6 +40,12 @@ services:
       # so a runtime container cannot DDL the schema.
       - key: VEGA_DATABASE_URL
         sync: false
+      # Set in the Render dashboard. Auth0 tenant domain (e.g., tenant.us.auth0.com).
+      - key: VEGA_AUTH0_DOMAIN
+        sync: false
+      # Set in the Render dashboard. Auth0 API identifier for this backend.
+      - key: VEGA_AUTH0_AUDIENCE
+        sync: false
       - key: HOST
         value: 0.0.0.0
       # Render terminates TLS in front of the container and forwards via

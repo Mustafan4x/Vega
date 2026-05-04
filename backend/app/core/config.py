@@ -51,6 +51,8 @@ class Settings:
     max_body_bytes: int
     log_level: str
     environment: str
+    auth0_domain: str
+    auth0_audience: str
 
     @property
     def is_production(self) -> bool:
@@ -71,12 +73,17 @@ def load_settings() -> Settings:
     log_level = read_env("LOG_LEVEL", DEFAULT_LOG_LEVEL) or DEFAULT_LOG_LEVEL
     environment = read_env("ENVIRONMENT", DEFAULT_ENVIRONMENT) or DEFAULT_ENVIRONMENT
 
+    auth0_domain = (read_env("AUTH0_DOMAIN", "") or "").strip()
+    auth0_audience = (read_env("AUTH0_AUDIENCE", "") or "").strip()
+
     settings = Settings(
         cors_origins=origins,
         rate_limit_default=rate_limit,
         max_body_bytes=max_body,
         log_level=log_level,
         environment=environment,
+        auth0_domain=auth0_domain,
+        auth0_audience=auth0_audience,
     )
 
     if settings.is_production:
@@ -103,3 +110,12 @@ def _validate_production(settings: Settings) -> None:
             raise ConfigError(
                 f"VEGA_CORS_ORIGINS must use https in production. Got non https origin: {origin!r}."
             )
+
+    if not settings.auth0_domain:
+        raise ConfigError(
+            "VEGA_AUTH0_DOMAIN must be set in production. See docs/setup-guide.md (Auth0 setup)."
+        )
+    if not settings.auth0_audience:
+        raise ConfigError(
+            "VEGA_AUTH0_AUDIENCE must be set in production. See docs/setup-guide.md (Auth0 setup)."
+        )

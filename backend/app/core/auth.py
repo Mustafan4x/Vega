@@ -51,7 +51,7 @@ _jwks_cache = _JWKSCache()
 
 def _fetch_jwks(domain: str) -> list[dict[str, Any]]:
     url = f"https://{domain}/.well-known/jwks.json"
-    with urllib.request.urlopen(url, timeout=5) as resp:  # noqa: S310
+    with urllib.request.urlopen(url, timeout=5) as resp:  # noqa: S310  # nosec B310
         import json
 
         body = json.loads(resp.read().decode())

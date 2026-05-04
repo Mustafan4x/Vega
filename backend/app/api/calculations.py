@@ -29,6 +29,7 @@ from sqlalchemy.orm import Session, selectinload
 from starlette.requests import Request
 
 from app.api.heatmap import HeatmapRequest, HeatmapResponse
+from app.core.auth import require_user
 from app.core.rate_limit import limiter
 from app.db import CalculationInput, CalculationOutput, get_session
 from app.pricing.black_scholes_vec import black_scholes_call_vec, black_scholes_put_vec
@@ -169,8 +170,10 @@ def list_calculations(
     request: Request,
     limit: int = Query(LIST_LIMIT_DEFAULT, ge=1, le=LIST_LIMIT_MAX, description="Page size."),
     offset: int = Query(0, ge=0, le=10_000, description="Number of items to skip."),
+    user_id: str = Depends(require_user),
     session: Session = Depends(get_session),
 ) -> CalculationListResponse:
+    del user_id
     total = int(session.execute(select(func.count(CalculationInput.id))).scalar_one())
     rows = (
         session.execute(

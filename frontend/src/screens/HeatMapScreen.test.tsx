@@ -39,7 +39,7 @@ describe('HeatMapScreen Save button', () => {
   it('triggers loginWithRedirect with pendingSave when logged out', async () => {
     const loginWithRedirect = vi.fn().mockResolvedValue(undefined)
     setAuth0MockState(makeAuth0Mock({ isAuthenticated: false, loginWithRedirect }))
-    vi.spyOn(global, 'fetch').mockResolvedValue(
+    vi.spyOn(globalThis, 'fetch').mockResolvedValue(
       new Response(JSON.stringify(heatmapResponseBody), {
         status: 200,
         headers: { 'Content-Type': 'application/json' },
@@ -60,7 +60,7 @@ describe('HeatMapScreen Save button', () => {
     const getToken = vi.fn().mockResolvedValue('jwt-xyz')
     setAuth0MockState(makeAuth0Mock({ isAuthenticated: true, getAccessTokenSilently: getToken }))
     const fetchSpy = vi
-      .spyOn(global, 'fetch')
+      .spyOn(globalThis, 'fetch')
       .mockResolvedValueOnce(
         new Response(JSON.stringify(heatmapResponseBody), {
           status: 200,

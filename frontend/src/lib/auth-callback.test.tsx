@@ -57,7 +57,7 @@ describe('AuthCallback', () => {
       sigma_axis: [0.2],
       spot_axis: [100],
     }
-    const fetchSpy = vi.spyOn(global, 'fetch').mockResolvedValue(
+    const fetchSpy = vi.spyOn(globalThis, 'fetch').mockResolvedValue(
       new Response(JSON.stringify(calculationCreateBody), {
         status: 200,
         headers: { 'Content-Type': 'application/json' },

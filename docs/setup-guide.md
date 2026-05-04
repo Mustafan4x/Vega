@@ -190,3 +190,40 @@ The owner DSN at Neon (DDL privileges) never goes into Render. Migrations run fr
 | 429 on every request | Rate limit hit | The default is 60/minute per IP; throttle the client or set `VEGA_RATE_LIMIT_DEFAULT` higher. Per route caps on `/api/heatmap`, `/api/tickers`, `/api/backtest` are tighter (see `docs/api.md`). |
 | Migration fails on Neon | Owner DSN wrong | Use the connection string with the OWNER role from Neon's "Connection details", not the application role. |
 | `pnpm` not found in Cloudflare build | Node setup | Cloudflare Pages auto detects `pnpm-lock.yaml`. If not, set `PNPM_VERSION=10` in env vars. |
+
+## Auth0 setup (Phase 12)
+
+Vega uses Auth0 for sign-in. Provision a free tenant and register two artifacts: a Single Page Application (the frontend) and an API (the backend audience).
+
+1. Create an Auth0 tenant at <https://manage.auth0.com>. Free tier covers 7,500 monthly active users; Vega will not approach this.
+2. **Create the API**: Applications, then APIs, then Create API. Name `Vega API`, identifier `vega-api`, signing algorithm `RS256`. The identifier is the `audience` value the frontend and backend share.
+3. **Create the SPA**: Applications, then Applications, then Create Application. Type `Single Page Web Applications`. After creation, set:
+   - Allowed Callback URLs: `http://localhost:5173/callback, https://vega-2rd.pages.dev/callback`.
+   - Allowed Logout URLs: `http://localhost:5173, https://vega-2rd.pages.dev`.
+   - Allowed Web Origins: `http://localhost:5173, https://vega-2rd.pages.dev`.
+   - Refresh Token Rotation: enabled. Refresh Token Expiration: rotating.
+4. **Enable identity providers**: Authentication, then Social, then enable Google and GitHub. No magic link, no email plus password.
+
+### Frontend env vars (Cloudflare Pages, build-time)
+
+```
+VITE_AUTH0_DOMAIN=<tenant>.us.auth0.com
+VITE_AUTH0_CLIENT_ID=<spa client id>
+VITE_AUTH0_AUDIENCE=vega-api
+VITE_AUTH0_REDIRECT_URI=https://vega-2rd.pages.dev/callback
+```
+
+A production build without `VITE_AUTH0_DOMAIN` or `VITE_AUTH0_CLIENT_ID` aborts (fail-loud).
+
+### Backend env vars (Render service env)
+
+```
+VEGA_AUTH0_DOMAIN=<tenant>.us.auth0.com
+VEGA_AUTH0_AUDIENCE=vega-api
+```
+
+Production startup fails loud if either is missing when `VEGA_ENVIRONMENT=production`.
+
+### Local dev
+
+Copy `frontend/.env.example` to `frontend/.env.local` and fill in the SPA values. The backend reads its values from your shell env when you run `uv --project backend run uvicorn app.main:app --reload`.

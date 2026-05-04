@@ -97,3 +97,8 @@ backend/var/
 tmp/
 .tmp/
 *.local
+
+# wrangler files
+.wrangler
+.dev.vars*
+!.dev.vars.example

@@ -31,8 +31,10 @@ VALID_PAYLOAD = {
 }
 
 
-def test_create_calculation_returns_201_with_uuid(client: TestClient) -> None:
-    response = client.post("/api/calculations", json=VALID_PAYLOAD)
+def test_create_calculation_returns_201_with_uuid(
+    client: TestClient, auth_headers: dict[str, str]
+) -> None:
+    response = client.post("/api/calculations", json=VALID_PAYLOAD, headers=auth_headers)
 
     assert response.status_code == 201, response.text
     body = response.json()
@@ -41,8 +43,8 @@ def test_create_calculation_returns_201_with_uuid(client: TestClient) -> None:
     assert str(parsed) == body["calculation_id"]
 
 
-def test_create_calculation_returns_grid(client: TestClient) -> None:
-    response = client.post("/api/calculations", json=VALID_PAYLOAD)
+def test_create_calculation_returns_grid(client: TestClient, auth_headers: dict[str, str]) -> None:
+    response = client.post("/api/calculations", json=VALID_PAYLOAD, headers=auth_headers)
 
     body = response.json()
     assert len(body["call"]) == 5
@@ -52,8 +54,10 @@ def test_create_calculation_returns_grid(client: TestClient) -> None:
     assert len(body["spot_axis"]) == 5
 
 
-def test_create_calculation_persists_input_row(client: TestClient) -> None:
-    response = client.post("/api/calculations", json=VALID_PAYLOAD)
+def test_create_calculation_persists_input_row(
+    client: TestClient, auth_headers: dict[str, str]
+) -> None:
+    response = client.post("/api/calculations", json=VALID_PAYLOAD, headers=auth_headers)
     calc_id = response.json()["calculation_id"]
 
     factory = get_session_factory()
@@ -67,8 +71,10 @@ def test_create_calculation_persists_input_row(client: TestClient) -> None:
         assert record.created_at is not None
 
 
-def test_create_calculation_persists_n_output_rows(client: TestClient) -> None:
-    response = client.post("/api/calculations", json=VALID_PAYLOAD)
+def test_create_calculation_persists_n_output_rows(
+    client: TestClient, auth_headers: dict[str, str]
+) -> None:
+    response = client.post("/api/calculations", json=VALID_PAYLOAD, headers=auth_headers)
     calc_id = response.json()["calculation_id"]
     expected_count = VALID_PAYLOAD["rows"] * VALID_PAYLOAD["cols"]
 
@@ -89,12 +95,14 @@ def test_create_calculation_persists_n_output_rows(client: TestClient) -> None:
             assert row.put_value >= 0
 
 
-def test_get_calculation_returns_persisted_grid(client: TestClient) -> None:
-    create = client.post("/api/calculations", json=VALID_PAYLOAD)
+def test_get_calculation_returns_persisted_grid(
+    client: TestClient, auth_headers: dict[str, str]
+) -> None:
+    create = client.post("/api/calculations", json=VALID_PAYLOAD, headers=auth_headers)
     calc_id = create.json()["calculation_id"]
     written_call = create.json()["call"]
 
-    response = client.get(f"/api/calculations/{calc_id}")
+    response = client.get(f"/api/calculations/{calc_id}", headers=auth_headers)
 
     assert response.status_code == 200
     body = response.json()
@@ -104,47 +112,63 @@ def test_get_calculation_returns_persisted_grid(client: TestClient) -> None:
     assert body["call"] == written_call
 
 
-def test_get_calculation_returns_404_for_unknown_uuid(client: TestClient) -> None:
-    response = client.get(f"/api/calculations/{uuid.uuid4()}")
+def test_get_calculation_returns_404_for_unknown_uuid(
+    client: TestClient, auth_headers: dict[str, str]
+) -> None:
+    response = client.get(f"/api/calculations/{uuid.uuid4()}", headers=auth_headers)
 
     assert response.status_code == 404
 
 
-def test_get_calculation_returns_404_for_non_uuid(client: TestClient) -> None:
-    response = client.get("/api/calculations/not-a-uuid")
+def test_get_calculation_returns_404_for_non_uuid(
+    client: TestClient, auth_headers: dict[str, str]
+) -> None:
+    response = client.get("/api/calculations/not-a-uuid", headers=auth_headers)
 
     assert response.status_code == 404
 
 
-def test_get_calculation_resists_path_injection_payloads(client: TestClient) -> None:
+def test_get_calculation_resists_path_injection_payloads(
+    client: TestClient, auth_headers: dict[str, str]
+) -> None:
     # SQL injection patterns in the path parameter must be rejected at
     # the UUID gate, never reach the ORM. Per threat model T1.
     for payload in ("1' OR '1'='1", "abc; DROP TABLE calculation_inputs;--"):
-        response = client.get(f"/api/calculations/{payload}")
+        response = client.get(f"/api/calculations/{payload}", headers=auth_headers)
         assert response.status_code == 404
 
 
-def test_create_calculation_rejects_oversized_grid(client: TestClient) -> None:
+def test_create_calculation_rejects_oversized_grid(
+    client: TestClient, auth_headers: dict[str, str]
+) -> None:
     bad = {**VALID_PAYLOAD, "rows": 22, "cols": 22}
 
-    response = client.post("/api/calculations", json=bad)
+    response = client.post("/api/calculations", json=bad, headers=auth_headers)
 
     assert response.status_code == 422
 
 
-def test_create_calculation_rejects_extra_field(client: TestClient) -> None:
+def test_create_calculation_rejects_extra_field(
+    client: TestClient, auth_headers: dict[str, str]
+) -> None:
     # Phase 9 added `model` as a real field; use a genuinely unknown
     # one to exercise extra="forbid".
     bad = {**VALID_PAYLOAD, "shenanigans": True}
 
-    response = client.post("/api/calculations", json=bad)
+    response = client.post("/api/calculations", json=bad, headers=auth_headers)
 
     assert response.status_code == 422
 
 
-def test_create_calculation_two_writes_have_different_ids(client: TestClient) -> None:
-    a = client.post("/api/calculations", json=VALID_PAYLOAD).json()["calculation_id"]
-    b = client.post("/api/calculations", json=VALID_PAYLOAD).json()["calculation_id"]
+def test_create_calculation_two_writes_have_different_ids(
+    client: TestClient, auth_headers: dict[str, str]
+) -> None:
+    a = client.post("/api/calculations", json=VALID_PAYLOAD, headers=auth_headers).json()[
+        "calculation_id"
+    ]
+    b = client.post("/api/calculations", json=VALID_PAYLOAD, headers=auth_headers).json()[
+        "calculation_id"
+    ]
 
     assert a != b
 
@@ -157,28 +181,30 @@ def test_create_calculation_two_writes_have_different_ids(client: TestClient) ->
     ],
 )
 def test_get_calculation_rejects_path_traversal_attempt(
-    client: TestClient, calc_id_attempt: str
+    client: TestClient, auth_headers: dict[str, str], calc_id_attempt: str
 ) -> None:
-    response = client.get(f"/api/calculations/{calc_id_attempt}")
+    response = client.get(f"/api/calculations/{calc_id_attempt}", headers=auth_headers)
     assert response.status_code in (404, 422)
 
 
 # ---------- List endpoint ----------------------------------------------------
 
 
-def test_list_empty_returns_zero_total(client: TestClient) -> None:
-    response = client.get("/api/calculations")
+def test_list_empty_returns_zero_total(client: TestClient, auth_headers: dict[str, str]) -> None:
+    response = client.get("/api/calculations", headers=auth_headers)
     assert response.status_code == 200, response.text
     body = response.json()
     assert body == {"items": [], "total": 0, "limit": 20, "offset": 0}
 
 
-def test_list_returns_newest_first(client: TestClient) -> None:
+def test_list_returns_newest_first(client: TestClient, auth_headers: dict[str, str]) -> None:
     ids = [
-        client.post("/api/calculations", json=VALID_PAYLOAD).json()["calculation_id"]
+        client.post("/api/calculations", json=VALID_PAYLOAD, headers=auth_headers).json()[
+            "calculation_id"
+        ]
         for _ in range(3)
     ]
-    response = client.get("/api/calculations")
+    response = client.get("/api/calculations", headers=auth_headers)
 
     assert response.status_code == 200, response.text
     body = response.json()
@@ -189,13 +215,13 @@ def test_list_returns_newest_first(client: TestClient) -> None:
     assert returned_ids == list(reversed(ids))
 
 
-def test_list_pagination(client: TestClient) -> None:
+def test_list_pagination(client: TestClient, auth_headers: dict[str, str]) -> None:
     for _ in range(5):
-        client.post("/api/calculations", json=VALID_PAYLOAD)
+        client.post("/api/calculations", json=VALID_PAYLOAD, headers=auth_headers)
 
-    page1 = client.get("/api/calculations?limit=2&offset=0").json()
-    page2 = client.get("/api/calculations?limit=2&offset=2").json()
-    page3 = client.get("/api/calculations?limit=2&offset=4").json()
+    page1 = client.get("/api/calculations?limit=2&offset=0", headers=auth_headers).json()
+    page2 = client.get("/api/calculations?limit=2&offset=2", headers=auth_headers).json()
+    page3 = client.get("/api/calculations?limit=2&offset=4", headers=auth_headers).json()
 
     assert page1["total"] == 5
     assert page1["limit"] == 2
@@ -209,9 +235,9 @@ def test_list_pagination(client: TestClient) -> None:
     assert page1_ids.isdisjoint(page2_ids)
 
 
-def test_list_summary_shape(client: TestClient) -> None:
-    client.post("/api/calculations", json=VALID_PAYLOAD)
-    body = client.get("/api/calculations").json()
+def test_list_summary_shape(client: TestClient, auth_headers: dict[str, str]) -> None:
+    client.post("/api/calculations", json=VALID_PAYLOAD, headers=auth_headers)
+    body = client.get("/api/calculations", headers=auth_headers).json()
 
     item = body["items"][0]
     assert set(item.keys()) == {
@@ -234,13 +260,20 @@ def test_list_summary_shape(client: TestClient) -> None:
 
 
 @pytest.mark.parametrize("bad_query", ["limit=0", "limit=51", "limit=-1", "offset=-1"])
-def test_list_rejects_invalid_pagination(client: TestClient, bad_query: str) -> None:
-    response = client.get(f"/api/calculations?{bad_query}")
+def test_list_rejects_invalid_pagination(
+    client: TestClient, auth_headers: dict[str, str], bad_query: str
+) -> None:
+    response = client.get(f"/api/calculations?{bad_query}", headers=auth_headers)
     assert response.status_code == 422
 
 
-def test_post_calculations_per_route_limit_caps_at_12(client: TestClient) -> None:
-    statuses = [client.post("/api/calculations", json=VALID_PAYLOAD).status_code for _ in range(14)]
+def test_post_calculations_per_route_limit_caps_at_12(
+    client: TestClient, auth_headers: dict[str, str]
+) -> None:
+    statuses = [
+        client.post("/api/calculations", json=VALID_PAYLOAD, headers=auth_headers).status_code
+        for _ in range(14)
+    ]
     assert statuses[:12] == [201] * 12, statuses
     assert statuses[12] == 429
     assert statuses[13] == 429

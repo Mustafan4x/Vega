@@ -21,7 +21,6 @@ export function AuthCallback(): JSX.Element {
   useEffect(() => {
     if (ran.current) return
     ran.current = true
-    let cancelled = false
 
     const run = async () => {
       try {
@@ -32,19 +31,14 @@ export function AuthCallback(): JSX.Element {
           const token = await getAccessTokenSilently()
           await saveCalculation(pending.request, { bearerToken: token })
         }
-        if (cancelled) return
         window.history.replaceState({}, '', '/')
         setStatus('done')
       } catch {
-        if (cancelled) return
         setStatus('error')
       }
     }
 
     void run()
-    return () => {
-      cancelled = true
-    }
   }, [handleRedirectCallback, getAccessTokenSilently])
 
   if (status === 'error') {

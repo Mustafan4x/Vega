@@ -116,7 +116,7 @@ export function HeatMapScreen(): JSX.Element {
     }
     if (!isAuthenticated) {
       await loginWithRedirect({
-        appState: { pendingSave: { request, response } },
+        appState: { pendingSave: { request } },
       })
       return
     }

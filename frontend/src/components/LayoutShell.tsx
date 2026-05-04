@@ -6,9 +6,11 @@
  */
 
 import type { ReactNode } from 'react'
+import { useAuth0 } from '@auth0/auth0-react'
 
 import { Icon } from './Icon'
 import { SCREENS, type ScreenId } from '../lib/screens'
+import { SignInButton, UserButton } from './AuthButtons'
 
 interface LayoutShellProps {
   active: ScreenId
@@ -48,9 +50,9 @@ export function LayoutShell({ active, onNav, children }: LayoutShellProps) {
             </button>
           ))}
         </nav>
-        <div data-element="footer" aria-label="Backend status: local">
-          <span data-element="statusDot" aria-hidden="true" />
-          <span aria-hidden="true">Local</span>
+        <div data-element="footer" aria-label="Account">
+          <UserButton />
+          <AuthFooter />
         </div>
       </aside>
 
@@ -79,4 +81,10 @@ export function LayoutShell({ active, onNav, children }: LayoutShellProps) {
       </div>
     </div>
   )
+}
+
+function AuthFooter() {
+  const { isAuthenticated } = useAuth0()
+  if (isAuthenticated) return null
+  return <SignInButton />
 }

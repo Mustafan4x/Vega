@@ -1,4 +1,16 @@
-import { describe, it, expect, vi } from 'vitest'
+import { describe, it, expect, beforeEach, vi } from 'vitest'
+import {
+  getAuth0MockState,
+  makeAuth0Mock,
+  resetAuth0MockState,
+  setAuth0MockState,
+} from '../test/auth0-mock'
+
+vi.mock('@auth0/auth0-react', () => ({
+  useAuth0: () => getAuth0MockState(),
+  Auth0Provider: ({ children }: { children: unknown }) => children,
+}))
+
 import { render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 
@@ -43,5 +55,37 @@ describe('LayoutShell', () => {
     expect(screen.getByTestId('content')).toBeInTheDocument()
     const crumb = document.querySelector('[data-component="TopBar"] [data-element="crumb"]')
     expect(crumb?.textContent).toMatch(/backtest/i)
+  })
+})
+
+describe('LayoutShell auth surface', () => {
+  beforeEach(() => {
+    resetAuth0MockState()
+  })
+
+  it('shows the sign-in button when logged out', () => {
+    setAuth0MockState(makeAuth0Mock({ isAuthenticated: false }))
+    render(
+      <LayoutShell active="pricing" onNav={() => {}}>
+        <div />
+      </LayoutShell>,
+    )
+    expect(screen.getByRole('button', { name: /sign in/i })).toBeInTheDocument()
+  })
+
+  it('shows the user button when logged in', () => {
+    setAuth0MockState(
+      makeAuth0Mock({
+        isAuthenticated: true,
+        user: { sub: 'google-oauth2|123', email: 'me@example.com' },
+      }),
+    )
+    render(
+      <LayoutShell active="pricing" onNav={() => {}}>
+        <div />
+      </LayoutShell>,
+    )
+    expect(screen.getByText('me@example.com')).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: /sign out/i })).toBeInTheDocument()
   })
 })

@@ -268,6 +268,32 @@ User's global instructions (`/home/mustafa/.claude/CLAUDE.md`) apply to every fi
 * No code is merged with failing tests, no exceptions.
 * Use `superpowers:test-driven-development` for any new feature; use `superpowers:verification-before-completion` before declaring work done.
 
+## When the user says "push"
+
+Standing protocol for every session in this repo. When the user says "push" or any equivalent ("ship it", "merge it", "land it"), do not stop mid flow to ask permission for the admin merge step.
+
+1. **Commit on a feature branch and push to origin.** Never `git push` directly to `main`; the local hook blocks it and `main` has branch protection. Branch name should describe the change (`readme-live-demo-link`, `ci-fix-semgrep-flag`, etc.).
+2. **Open the PR via `gh pr create`.** Title and body follow the project commit conventions: no `Co-Authored-By` trailer, no "Generated with Claude" or similar attribution line, no em or en dashes, no hyphens used as prose punctuation.
+3. **Watch the required CI checks** with `gh pr checks <N> --watch --interval 10`. Wait for every required check (Backend, Frontend, Secrets scan, Python SAST, SAST semgrep) to report `pass`. If anything fails, stop and surface the failure to the user; do not admin merge over a failing required check.
+4. **Once all required checks are green, admin merge** with `gh pr merge <N> --squash --delete-branch --admin`. Do not stop to ask the user to bypass the "1 review required" rule. Vega is a solo repo where the user is also the PR author, so that branch protection rule is structurally unsatisfiable, and `--admin` is the standing authorization to bypass *that specific rule only*. Squash merge keeps history linear.
+5. **Sync local `main`** with `git checkout main && git pull --ff-only`. Confirm the new commit is on `main`.
+6. **Report briefly to the user**: the merged PR number, the squash commit SHA on `main`, and a one or two sentence summary of what shipped.
+
+### What `--admin` is and is not authorized for
+
+The standing authorization is **only** for the self approval bypass on PRs that are fully green. It is **not** authorization to:
+
+* Skip pre commit hooks or required CI checks (`--no-verify`, merging over failures).
+* Force push to feature branches without `--force-with-lease`, and never to `main`.
+* Push directly to `main`, bypassing the PR flow entirely.
+* Merge a PR with unresolved review comments left by the user.
+
+If a required check fails because of a tool bug (the `semgrep ci --error` flag bug from the PR #10 era is the canonical example), file a small fix PR, point at the failing log, and **ask once** before admin merging that bug fix PR specifically. Once the fix lands, future PRs run cleanly without further override.
+
+### Multi PR situations
+
+If multiple PRs are open and the user says "push", default to merging the PR(s) opened in the current session, in dependency order (a CI fix PR first, then any PRs that depended on it). Do not silently admin merge stale or unrelated open PRs (Dependabot, the user's own in flight branches). When in doubt, list the open PRs and ask which to land.
+
 ## Plugin and skill quick reference
 
 This is the canonical list of which skills are used where. Each agent file restates the relevant subset.

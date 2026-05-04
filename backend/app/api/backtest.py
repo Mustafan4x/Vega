@@ -21,6 +21,7 @@ from datetime import date
 
 from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel, ConfigDict, Field, model_validator
+from starlette.requests import Request
 
 from app.backtest.engine import (
     BacktestRequest as EngineRequest,
@@ -30,6 +31,7 @@ from app.backtest.engine import (
     Strategy,
     run_backtest,
 )
+from app.core.rate_limit import limiter
 from app.services.historical import (
     HISTORICAL_TICKER_RE,
     HistoricalLookup,
@@ -42,6 +44,12 @@ from app.services.historical import (
 router = APIRouter(prefix="/api", tags=["backtest"])
 
 MAX_DATE_RANGE_DAYS = 365 * 5
+
+# Per route cap. The tightest in the service: a backtest can fetch up to
+# five years of daily prices via yfinance (T6) and runs the engine across
+# 1300 marks per leg. Performance Engineer Phase 10 recommended a tight
+# per route limit on top of the global default; this is that limit.
+BACKTEST_RATE_LIMIT = "10/minute"
 
 
 class BacktestPayload(BaseModel):
@@ -110,7 +118,9 @@ def _to_leg_out(leg: Leg) -> LegOut:
 
 
 @router.post("/backtest", response_model=BacktestResponse)
+@limiter.limit(BACKTEST_RATE_LIMIT)
 def backtest(
+    request: Request,
     payload: BacktestPayload,
     lookup: HistoricalLookup = Depends(get_historical_lookup),
 ) -> BacktestResponse:

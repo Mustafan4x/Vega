@@ -10,10 +10,8 @@ from __future__ import annotations
 from fastapi import FastAPI
 from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
-from slowapi import Limiter
 from slowapi.errors import RateLimitExceeded
 from slowapi.middleware import SlowAPIMiddleware
-from slowapi.util import get_remote_address
 from starlette.requests import Request
 from starlette.responses import JSONResponse
 
@@ -24,6 +22,7 @@ from app.api.price import router as price_router
 from app.api.tickers import router as tickers_router
 from app.core.config import load_settings
 from app.core.logging import configure_logging
+from app.core.rate_limit import limiter, reset_limiter
 from app.middleware import (
     AccessLogMiddleware,
     BodySizeLimitMiddleware,
@@ -69,10 +68,7 @@ def build_app() -> FastAPI:
         openapi_url=openapi_url,
     )
 
-    limiter = Limiter(
-        key_func=get_remote_address,
-        default_limits=[settings.rate_limit_default],
-    )
+    reset_limiter()
     app.state.limiter = limiter
     app.add_exception_handler(RateLimitExceeded, _rate_limit_handler)
     app.add_exception_handler(RequestValidationError, _validation_handler)

@@ -2,11 +2,11 @@
 
 Single source of truth for which phase is next. Read this file when the user says "work on the next phase" or any equivalent. Update this file when a phase changes state. The Project Manager session owns it.
 
-**Last updated**: 2026-05-03 (Phase 10 closed).
+**Last updated**: 2026-05-03 (Phase 11 opened).
 
 ## Next phase
 
-**Phase 11: Production deployment.** Deploy frontend to Cloudflare Pages, backend to Render, Postgres on Neon. Final security hardening (HTTPS, HSTS, CSP, secret rotation, dependency scan), per-route slowapi limits on `/api/tickers/{symbol}`, `/api/heatmap`, and `/api/backtest` (deferred from Phases 8 and 10), polished `docs/setup-guide.md`. Reserve a fresh window because the deploy step requires the user to click through three dashboards.
+**Phase 11: Production deployment** is **in progress** in this session. Deploy frontend to Cloudflare Pages, backend to Render, Postgres on Neon. Final security hardening (HTTPS, HSTS, CSP, secret rotation, dependency scan), per-route slowapi limits on `/api/tickers/{symbol}`, `/api/heatmap`, and `/api/backtest` (deferred from Phases 8 and 10), polished `docs/setup-guide.md`. The deploy step requires the user to click through three dashboards.
 
 If you are reading this file because the user just said "work on the next phase", do the following:
 
@@ -33,7 +33,7 @@ Status values: `not started`, `in progress`, `completed`, `bundled with phase N`
 | 8 | Real market data | completed | 2026-05-03 | ~55% alone | shipped solo; 25 new backend tests + 19 new frontend tests; live AAPL smoke test green; Security Engineer conditional pass (no blockers); three T6 residual risks documented |
 | 9 | Multiple pricing models | completed | 2026-05-03 | ~70% (well under budget) | binomial CRR + Monte Carlo (antithetic) added; `model` param on price and heatmap; ModelSelector + ComparePanel; 67 new backend tests + 8 new frontend tests; live three-model convergence verified; Risk Reviewer clean sign-off |
 | 10 | Backtesting | completed | 2026-05-03 | ~50% (well under budget) | shipped solo; pure backtest engine + yfinance historical service + POST /api/backtest + frontend BacktestForm/BacktestChart/BacktestScreen; 41 new backend tests + 20 new frontend tests; live AAPL smoke test green; Risk Reviewer + Performance Engineer both signed off (per-route rate limit deferred to Phase 11) |
-| 11 | Production deployment | not started | | ~90% | reserve a fresh window |
+| 11 | Production deployment | in progress | | ~90% | code work first (rate limits, CORS, Render IaC, CF Pages headers, docs); then user dashboard clicks |
 
 ## Resume notes
 

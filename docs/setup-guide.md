@@ -1,96 +1,192 @@
 # Setup guide
 
-This guide is for the human (Mustafa) to walk through. Anything that requires a browser session, a one time signup, a payment method on file, or a click on someone else's UI lives here. The Documentation Engineer keeps this file current as the project ships.
+Step by step walkthrough for deploying Trader to production. Target time on a fresh laptop: under 30 minutes. Skip the local dev section if you already have a working dev environment.
 
-<!-- TODO: this file is a starter scaffold. The Documentation Engineer agent will expand each section with screenshots, exact CLI invocations, and verified copy as the corresponding phases complete. -->
+## What you will build
+
+* **Frontend** on Cloudflare Pages, served from `https://<project>.pages.dev`.
+* **Backend** on Render, served from `https://<service>.onrender.com`, behind a Docker container.
+* **Database** on Neon (managed Postgres), accessed by the backend via `TRADER_DATABASE_URL`.
+
+All three services have free tiers that cover this project comfortably.
 
 ## Accounts you will need
 
-All of these have free tiers that are enough for this project.
+1. **GitHub**: <https://github.com/Mustafan4x/Trader> (already created).
+2. **Cloudflare**: <https://dash.cloudflare.com/sign-up>.
+3. **Render**: <https://render.com/>.
+4. **Neon**: <https://neon.tech/>.
+5. **Optional**: a domain registrar if you want a custom domain.
 
-1. **GitHub**: https://github.com/Mustafan4x/Trader (already created).
-2. **Cloudflare**: for Cloudflare Pages (frontend hosting). Sign up at https://dash.cloudflare.com/sign-up.
-3. **Render**: for FastAPI backend hosting. Sign up at https://render.com/.
-4. **Neon**: for managed Postgres. Sign up at https://neon.tech/.
-5. **Optional, only if you want a custom domain**: a domain registrar (Cloudflare Registrar is fine, no markup over wholesale).
+## Hosting choice rationale
 
-## Hosting choice: Cloudflare Pages vs Vercel
-
-The project defaults to **Cloudflare Pages** for the frontend. Reasons:
-
-* The free tier is generous.
-* Cloudflare's WAF and DDoS protection are best in class.
-* It pairs cleanly with Cloudflare Workers if edge logic is added later.
-
-Vercel remains a fine alternative. Recent reports of Vercel related incidents have not been independently verified by this project; for a public pet project that does not store user secrets, the practical risk of using either platform is low. The decision was made on platform fit, not on incident response. If Vercel is preferred, the deploy steps are nearly identical; pick one and stick with it.
-
-## Backend hosting: Render vs Fly.io
-
-Render is the default in this guide because the dashboard is simpler. Fly.io is a fine alternative; pick whichever you like. **Do not** try to host the FastAPI backend on Vercel or Cloudflare Pages: those platforms are designed for static plus edge functions and do not host long lived Python servers well.
+* **Frontend on Cloudflare Pages**, not Vercel: free tier is generous, the WAF and DDoS protection are best in class, and Cloudflare Workers pair cleanly if edge logic is added later. Vercel works too; pick one and stick with it.
+* **Backend on Render**, not Vercel or Cloudflare Pages: those platforms are designed for static plus edge functions. They do not host long lived Python servers well. Fly.io is a fine alternative to Render.
+* **Database on Neon**, not RDS or Heroku Postgres: Neon's free tier is the best in class for a low traffic project, with branching for staging/prod.
 
 ## Local development setup
 
-These steps run on Mustafa's machine. They do not require any cloud accounts. The canonical local path is `/home/mustafa/src/trader/` (lowercase, regardless of the GitHub repo's display name).
+These steps run on your machine. They do not require any cloud accounts. The canonical local path is `/home/mustafa/src/trader/`.
 
-1. Install `uv` (Python toolchain): `curl -LsSf https://astral.sh/uv/install.sh | sh`
-2. Install Node.js (LTS) and `pnpm`: see https://pnpm.io/installation.
-3. If the local working directory does not exist yet (fresh machine), clone with: `git clone https://github.com/Mustafan4x/Trader.git /home/mustafa/src/trader`. On Mustafa's primary machine the directory is already wired up by the DevOps Engineer agent in Phase 0; no clone needed there.
-4. Install Python deps: `cd /home/mustafa/src/trader/backend && uv sync`
-5. Install frontend deps: `cd /home/mustafa/src/trader/frontend && pnpm install`
-6. Start the backend: `cd /home/mustafa/src/trader/backend && uv run uvicorn app.main:app --reload`
-7. Start the frontend: `cd /home/mustafa/src/trader/frontend && pnpm dev`
-8. Open `http://localhost:5173` in a browser.
+```bash
+# Tooling
+curl -LsSf https://astral.sh/uv/install.sh | sh
+# Install Node.js LTS plus pnpm: https://pnpm.io/installation
 
-The DevOps Engineer agent will fill in the exact directory layout, env var template (`.env.example`), and `docker-compose up` flow once Phase 0 is complete.
+# Backend
+cd /home/mustafa/src/trader/backend
+uv sync
+uv run pytest                     # 295+ tests, all green
+uv run trader-serve               # http://localhost:8000
+
+# Frontend (in a second terminal)
+cd /home/mustafa/src/trader/frontend
+pnpm install
+pnpm test --run                   # 114+ tests, all green
+pnpm dev                          # http://localhost:5173
+```
+
+Open `http://localhost:5173` in a browser; the Pricing screen should load and a Calculate against `S=100, K=100, T=1, r=0.05, sigma=0.20` should return call ≈ 10.45 and put ≈ 5.57.
+
+### Local Postgres parity (optional)
+
+```bash
+cd /home/mustafa/src/trader
+docker compose up -d              # binds Postgres to 127.0.0.1:5432 only
+cd backend
+TRADER_DATABASE_URL=postgresql+psycopg://trader:trader@127.0.0.1:5432/trader \
+  uv run alembic upgrade head
+```
+
+The dev SQLite store at `backend/var/trader.db` is the default if `TRADER_DATABASE_URL` is unset.
 
 ## First time deployment
 
-These steps are sequenced so each one fails loudly if the prior one was skipped.
+The order matters. Each step verifies the previous one. **Do not skip ahead**: a missing CORS origin or a wrong DSN at the wrong moment is the most common pet project deployment failure.
 
-### Database (Neon)
+### Step 1. Database (Neon)
 
-1. Sign in to Neon, create a project, name it `trader`.
-2. Copy the connection string from the dashboard.
-3. Store it locally as `DATABASE_URL` in a `.env` file (never commit this file).
-4. Run the Alembic migration locally to verify connectivity: `uv run alembic upgrade head`.
+1. Sign in to <https://console.neon.tech/>.
+2. **Create a project**: name it `trader`, region `US East (Ohio)` (or whichever is closest to your Render region).
+3. **Copy the connection string** from the dashboard's "Connection details" pane. It looks like:
+   `postgresql://<user>:<pwd>@<host>.us-east-2.aws.neon.tech/<db>?sslmode=require`
+4. **Create the application role** (least privilege; do not use the owner role at runtime). In the Neon SQL editor:
+   ```sql
+   CREATE ROLE trader_app WITH LOGIN PASSWORD '<paste a strong password>';
+   GRANT CONNECT ON DATABASE neondb TO trader_app;
+   GRANT USAGE ON SCHEMA public TO trader_app;
+   GRANT SELECT, INSERT ON calculation_inputs, calculation_outputs TO trader_app;
+   GRANT USAGE, SELECT ON ALL SEQUENCES IN SCHEMA public TO trader_app;
+   ```
+   Construct the application DSN by replacing the user and password in the connection string from step 3 with `trader_app:<password>`.
+5. **Run the schema migration locally** using the OWNER role's DSN (the one from step 3, not the application role):
+   ```bash
+   cd backend
+   TRADER_DATABASE_URL='<owner DSN from step 3>' uv run alembic upgrade head
+   ```
+   You should see `INFO  [alembic.runtime.migration] Running upgrade -> 9c8f64a81798`.
+6. **Verify** that `\dt` from the Neon SQL console lists `calculation_inputs` and `calculation_outputs`. The application DSN now has only `SELECT, INSERT` on those two tables.
 
-### Backend (Render)
+The owner DSN never leaves your local shell history. The `trader_app` DSN goes to Render in the next step.
 
-1. Sign in to Render, create a new Web Service, point it at the GitHub repo.
-2. Set the build command per the DevOps Engineer's `render.yaml` (filled in during Phase 11).
-3. Set environment variables in the Render dashboard: `DATABASE_URL`, `ENVIRONMENT=production`, plus any others the Security Engineer specifies.
-4. Confirm the public URL responds at `/health`.
+### Step 2. Backend (Render)
 
-### Frontend (Cloudflare Pages)
+1. Sign in to <https://dashboard.render.com/>.
+2. **Connect GitHub**: top right, "New" -> "Blueprint", connect the `Mustafan4x/Trader` repo. Render reads `/render.yaml` from the repo root.
+3. Render will offer to create a service named `trader-backend` (Docker, free plan, Oregon). Accept.
+4. **Set the env vars** Render flagged as `sync: false` (these are not in `render.yaml`):
+   * `TRADER_CORS_ORIGINS`: paste the eventual Cloudflare Pages URL. You do not have it yet, so leave a placeholder like `https://placeholder.pages.dev`. We come back here at the end.
+   * `TRADER_DATABASE_URL`: paste the **trader_app** DSN from Step 1.4 (not the owner DSN).
+5. **Deploy**. Render builds the Docker image (4-6 minutes for a cold build, 1-2 minutes after the first), then starts the service. Watch the build log.
+6. **Verify the deploy**:
+   ```bash
+   curl https://<service>.onrender.com/health
+   # -> {"status":"ok"}
+   ```
+   If `/health` is 200, the service is live. If it 502s, Render is waking from cold start (free tier sleeps after 15 min of idle); retry once.
+7. **Note the Render URL** (e.g., `https://trader-backend-abc.onrender.com`). You will paste it into Cloudflare Pages in the next step.
 
-1. Sign in to Cloudflare, go to Pages, connect the GitHub repo.
-2. Build command: `pnpm install && pnpm build`. Output directory: `frontend/dist`.
-3. Set the env var `VITE_API_BASE_URL` to the Render backend URL.
-4. Confirm the deployed URL loads and the form submits successfully against the production backend.
+### Step 3. Frontend (Cloudflare Pages)
 
-### Custom domain (optional)
+1. Sign in to <https://dash.cloudflare.com/>.
+2. **Pages** -> **Create application** -> **Connect to Git**. Authorize Cloudflare to read the `Mustafan4x/Trader` repo.
+3. Build settings:
+   * Framework preset: `None` (we want explicit control).
+   * Build command: `pnpm install --frozen-lockfile && pnpm build`
+   * Build output directory: `dist`
+   * Root directory (advanced): `frontend`
+4. **Environment variables** (Production):
+   * `VITE_API_BASE_URL` = the Render URL from Step 2.7 (e.g., `https://trader-backend-abc.onrender.com`).
+   * `NODE_VERSION` = `22`
+   * `PNPM_VERSION` = `10`
+5. **Save and Deploy**. Cloudflare runs the build (~2 minutes); the result lands at `https://<project>.pages.dev`.
+6. **Verify the deploy**:
+   * Open the Pages URL in a browser. The Pricing screen loads.
+   * Open dev tools, Network tab. Submit the form. The request to `/api/price` should be 200.
+   * If you see a CORS error, the `TRADER_CORS_ORIGINS` value in Render is still the placeholder; go to Step 4.
+
+### Step 4. Tie the loop closed
+
+1. **Copy the Cloudflare Pages URL** (e.g., `https://trader-abc.pages.dev`).
+2. **In Render** -> your service -> Environment, edit `TRADER_CORS_ORIGINS` to the exact Pages URL. Save and redeploy.
+3. **Wait for Render to finish redeploying** (~1 minute).
+4. **Reload the Pages URL** and submit the Pricing form. The 200 should be clean.
+5. **Smoke test** every screen: Pricing, Heat Map, Compare, Backtest, History. Each should round trip a valid request.
+
+## Custom domain (optional)
 
 1. Buy a domain at any registrar (Cloudflare Registrar is sold at wholesale).
-2. In Cloudflare Pages, add the custom domain. Cloudflare will configure DNS automatically if the domain is on Cloudflare.
-3. Update `VITE_API_BASE_URL` if you also want a custom subdomain for the API.
+2. **Cloudflare Pages** -> your project -> Custom domains -> Add custom domain. Cloudflare auto provisions DNS if the domain is on Cloudflare.
+3. **Add the apex domain to Render** (optional, for a custom backend URL): Render -> service -> Settings -> Custom Domains. Verify ownership via TXT record.
+4. **Update `TRADER_CORS_ORIGINS`** in Render to include the custom frontend domain.
+5. **Update `VITE_API_BASE_URL`** in Cloudflare Pages to the custom backend domain (if you set one).
+6. **Update `_headers`** in `frontend/public/_headers` to swap `https://*.onrender.com` for the custom backend domain in the `connect-src` directive. Commit and let Cloudflare Pages redeploy.
 
 ## Things you will be asked to click during setup
 
-This list will grow as the agents do their work. Whenever an agent needs the human to log in somewhere, click "I agree", or provide a billing email, that step ends up here.
+* **GitHub**: accept the OAuth permission prompt for Cloudflare Pages (read the repo).
+* **GitHub**: accept the OAuth permission prompt for Render (read the repo).
+* **Neon**: nothing beyond signup and copying the connection string.
+* **Cloudflare**: nothing beyond signup and connecting the GitHub repo.
+* **Render**: nothing beyond signup and connecting the GitHub repo, plus pasting the two `sync: false` env vars.
 
-* GitHub: accept any required org or branch protection prompts.
-* Cloudflare Pages: confirm the OAuth permission grant to read the repo.
-* Render: confirm the OAuth permission grant to read the repo.
-* Neon: nothing beyond signup and copying the connection string.
+## Branch protection (recommended after first deploy)
+
+Apply on GitHub at <https://github.com/Mustafan4x/Trader/settings/branches>:
+
+* Require a pull request before merging to `main`.
+* Require at least one approving review.
+* Require status checks: the four CI jobs in `.github/workflows/ci.yml` (`backend`, `frontend`, `secrets-scan`, `bandit`, `semgrep`).
+* Require branches to be up to date before merging.
+* Restrict who can push to `main`.
+
+Also enable Dependabot (Settings -> Code security -> Dependabot alerts) and CodeQL (Settings -> Code security -> Code scanning) for both Python and JavaScript/TypeScript.
 
 ## Secrets reference
 
-Every secret used by the project is listed here. Never paste a real value into this file or any committed file.
+Every secret used by the project is listed here. Never paste a real value into this file or any committed file. The Security Engineer agent owns this table and updates it whenever a new secret is introduced.
 
 | Name | Where it lives | What it is |
 |---|---|---|
-| `DATABASE_URL` | Render env, local `.env` | Postgres connection string from Neon. |
-| `VITE_API_BASE_URL` | Cloudflare Pages env, local `.env.local` | Public URL of the Render backend. |
-| `SENTRY_DSN` | Render env, local `.env` (optional) | Filled in by the Observability Engineer if Sentry is adopted. |
+| `TRADER_DATABASE_URL` | Render env vars (production), local `.env` (dev only) | Postgres connection string for the **application** role at Neon. Limited to `SELECT, INSERT` on `calculation_inputs` and `calculation_outputs`. |
+| `TRADER_CORS_ORIGINS` | Render env vars (production), local `.env` (dev only) | Comma separated list of allowed frontend origins. Production fail loud rejects empty values, wildcards, and HTTP origins. |
+| `VITE_API_BASE_URL` | Cloudflare Pages env vars (production), local `.env.local` (dev only) | Public URL of the Render backend. Baked into the frontend bundle at build time. Production fail loud rejects empty and localhost values. |
 
-The Security Engineer agent owns this table and updates it whenever a new secret is introduced. The Documentation Engineer agent verifies the table matches the actual code.
+The owner DSN at Neon (DDL privileges) never goes into Render. Migrations run from a developer's shell during a maintenance window.
+
+## Rollback
+
+* **Frontend**: Cloudflare Pages -> Deployments -> select a previous build -> Rollback. Effective in seconds.
+* **Backend**: Render -> Manual Deploy -> select a previous commit. Effective in 1-2 minutes.
+* **Database**: Neon supports point in time restore on paid plans. On the free tier, the schema is small enough to hand re run.
+
+## Troubleshooting
+
+| Symptom | Cause | Fix |
+|---|---|---|
+| `Failed to fetch` in browser console | CORS misconfigured | Verify `TRADER_CORS_ORIGINS` in Render exactly matches the Pages URL (including https://). |
+| `VITE_API_BASE_URL is not set` in console | Cloudflare Pages env var missing | Set `VITE_API_BASE_URL` in Pages and trigger a redeploy. |
+| Backend returns 502 | Render free tier cold start | Wait 30 seconds and retry; or upgrade to a paid plan. |
+| 429 on every request | Rate limit hit | The default is 60/minute per IP; throttle the client or set `TRADER_RATE_LIMIT_DEFAULT` higher. Per route caps on `/api/heatmap`, `/api/tickers`, `/api/backtest` are tighter (see `docs/api.md`). |
+| Migration fails on Neon | Owner DSN wrong | Use the connection string with the OWNER role from Neon's "Connection details", not the application role. |
+| `pnpm` not found in Cloudflare build | Node setup | Cloudflare Pages auto detects `pnpm-lock.yaml`. If not, set `PNPM_VERSION=10` in env vars. |

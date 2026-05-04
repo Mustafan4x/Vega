@@ -2,7 +2,7 @@
 
 This is the per phase implementation plan, derived from `SPEC.md`. It is owned by the Project Manager and updated at every phase boundary. For "which phase is next" status, read `STATUS.md` (the single source of truth). This file is the longer plan: who does what, what ships, and what gates a phase before it closes.
 
-**Currently in flight**: Phase 11 (Production deployment). Phases 0 through 10 are complete.
+**Currently in flight**: Phase 11 (Production deployment). Code work landed on `main`; user is walking through Cloudflare Pages + Render + Neon dashboards. Phases 0 through 10 are complete.
 
 ## How this plan is used
 
@@ -370,25 +370,48 @@ QA, Security, Code Review, Risk Reviewer.
 
 ---
 
-## Phase 11: Production deployment
+## Phase 11: Production deployment [IN FLIGHT]
 
 **Owners**: DevOps Engineer (lead), Security Engineer (final hardening), Documentation Engineer (setup guide).
 
 **Window cost**: ~90% of one window. Reserve a fresh window because deployment requires the user to log in and click through three dashboards.
 
-### Deliverables
+### Code deliverables (landed)
 
-* Frontend on Cloudflare Pages.
-* Backend on Render.
-* Postgres on Neon.
-* Custom subdomain (if the user wants one).
-* Final security checklist: HTTPS everywhere, HSTS preload eligibility, CSP and frame ancestors and CORS production correct, secret rotation, no error path leaking stack traces.
-* `docs/setup-guide.md` polished end to end: a fresh user can deploy from a fresh clone in under 30 minutes.
-* `docs/api.md` published from the FastAPI OpenAPI schema.
+* [x] Per route slowapi limits, deferred from Phases 4 / 8 / 10:
+  `/api/heatmap` 12/minute, `/api/tickers/{symbol}` 30/minute, `/api/backtest` 10/minute.
+  New module `backend/app/core/rate_limit.py` holds the singleton `Limiter` so the per route decorators reference one instance; `application_limits` reads the env per request so existing rate limit tests continue to honor `TRADER_RATE_LIMIT_DEFAULT`.
+* [x] 4 new backend tests for the per route caps (heatmap exhausts at 12, tickers at 30, backtest at 10, health stays 200). 295 backend tests pass (was 290).
+* [x] Production fail loud on missing or unsafe `TRADER_CORS_ORIGINS`: empty, wildcard, or HTTP origins now raise `ConfigError` at boot in `backend/app/core/config.py`. 5 new env tests cover the matrix. Existing production fixture updated to provide a valid HTTPS origin.
+* [x] Frontend production fail loud on missing or localhost `VITE_API_BASE_URL`: `readApiBaseUrl` in `frontend/src/lib/api.ts` throws on the first request when running a production bundle without a real backend URL. 3 new tests cover the matrix. 114 frontend tests pass (was 111).
+* [x] `backend/Dockerfile`: multi stage build with uv, drops to a non root `trader` user, `trader-serve` as CMD. Pinned uv version for reproducibility.
+* [x] `render.yaml` Blueprint at the repo root: web service `trader-backend`, docker runtime, free plan, Oregon, `/health` health check, env vars (production, log level, rate limit) plus `sync: false` placeholders for the two secrets the user pastes in the dashboard (`TRADER_CORS_ORIGINS`, `TRADER_DATABASE_URL`).
+* [x] `frontend/public/_headers`: production CSP plus HSTS plus the same security headers the backend emits, plus aggressive `Cache-Control: immutable` on `/assets/*` and `must-revalidate` on `/index.html`. Verified the file lands in `dist/` after `pnpm build`.
+* [x] `frontend/public/_redirects`: `/* /index.html 200` so a hard refresh on a non root path serves the SPA.
+* [x] `docs/api.md`: hand edited reference page for the seven endpoints, with rate limit table, error response shape table, and example request/response bodies.
+* [x] `docs/setup-guide.md`: rewritten end to end. Step 1 Neon (least privilege role creation in SQL), step 2 Render (Blueprint connect, paste two env vars), step 3 Cloudflare Pages (build settings, env vars), step 4 tie the loop closed, plus optional custom domain and a troubleshooting matrix.
+* [x] `docs/security/secrets.md`: env var names match the actual code (`TRADER_*`), production fail loud paths documented, application vs migration role distinction tightened.
+* [x] Dependency audit clean: `pip-audit` and `pnpm audit --prod` both report `No known vulnerabilities found`.
+* [x] Backend production smoke test (locally with `TRADER_ENVIRONMENT=production` and a valid HTTPS CORS origin) returns 200 on `/health` and `/api/price`, 404 on `/docs` and `/openapi.json`, and refuses to boot when `TRADER_CORS_ORIGINS` is missing.
+
+### User dashboard work (pending)
+
+These steps live in `docs/setup-guide.md`. They cannot be done by the PM session.
+
+* [ ] Sign up Cloudflare, Render, Neon.
+* [ ] Create the Neon project; copy the owner DSN; create the `trader_app` application role with `SELECT, INSERT` on the two calculation tables; run `alembic upgrade head` against the owner DSN locally.
+* [ ] Connect the GitHub repo to Render via Blueprint; paste `TRADER_CORS_ORIGINS` (placeholder) and `TRADER_DATABASE_URL` (`trader_app` DSN); verify `/health` returns 200 at the new Render URL.
+* [ ] Connect the GitHub repo to Cloudflare Pages; set `VITE_API_BASE_URL` to the Render URL; verify the deployed Pages URL loads and POSTs `/api/price` cleanly.
+* [ ] Update Render's `TRADER_CORS_ORIGINS` to the exact Pages URL; redeploy; smoke test all five screens (Pricing, Heat Map, Compare, Backtest, History).
+* [ ] Optional: custom domain.
+* [ ] Apply branch protection rules and enable Dependabot + CodeQL on the GitHub repo (per `docs/setup-guide.md`).
 
 ### Gates
 
-QA, Security (final hardening), Code Review, Documentation Engineer sign off.
+* [x] QA: 295 backend + 114 frontend tests pass; ruff, mypy, eslint, prettier, tsc all clean; Vite build green (33 KB CSS, 233 KB JS, 71 KB gzip).
+* [x] Security (code level): production fail loud paths land for both CORS and the frontend API base URL; per route rate limits close the deferred Phase 4 / 8 / 10 findings; `pip-audit` and `pnpm audit --prod` clean.
+* [ ] Security (live): final hardening verified after deploy (HSTS preload eligibility, CSP, frame ancestors, no stack trace leak from production error path). Pending the user's dashboard work.
+* [ ] Documentation Engineer: `docs/setup-guide.md` walked through end to end on a fresh clone. Pending the user's dashboard work.
 
 After Phase 11 closes, the PM offers a `/schedule` agent to revisit the deployed app for any rot or follow ups in a few weeks.
 

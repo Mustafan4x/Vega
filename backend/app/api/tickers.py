@@ -18,7 +18,9 @@ from __future__ import annotations
 
 from fastapi import APIRouter, Depends, HTTPException, Path
 from pydantic import BaseModel, ConfigDict, Field
+from starlette.requests import Request
 
+from app.core.rate_limit import limiter
 from app.services.tickers import (
     TICKER_RE,
     TickerLookup,
@@ -29,6 +31,12 @@ from app.services.tickers import (
 )
 
 router = APIRouter(prefix="/api", tags=["tickers"])
+
+# Per route cap. Tighter than the default per IP cap because every cache
+# miss issues an upstream yfinance call (T6). The 60 second TTL plus 256
+# entry LRU absorb most repeats, but we cap the route directly to bound
+# upstream load even on a cold cache.
+TICKERS_RATE_LIMIT = "30/minute"
 
 
 class TickerResponse(BaseModel):
@@ -48,7 +56,9 @@ def get_ticker_lookup() -> TickerLookup:
     "/tickers/{symbol}",
     response_model=TickerResponse,
 )
+@limiter.limit(TICKERS_RATE_LIMIT)
 def read_ticker(
+    request: Request,
     symbol: str = Path(
         ...,
         pattern=TICKER_RE.pattern,

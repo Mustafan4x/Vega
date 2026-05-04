@@ -140,3 +140,64 @@ describe('fetchPrice', () => {
     })
   })
 })
+
+describe('readApiBaseUrl (production fail loud)', () => {
+  const fetchSpy = vi.fn<typeof fetch>()
+
+  beforeEach(() => {
+    fetchSpy.mockReset()
+    vi.stubGlobal('fetch', fetchSpy)
+  })
+
+  afterEach(() => {
+    vi.unstubAllGlobals()
+    vi.unstubAllEnvs()
+  })
+
+  it('throws in production when VITE_API_BASE_URL is missing', async () => {
+    vi.stubEnv('PROD', true)
+    vi.stubEnv('VITE_API_BASE_URL', '')
+
+    await expect(fetchPrice(REQUEST)).rejects.toThrow(/VITE_API_BASE_URL is not set/)
+  })
+
+  it('throws in production when VITE_API_BASE_URL points at localhost', async () => {
+    vi.stubEnv('PROD', true)
+    vi.stubEnv('VITE_API_BASE_URL', 'http://localhost:8000')
+
+    await expect(fetchPrice(REQUEST)).rejects.toThrow(/not allowed in a production build/)
+  })
+
+  it('falls back to localhost in development without throwing', async () => {
+    vi.stubEnv('PROD', false)
+    vi.stubEnv('VITE_API_BASE_URL', '')
+    fetchSpy.mockResolvedValue(
+      jsonResponse(200, {
+        call: 10,
+        put: 5,
+        model: 'black_scholes',
+        call_greeks: {
+          delta: 0.5,
+          gamma: 0.01,
+          theta_per_day: -0.02,
+          vega_per_pct: 0.3,
+          rho_per_pct: 0.4,
+        },
+        put_greeks: {
+          delta: -0.5,
+          gamma: 0.01,
+          theta_per_day: -0.02,
+          vega_per_pct: 0.3,
+          rho_per_pct: 0.4,
+        },
+      }),
+    )
+
+    const result = await fetchPrice(REQUEST)
+    expect(result.call).toBe(10)
+    expect(fetchSpy).toHaveBeenCalledWith(
+      expect.stringMatching(/^http:\/\/localhost:8000/),
+      expect.any(Object),
+    )
+  })
+})

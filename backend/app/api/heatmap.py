@@ -27,7 +27,9 @@ from typing import Literal
 import numpy as np
 from fastapi import APIRouter
 from pydantic import BaseModel, ConfigDict, Field, model_validator
+from starlette.requests import Request
 
+from app.core.rate_limit import limiter
 from app.pricing.binomial import binomial_call, binomial_put
 from app.pricing.black_scholes_vec import black_scholes_call_vec, black_scholes_put_vec
 from app.pricing.monte_carlo import monte_carlo_call, monte_carlo_put
@@ -35,6 +37,11 @@ from app.pricing.monte_carlo import monte_carlo_call, monte_carlo_put
 router = APIRouter(prefix="/api", tags=["heatmap"])
 
 MAX_DIMENSION = 21
+
+# Per route cap. Tighter than the default per IP cap because the heat map
+# does up to 441 cell prices on the binomial / Monte Carlo paths and is
+# the most computationally expensive endpoint that does not hit yfinance.
+HEATMAP_RATE_LIMIT = "12/minute"
 
 PricingModel = Literal["black_scholes", "binomial", "monte_carlo"]
 
@@ -181,7 +188,8 @@ def _grid_for_model(
 
 
 @router.post("/heatmap", response_model=HeatmapResponse)
-def heatmap(payload: HeatmapRequest) -> HeatmapResponse:
+@limiter.limit(HEATMAP_RATE_LIMIT)
+def heatmap(request: Request, payload: HeatmapRequest) -> HeatmapResponse:
     sigma_lo = payload.sigma * (1.0 + payload.vol_shock[0])
     sigma_hi = payload.sigma * (1.0 + payload.vol_shock[1])
     spot_lo = payload.S * (1.0 + payload.spot_shock[0])

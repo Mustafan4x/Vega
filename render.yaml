@@ -1,0 +1,49 @@
+# Render Blueprint for the Trader backend.
+#
+# Connect this repo to Render via Blueprints (https://render.com/docs/infrastructure-as-code).
+# Render reads this file on the connected branch and provisions the
+# service. Secrets (TRADER_DATABASE_URL, TRADER_CORS_ORIGINS) are NOT
+# committed; they are set once in the Render dashboard, marked
+# `sync: false` here so Blueprint reconciliation does not overwrite
+# them.
+#
+# Deploy flow: a push to main triggers a new Render build, which runs
+# the Dockerfile under backend/, then promotes the resulting image to
+# the live web service. The /health endpoint gates the rollout.
+
+services:
+  - type: web
+    name: trader-backend
+    runtime: docker
+    repo: https://github.com/Mustafan4x/Trader
+    branch: main
+    rootDir: backend
+    dockerfilePath: ./Dockerfile
+    plan: free
+    region: oregon
+    healthCheckPath: /health
+    autoDeploy: true
+    envVars:
+      - key: TRADER_ENVIRONMENT
+        value: production
+      - key: TRADER_LOG_LEVEL
+        value: INFO
+      - key: TRADER_RATE_LIMIT_DEFAULT
+        value: 60/minute
+      # Set in the Render dashboard. Comma separated list of allowed
+      # frontend origins (e.g., the Cloudflare Pages URL).
+      - key: TRADER_CORS_ORIGINS
+        sync: false
+      # Set in the Render dashboard. Postgres DSN from Neon. Use the
+      # application role (SELECT, INSERT only on calculation_inputs and
+      # calculation_outputs); the migration role's DSN never goes here
+      # so a runtime container cannot DDL the schema.
+      - key: TRADER_DATABASE_URL
+        sync: false
+      - key: HOST
+        value: 0.0.0.0
+      # Render terminates TLS in front of the container and forwards via
+      # X-Forwarded-For. Wildcard is acceptable here because uvicorn
+      # only accepts external traffic via Render's edge.
+      - key: FORWARDED_ALLOW_IPS
+        value: "*"

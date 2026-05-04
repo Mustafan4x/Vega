@@ -1,8 +1,10 @@
 """Environment dependent behavior.
 
 In production the OpenAPI docs and schema are not served; in development
-they are. This test suite exercises both modes by toggling
-``TRADER_ENVIRONMENT`` before building the app.
+they are. The production env loader also fails loud on missing or
+unsafe ``TRADER_CORS_ORIGINS``. This suite exercises both modes by
+toggling ``TRADER_ENVIRONMENT`` (and the matching CORS env) before
+building the app.
 """
 
 from __future__ import annotations
@@ -12,10 +14,13 @@ from collections.abc import Iterator
 import pytest
 from fastapi.testclient import TestClient
 
+from app.core.config import ConfigError, load_settings
+
 
 @pytest.fixture
 def production_client(monkeypatch: pytest.MonkeyPatch) -> Iterator[TestClient]:
     monkeypatch.setenv("TRADER_ENVIRONMENT", "production")
+    monkeypatch.setenv("TRADER_CORS_ORIGINS", "https://trader.pages.dev")
 
     from app.main import build_app
 
@@ -55,3 +60,50 @@ def test_development_serves_swagger_docs(client: TestClient) -> None:
 
     assert response.status_code == 200
     assert "swagger" in response.text.lower() or "openapi" in response.text.lower()
+
+
+def test_production_requires_cors_origins(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setenv("TRADER_ENVIRONMENT", "production")
+    monkeypatch.delenv("TRADER_CORS_ORIGINS", raising=False)
+
+    with pytest.raises(ConfigError, match="TRADER_CORS_ORIGINS"):
+        load_settings()
+
+
+def test_production_rejects_wildcard_cors(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setenv("TRADER_ENVIRONMENT", "production")
+    monkeypatch.setenv("TRADER_CORS_ORIGINS", "*")
+
+    with pytest.raises(ConfigError, match="not allowed in production"):
+        load_settings()
+
+
+def test_production_rejects_http_cors(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setenv("TRADER_ENVIRONMENT", "production")
+    monkeypatch.setenv("TRADER_CORS_ORIGINS", "http://trader.example.com")
+
+    with pytest.raises(ConfigError, match="https"):
+        load_settings()
+
+
+def test_production_accepts_multiple_https_origins(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setenv("TRADER_ENVIRONMENT", "production")
+    monkeypatch.setenv(
+        "TRADER_CORS_ORIGINS",
+        "https://trader.pages.dev,https://trader.example.com",
+    )
+
+    settings = load_settings()
+    assert settings.cors_origins == (
+        "https://trader.pages.dev",
+        "https://trader.example.com",
+    )
+
+
+def test_development_allows_localhost_cors(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setenv("TRADER_ENVIRONMENT", "development")
+    monkeypatch.delenv("TRADER_CORS_ORIGINS", raising=False)
+
+    settings = load_settings()
+    # Development falls back to localhost. No fail loud in dev.
+    assert settings.cors_origins == ("http://localhost:5173",)

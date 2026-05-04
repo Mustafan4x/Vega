@@ -1,0 +1,11 @@
+# Cloudflare Pages SPA fallback.
+#
+# The React app is a single page application; client side routing
+# handles every visible path. Without this rule, a hard refresh on a
+# non root path (e.g., /heatmap) returns 404 from Cloudflare's edge
+# because the file does not exist. Rewriting every unmatched path to
+# /index.html (status 200) hands the URL to the SPA router.
+#
+# Reference: https://developers.cloudflare.com/pages/platform/redirects/
+
+/*    /index.html    200

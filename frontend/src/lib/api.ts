@@ -145,7 +145,29 @@ interface PostShape {
 }
 
 function readApiBaseUrl(): string {
-  return import.meta.env?.VITE_API_BASE_URL ?? DEFAULT_BASE_URL
+  const env = import.meta.env ?? {}
+  const explicit = typeof env.VITE_API_BASE_URL === 'string' ? env.VITE_API_BASE_URL.trim() : ''
+  // Production fail loud: a production bundle without VITE_API_BASE_URL
+  // means the deploy step forgot to wire the env var. Falling back to
+  // localhost would hand every user a silently broken UI; throw at the
+  // first request so the cause is obvious in the console. Cloudflare
+  // Pages takes the env var at build time, so this check fires the
+  // moment the broken bundle runs.
+  if (env.PROD) {
+    if (explicit === '') {
+      throw new Error(
+        'VITE_API_BASE_URL is not set. Production builds require an explicit ' +
+          'backend URL; see docs/setup-guide.md (Cloudflare Pages env vars).',
+      )
+    }
+    if (explicit.startsWith('http://localhost') || explicit.startsWith('http://127.')) {
+      throw new Error(
+        `VITE_API_BASE_URL=${explicit} is not allowed in a production build. ` +
+          'Set it to the public Render backend URL.',
+      )
+    }
+  }
+  return explicit !== '' ? explicit : DEFAULT_BASE_URL
 }
 
 function trimTrailingSlash(url: string): string {

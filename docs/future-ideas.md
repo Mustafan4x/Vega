@@ -22,15 +22,21 @@ A scratch list of features that are out of scope for v1 but worth picking up lat
 
 **Notes for the implementer**: the convention is documented in `docs/risk/conventions.md` (dividends assumed zero in v1). The Quant Domain Validator owns the formula change and the new reference values. Risk Reviewer must update sanity cases. Backend Developer adds an optional `q: float = 0.0` parameter to the function signature so existing callers keep working. Frontend Developer adds the input field and the percent to decimal conversion. Default to `q = 0` everywhere so the v1 behavior is preserved.
 
-## Logo and favicon
+## Logo, favicon, and tab title
 
-**Idea**: design a Vega wordmark / logo and replace the Vite default favicon with a custom SVG that matches the Oxblood palette. The project name was renamed from "Trader" to "Vega" during Phase 11; the visual mark is the natural follow up.
+**Idea**: replace the leftover purple lightning bolt favicon with a custom Oxblood mark, design a proper Vega wordmark for any future marketing surface, and shorten the browser tab title from `Vega · Black Scholes Options Pricer` to just `Vega`.
 
-**Why deferred**: naming landed; brand work is creative and personal and does not block the engineering build.
+**Why deferred**: the current favicon at `frontend/public/favicon.svg` is a purple `#863bff` lightning bolt SVG carried over from a frontend template. It loads, it works, and the in app sidebar mark in `LayoutShell.tsx` is already a simple plus shape on `currentColor` that picks up the Oxblood palette correctly, so the visual identity is functionally fine. The longer tab title is descriptive but reads cluttered when the user has many tabs open; a single word reads cleaner. None of this blocks a working build, so the polish is intentionally postponed.
 
-**When to revisit**: any time after Phase 11 ships, especially before sharing the deployed link on a resume.
+**When to revisit**: any time after Phase 11 ships, especially before sharing the deployed link on a resume, in a blog post, or anywhere a screenshot of the browser tab is visible. The favicon is the first thing a visitor's tab shows, so this is high impact for low effort.
 
-**Notes for the implementer**: Logo work belongs to a UI/UX Designer pass; the Oxblood palette and IBM Plex Serif italic display from `docs/design/tokens.md` are the constraints. Favicon at `frontend/public/favicon.svg` is currently the Vite default. The brand mark renders in `frontend/src/components/LayoutShell.tsx` as an inline SVG; replace with the new asset.
+**Notes for the implementer**:
+
+* **Tab title**: edit `frontend/index.html` line 8, change `<title>Vega · Black Scholes Options Pricer</title>` to `<title>Vega</title>`. One line change, no test updates required beyond a single Vitest assertion that `document.title === 'Vega'` to lock the regression.
+* **Favicon**: replace `frontend/public/favicon.svg` with a custom SVG that uses the Oxblood palette (oxblood `#C03A3A` primary, sea green `#34D399` accent, both already defined in `docs/design/tokens.md`). Keep the file under 4 KB and verify it renders crisply at 16 px and 32 px (browser tab favicon sizes). Spot check in both light and dark browser themes since the tab background changes by OS.
+* **In app sidebar mark**: the inline SVG in `frontend/src/components/LayoutShell.tsx` lines 27 to 31 is a simple plus shape using `currentColor` and already matches the Oxblood theme. Decide whether to keep it as is or harmonize it with the new favicon; both choices are defensible. Whichever way, the `data-element="brandMark"` selector must keep working since `web-design-guidelines` audits depend on it.
+* **Wordmark**: out of scope for the favicon swap; this is a separate UI/UX Designer pass if desired. IBM Plex Serif italic from `docs/design/tokens.md` is the display face. The wordmark would render in the sidebar next to `<span data-element="brandName">Vega</span>` and on any future landing page.
+* **Ownership**: favicon and wordmark belong to the UI/UX Designer agent (`agents/05-ui-ux-designer.md`); the title and any DOM wiring belong to the Frontend Developer agent (`agents/04-frontend-developer.md`).
 
 ## Security hardening research pass
 

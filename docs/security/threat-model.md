@@ -420,3 +420,21 @@ After all of the above, the Security Engineer agent (in a future session) verifi
 * The merge button on the test PR is disabled until all required checks pass.
 
 If any of these verifications fail, the Security Engineer agent reopens this section and investigates before signing off Phase 0.
+
+## Phase 12 addendum: authentication and per user history
+
+The `/api/calculations*` endpoints are now gated behind a verified Auth0 JWT. Identity is the JWT `sub` claim; no local user table.
+
+| Category | Threat | Mitigation |
+|---|---|---|
+| Spoofing | Impersonate another user | RS256 signature verification against Auth0 JWKS, audience check (`vega-api`), issuer check (`https://<tenant>.auth0.com/`), expiry check. |
+| Tampering | Modify token payload | Signature verification rejects any modification. |
+| Repudiation | Deny saving a calculation | Existing structured logs include request IDs; not separately logged for v1. |
+| Information disclosure | Read another user's saved calculation | `WHERE user_id = ?` filter on every query; cross-user lookups return 404 (IDOR-as-not-found) to avoid leaking row existence. |
+| Denial of service | Flood saves under a stolen token | Existing per-route per-IP rate limits (12/min write, 60/min read) unchanged. Per-user rate limits explicitly out of scope. |
+| Elevation of privilege | Gain admin access | No roles in the system; every authenticated user has identical scope (their own calculations only). |
+
+### Residual risks added in Phase 12
+
+- **Refresh token cookie** is set by Auth0's domain. Its security posture (httpOnly, Secure, SameSite, rotation) is Auth0's responsibility. Vega cannot harden it further.
+- **Auth0 tenant takeover** would let an attacker mint valid JWTs. Mitigated by Auth0's own controls (tenant admin MFA on the maintainer's account).

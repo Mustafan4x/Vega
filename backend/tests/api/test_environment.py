@@ -21,6 +21,8 @@ from app.core.config import ConfigError, load_settings
 def production_client(monkeypatch: pytest.MonkeyPatch) -> Iterator[TestClient]:
     monkeypatch.setenv("VEGA_ENVIRONMENT", "production")
     monkeypatch.setenv("VEGA_CORS_ORIGINS", "https://vega.pages.dev")
+    monkeypatch.setenv("VEGA_AUTH0_DOMAIN", "vega-test.us.auth0.com")
+    monkeypatch.setenv("VEGA_AUTH0_AUDIENCE", "vega-api")
 
     from app.main import build_app
 
@@ -92,6 +94,8 @@ def test_production_accepts_multiple_https_origins(monkeypatch: pytest.MonkeyPat
         "VEGA_CORS_ORIGINS",
         "https://vega.pages.dev,https://vega.example.com",
     )
+    monkeypatch.setenv("VEGA_AUTH0_DOMAIN", "vega-test.us.auth0.com")
+    monkeypatch.setenv("VEGA_AUTH0_AUDIENCE", "vega-api")
 
     settings = load_settings()
     assert settings.cors_origins == (
@@ -119,4 +123,36 @@ def test_legacy_trader_env_is_ignored(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setenv("TRADER_CORS_ORIGINS", "https://legacy.pages.dev")
 
     with pytest.raises(ConfigError, match="VEGA_CORS_ORIGINS"):
+        load_settings()
+
+
+def test_settings_loads_auth0_domain(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setenv("VEGA_AUTH0_DOMAIN", "vega-test.us.auth0.com")
+    monkeypatch.setenv("VEGA_AUTH0_AUDIENCE", "vega-api")
+    from app.core.config import load_settings
+
+    settings = load_settings()
+    assert settings.auth0_domain == "vega-test.us.auth0.com"
+    assert settings.auth0_audience == "vega-api"
+
+
+def test_settings_auth0_optional_in_development(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.delenv("VEGA_AUTH0_DOMAIN", raising=False)
+    monkeypatch.delenv("VEGA_AUTH0_AUDIENCE", raising=False)
+    monkeypatch.setenv("VEGA_ENVIRONMENT", "development")
+    from app.core.config import load_settings
+
+    settings = load_settings()
+    assert settings.auth0_domain == ""
+    assert settings.auth0_audience == ""
+
+
+def test_settings_auth0_required_in_production(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setenv("VEGA_ENVIRONMENT", "production")
+    monkeypatch.setenv("VEGA_CORS_ORIGINS", "https://vega-2rd.pages.dev")
+    monkeypatch.delenv("VEGA_AUTH0_DOMAIN", raising=False)
+    monkeypatch.delenv("VEGA_AUTH0_AUDIENCE", raising=False)
+    from app.core.config import ConfigError, load_settings
+
+    with pytest.raises(ConfigError, match="VEGA_AUTH0_DOMAIN"):
         load_settings()

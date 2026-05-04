@@ -9,8 +9,10 @@
  */
 
 import { useCallback, useEffect, useRef, useState, type JSX } from 'react'
+import { useAuth0 } from '@auth0/auth0-react'
 
 import { HeatMap } from '../components/HeatMap'
+import { SignInButton } from '../components/AuthButtons'
 import {
   fetchCalculation,
   fetchCalculations,
@@ -35,6 +37,7 @@ type DetailStatus =
   | { kind: 'error'; message: string }
 
 export function HistoryScreen(): JSX.Element {
+  const { isAuthenticated, getAccessTokenSilently } = useAuth0()
   const [list, setList] = useState<CalculationListResponse | null>(null)
   const [listStatus, setListStatus] = useState<ListStatus>({ kind: 'idle' })
   const [selected, setSelected] = useState<CalculationDetail | null>(null)
@@ -50,10 +53,12 @@ export function HistoryScreen(): JSX.Element {
 
     setListStatus({ kind: 'loading' })
     try {
+      const token = await getAccessTokenSilently()
       const result = await fetchCalculations({
         limit: PAGE_SIZE,
         offset: 0,
         signal: controller.signal,
+        bearerToken: token,
       })
       if (controller.signal.aborted) return
       setList(result)
@@ -63,7 +68,7 @@ export function HistoryScreen(): JSX.Element {
       const message = err instanceof PriceError ? err.message : 'Could not load history.'
       setListStatus({ kind: 'error', message })
     }
-  }, [])
+  }, [getAccessTokenSilently])
 
   useEffect(() => {
     // Standard fetch-on-mount: loadList kicks off the network request
@@ -78,25 +83,41 @@ export function HistoryScreen(): JSX.Element {
     }
   }, [loadList])
 
-  const onSelect = useCallback(async (id: string) => {
-    inFlightDetail.current?.abort()
-    const controller = new AbortController()
-    inFlightDetail.current = controller
+  const onSelect = useCallback(
+    async (id: string) => {
+      inFlightDetail.current?.abort()
+      const controller = new AbortController()
+      inFlightDetail.current = controller
 
-    setSelectedId(id)
-    setDetailStatus({ kind: 'loading' })
+      setSelectedId(id)
+      setDetailStatus({ kind: 'loading' })
 
-    try {
-      const detail = await fetchCalculation(id, { signal: controller.signal })
-      if (controller.signal.aborted) return
-      setSelected(detail)
-      setDetailStatus({ kind: 'ready' })
-    } catch (err) {
-      if (controller.signal.aborted) return
-      const message = err instanceof PriceError ? err.message : 'Could not load that calculation.'
-      setDetailStatus({ kind: 'error', message })
-    }
-  }, [])
+      try {
+        const token = await getAccessTokenSilently()
+        const detail = await fetchCalculation(id, { signal: controller.signal, bearerToken: token })
+        if (controller.signal.aborted) return
+        setSelected(detail)
+        setDetailStatus({ kind: 'ready' })
+      } catch (err) {
+        if (controller.signal.aborted) return
+        const message = err instanceof PriceError ? err.message : 'Could not load that calculation.'
+        setDetailStatus({ kind: 'error', message })
+      }
+    },
+    [getAccessTokenSilently],
+  )
+
+  if (!isAuthenticated) {
+    return (
+      <section data-component="HistoryScreen">
+        <div data-element="emptyState" className="tr-card">
+          <h2 className="tr-card-title">Saved calculations</h2>
+          <p>Sign in to see your saved calculations.</p>
+          <SignInButton />
+        </div>
+      </section>
+    )
+  }
 
   return (
     <div className="tr-history-screen tr-screen-fade" data-component="HistoryScreen">

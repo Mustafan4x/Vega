@@ -42,6 +42,7 @@ class CalculationInput(Base):
     spot_shock_max: Mapped[float] = mapped_column(Float, nullable=False)
     rows: Mapped[int] = mapped_column(Integer, nullable=False)
     cols: Mapped[int] = mapped_column(Integer, nullable=False)
+    user_id: Mapped[str] = mapped_column(String(64), nullable=False)
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True),
         # Python side default first so ORM writes get microsecond precision

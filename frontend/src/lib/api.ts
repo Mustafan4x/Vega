@@ -147,6 +147,7 @@ export type PriceErrorKind =
   | 'not_found'
   | 'upstream_timeout'
   | 'upstream'
+  | 'unauthorized'
 
 export class PriceError extends Error {
   readonly kind: PriceErrorKind
@@ -170,6 +171,7 @@ interface FetchOptions {
   baseUrl?: string
   timeoutMs?: number
   signal?: AbortSignal
+  bearerToken?: string
 }
 
 interface ValidationDetail {
@@ -248,11 +250,19 @@ async function postJson<TRequest, TResponse>(
   combineSignals(options.signal, controller)
   const timer = setTimeout(() => controller.abort(new Error('timeout')), timeoutMs)
 
+  const postHeaders: Record<string, string> = {
+    'Content-Type': 'application/json',
+    Accept: 'application/json',
+  }
+  if (options.bearerToken) {
+    postHeaders.Authorization = `Bearer ${options.bearerToken}`
+  }
+
   let response: Response
   try {
     response = await fetch(`${baseUrl}${shape.path}`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
+      headers: postHeaders,
       body: JSON.stringify(request),
       credentials: 'omit',
       mode: 'cors',
@@ -283,6 +293,10 @@ async function postJson<TRequest, TResponse>(
       })
     }
     return body
+  }
+
+  if (response.status === 401) {
+    throw new PriceError('unauthorized', 'Sign in required.', { status: 401 })
   }
 
   if (response.status === 422) {
@@ -650,11 +664,16 @@ async function getJson<TResponse>(
   combineSignals(options.signal, controller)
   const timer = setTimeout(() => controller.abort(new Error('timeout')), timeoutMs)
 
+  const headers: Record<string, string> = { Accept: 'application/json' }
+  if (options.bearerToken) {
+    headers.Authorization = `Bearer ${options.bearerToken}`
+  }
+
   let response: Response
   try {
     response = await fetch(`${baseUrl}${path}`, {
       method: 'GET',
-      headers: { Accept: 'application/json' },
+      headers,
       credentials: 'omit',
       mode: 'cors',
       signal: controller.signal,
@@ -682,6 +701,9 @@ async function getJson<TResponse>(
       throw new PriceError('server', `Unexpected response shape from ${label}.`, { status: 200 })
     }
     return body
+  }
+  if (response.status === 401) {
+    throw new PriceError('unauthorized', 'Sign in required.', { status: 401 })
   }
   if (response.status === 404) {
     throw new PriceError('not_found', 'Calculation not found.', { status: 404 })

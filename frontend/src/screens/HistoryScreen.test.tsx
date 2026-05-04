@@ -1,4 +1,16 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest'
+import {
+  getAuth0MockState,
+  makeAuth0Mock,
+  resetAuth0MockState,
+  setAuth0MockState,
+} from '../test/auth0-mock'
+
+vi.mock('@auth0/auth0-react', () => ({
+  useAuth0: () => getAuth0MockState(),
+  Auth0Provider: ({ children }: { children: unknown }) => children,
+}))
+
 import { render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 
@@ -47,10 +59,17 @@ describe('HistoryScreen', () => {
   beforeEach(() => {
     fetchSpy.mockReset()
     vi.stubGlobal('fetch', fetchSpy)
+    setAuth0MockState(
+      makeAuth0Mock({
+        isAuthenticated: true,
+        user: { sub: 'test|user' },
+      }),
+    )
   })
 
   afterEach(() => {
     vi.unstubAllGlobals()
+    resetAuth0MockState()
   })
 
   it('renders the empty state when no calculations exist', async () => {
@@ -116,5 +135,42 @@ describe('HistoryScreen', () => {
     render(<HistoryScreen />)
 
     expect(await screen.findByRole('alert')).toBeInTheDocument()
+  })
+})
+
+describe('HistoryScreen auth gating', () => {
+  beforeEach(() => {
+    resetAuth0MockState()
+  })
+
+  it('renders the empty state when logged out', async () => {
+    setAuth0MockState(makeAuth0Mock({ isAuthenticated: false }))
+    render(<HistoryScreen />)
+    expect(await screen.findByText(/sign in to see your saved calculations/i)).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: /sign in/i })).toBeInTheDocument()
+  })
+
+  it('fetches with a bearer token when logged in', async () => {
+    const getToken = vi.fn().mockResolvedValue('jwt-abc')
+    setAuth0MockState(
+      makeAuth0Mock({
+        isAuthenticated: true,
+        getAccessTokenSilently: getToken,
+        user: { sub: 'github|user-x' },
+      }),
+    )
+    const fetchSpy = vi.spyOn(globalThis, 'fetch').mockResolvedValue(
+      new Response(JSON.stringify({ items: [], total: 0, limit: 20, offset: 0 }), {
+        status: 200,
+        headers: { 'Content-Type': 'application/json' },
+      }),
+    )
+    render(<HistoryScreen />)
+    await screen.findByText(/saved calculations/i)
+    const call = fetchSpy.mock.calls[0]
+    const opts = call?.[1] as RequestInit | undefined
+    const headers = (opts?.headers ?? {}) as Record<string, string>
+    expect(headers.Authorization).toBe('Bearer jwt-abc')
+    fetchSpy.mockRestore()
   })
 })

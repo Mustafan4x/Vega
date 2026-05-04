@@ -29,6 +29,7 @@ from sqlalchemy.orm import Session, selectinload
 from starlette.requests import Request
 
 from app.api.heatmap import HeatmapRequest, HeatmapResponse
+from app.core.auth import require_user
 from app.core.rate_limit import limiter
 from app.db import CalculationInput, CalculationOutput, get_session
 from app.pricing.black_scholes_vec import black_scholes_call_vec, black_scholes_put_vec
@@ -62,6 +63,7 @@ class CalculationResponse(HeatmapResponse):
 def create_calculation(
     request: Request,
     payload: HeatmapRequest,
+    user_id: str = Depends(require_user),
     session: Session = Depends(get_session),
 ) -> CalculationResponse:
     sigma_lo = payload.sigma * (1.0 + payload.vol_shock[0])
@@ -99,6 +101,7 @@ def create_calculation(
         spot_shock_max=payload.spot_shock[1],
         rows=payload.rows,
         cols=payload.cols,
+        user_id=user_id,
     )
     session.add(record)
 
@@ -169,12 +172,18 @@ def list_calculations(
     request: Request,
     limit: int = Query(LIST_LIMIT_DEFAULT, ge=1, le=LIST_LIMIT_MAX, description="Page size."),
     offset: int = Query(0, ge=0, le=10_000, description="Number of items to skip."),
+    user_id: str = Depends(require_user),
     session: Session = Depends(get_session),
 ) -> CalculationListResponse:
-    total = int(session.execute(select(func.count(CalculationInput.id))).scalar_one())
+    total = int(
+        session.execute(
+            select(func.count(CalculationInput.id)).where(CalculationInput.user_id == user_id)
+        ).scalar_one()
+    )
     rows = (
         session.execute(
             select(CalculationInput)
+            .where(CalculationInput.user_id == user_id)
             .order_by(CalculationInput.created_at.desc(), CalculationInput.id.desc())
             .limit(limit)
             .offset(offset)
@@ -204,6 +213,7 @@ def list_calculations(
 def read_calculation(
     request: Request,
     calculation_id: str,
+    user_id: str = Depends(require_user),
     session: Session = Depends(get_session),
 ) -> CalculationDetail:
     if not _UUID_RE.match(calculation_id):
@@ -212,7 +222,7 @@ def read_calculation(
     record: CalculationInput | None = (
         session.query(CalculationInput)
         .options(selectinload(CalculationInput.outputs))
-        .filter_by(id=calculation_id)
+        .filter_by(id=calculation_id, user_id=user_id)
         .one_or_none()
     )
     if record is None:

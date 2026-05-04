@@ -2,7 +2,7 @@
 
 Single source of truth for which phase is next. Read this file when the user says "work on the next phase" or any equivalent. Update this file when a phase changes state. The Project Manager session owns it.
 
-**Last updated**: 2026-05-04 (Phase 12 paused mid frontend; see Resume notes).
+**Last updated**: 2026-05-04 (Phase 12 resumed; Bundle 3 in progress).
 
 ## Next phase
 
@@ -26,7 +26,7 @@ Status values: `not started`, `in progress`, `completed`, `bundled with phase N`
 | 9 | Multiple pricing models | completed | 2026-05-03 | ~70% (well under budget) | binomial CRR + Monte Carlo (antithetic) added; `model` param on price and heatmap; ModelSelector + ComparePanel; 67 new backend tests + 8 new frontend tests; live three-model convergence verified; Risk Reviewer clean sign-off |
 | 10 | Backtesting | completed | 2026-05-03 | ~50% (well under budget) | shipped solo; pure backtest engine + yfinance historical service + POST /api/backtest + frontend BacktestForm/BacktestChart/BacktestScreen; 41 new backend tests + 20 new frontend tests; live AAPL smoke test green; Risk Reviewer + Performance Engineer both signed off (per-route rate limit deferred to Phase 11) |
 | 11 | Production deployment | completed | 2026-05-04 | ~95% | per-route rate limits closed (heatmap 12/min, tickers 30/min, backtest 10/min, calculations write 12/min, read 60/min); production fail-loud on missing CORS and missing API base URL; render.yaml + Dockerfile (uv multi-stage, non-root); CF Pages _headers (CSP, HSTS) + _redirects (SPA fallback); docs/api.md and end-to-end docs/setup-guide.md polished; pip-audit and pnpm audit clean; live deploy at vega-2rd.pages.dev / vega-backend-1wm0.onrender.com / Neon; project-wide rename Trader -> Vega including code, env vars, docs, GitHub repo, Render service, CF Pages project, Neon application role (vega_app), Neon password rotated, local folder /home/mustafa/src/vega/; 312 backend + 120 frontend tests pass |
-| 12 | Authentication and per user history | paused | | ~1 full window (~50% spent so far) | backend half complete (329 tests pass); frontend foundation + sign-in surfaces wired (124 frontend tests pass); save-replay funnel, /callback handler, CSP, threat model, setup guide, STATUS close, and PR are pending. See Resume notes. Plan: docs/superpowers/plans/2026-05-04-auth-and-per-user-history.md. Spec: docs/superpowers/specs/2026-05-04-auth-and-per-user-history-design.md |
+| 12 | Authentication and per user history | in progress | | ~1 full window (~50% spent so far) | backend half complete (329 tests pass); frontend foundation + sign-in surfaces wired (124 frontend tests pass); resumed 2026-05-04 starting at Bundle 3 (save-replay funnel + /callback handler). Bundles 4 + 5 still pending. Plan: docs/superpowers/plans/2026-05-04-auth-and-per-user-history.md. Spec: docs/superpowers/specs/2026-05-04-auth-and-per-user-history-design.md |
 
 ## Resume notes
 

@@ -2,11 +2,11 @@
 
 Single source of truth for which phase is next. Read this file when the user says "work on the next phase" or any equivalent. Update this file when a phase changes state. The Project Manager session owns it.
 
-**Last updated**: 2026-05-04 (Phase 11 closed; v1 shipped).
+**Last updated**: 2026-05-04 (Phase 12 in progress).
 
 ## Next phase
 
-**v1 is shipped.** Frontend at <https://vega-2rd.pages.dev/>, backend at <https://vega-backend-1wm0.onrender.com>, Postgres on Neon. There is no next phase from the spec; design changes follow the two flows in `CLAUDE.md` ("Design change workflow") and any new feature work is captured in the maintainer's private notes (gitignored, outside the public repo).
+**Phase 12: Authentication and per user history.** Auth0 + Google/GitHub OAuth via `@auth0/auth0-react`, JWT bearer + JWKS verification on FastAPI side, `user_id NOT NULL` on `calculation_inputs`. Existing rows are dropped at migration. Window cost: ~1 full window. Pause point if needed: after backend tests pass.
 
 ## Phase status table
 
@@ -26,6 +26,7 @@ Status values: `not started`, `in progress`, `completed`, `bundled with phase N`
 | 9 | Multiple pricing models | completed | 2026-05-03 | ~70% (well under budget) | binomial CRR + Monte Carlo (antithetic) added; `model` param on price and heatmap; ModelSelector + ComparePanel; 67 new backend tests + 8 new frontend tests; live three-model convergence verified; Risk Reviewer clean sign-off |
 | 10 | Backtesting | completed | 2026-05-03 | ~50% (well under budget) | shipped solo; pure backtest engine + yfinance historical service + POST /api/backtest + frontend BacktestForm/BacktestChart/BacktestScreen; 41 new backend tests + 20 new frontend tests; live AAPL smoke test green; Risk Reviewer + Performance Engineer both signed off (per-route rate limit deferred to Phase 11) |
 | 11 | Production deployment | completed | 2026-05-04 | ~95% | per-route rate limits closed (heatmap 12/min, tickers 30/min, backtest 10/min, calculations write 12/min, read 60/min); production fail-loud on missing CORS and missing API base URL; render.yaml + Dockerfile (uv multi-stage, non-root); CF Pages _headers (CSP, HSTS) + _redirects (SPA fallback); docs/api.md and end-to-end docs/setup-guide.md polished; pip-audit and pnpm audit clean; live deploy at vega-2rd.pages.dev / vega-backend-1wm0.onrender.com / Neon; project-wide rename Trader -> Vega including code, env vars, docs, GitHub repo, Render service, CF Pages project, Neon application role (vega_app), Neon password rotated, local folder /home/mustafa/src/vega/; 312 backend + 120 frontend tests pass |
+| 12 | Authentication and per user history | in progress | | ~1 full window | Auth0 + Google/GitHub OAuth, write-gate auth perimeter, drop existing rows; spec at docs/superpowers/specs/2026-05-04-auth-and-per-user-history-design.md |
 
 ## Resume notes
 

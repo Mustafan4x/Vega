@@ -11,6 +11,7 @@ from __future__ import annotations
 
 import math
 import uuid
+from collections.abc import Callable
 
 import pytest
 from fastapi.testclient import TestClient
@@ -277,3 +278,68 @@ def test_post_calculations_per_route_limit_caps_at_12(
     assert statuses[:12] == [201] * 12, statuses
     assert statuses[12] == 429
     assert statuses[13] == 429
+
+
+# ---------- Cross-user isolation tests ---------------------------------------
+
+
+def test_post_persists_user_id_from_token(
+    client: TestClient, auth_token: Callable[..., str]
+) -> None:
+    token_a = auth_token(sub="google-oauth2|user-a")
+    response = client.post(
+        "/api/calculations",
+        json=VALID_PAYLOAD,
+        headers={"Authorization": f"Bearer {token_a}"},
+    )
+    assert response.status_code == 201
+    calc_id = response.json()["calculation_id"]
+
+    factory = get_session_factory()
+    with factory() as session:
+        record = session.get(CalculationInput, calc_id)
+        assert record is not None
+        assert record.user_id == "google-oauth2|user-a"
+
+
+def test_list_only_returns_callers_rows(client: TestClient, auth_token: Callable[..., str]) -> None:
+    token_a = auth_token(sub="google-oauth2|user-a")
+    token_b = auth_token(sub="github|user-b")
+    headers_a = {"Authorization": f"Bearer {token_a}"}
+    headers_b = {"Authorization": f"Bearer {token_b}"}
+
+    client.post("/api/calculations", json=VALID_PAYLOAD, headers=headers_a)
+    client.post("/api/calculations", json=VALID_PAYLOAD, headers=headers_a)
+    client.post("/api/calculations", json=VALID_PAYLOAD, headers=headers_b)
+
+    list_a = client.get("/api/calculations", headers=headers_a)
+    assert list_a.status_code == 200
+    body_a = list_a.json()
+    assert body_a["total"] == 2
+
+    list_b = client.get("/api/calculations", headers=headers_b)
+    assert list_b.status_code == 200
+    body_b = list_b.json()
+    assert body_b["total"] == 1
+
+
+def test_get_others_calculation_returns_404(
+    client: TestClient, auth_token: Callable[..., str]
+) -> None:
+    token_a = auth_token(sub="google-oauth2|user-a")
+    token_b = auth_token(sub="github|user-b")
+    headers_a = {"Authorization": f"Bearer {token_a}"}
+    headers_b = {"Authorization": f"Bearer {token_b}"}
+
+    create = client.post("/api/calculations", json=VALID_PAYLOAD, headers=headers_a)
+    calc_id = create.json()["calculation_id"]
+
+    response_b = client.get(f"/api/calculations/{calc_id}", headers=headers_b)
+    assert response_b.status_code == 404
+    assert response_b.json() == {"detail": "Calculation not found."}
+
+
+def test_endpoints_reject_unauthenticated_requests(client: TestClient) -> None:
+    assert client.post("/api/calculations", json=VALID_PAYLOAD).status_code == 401
+    assert client.get("/api/calculations").status_code == 401
+    assert client.get("/api/calculations/00000000-0000-0000-0000-000000000000").status_code == 401

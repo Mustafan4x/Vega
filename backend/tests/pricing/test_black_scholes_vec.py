@@ -123,3 +123,23 @@ def test_vec_atm_grid_is_finite_and_positive() -> None:
     assert np.all(np.isfinite(put))
     assert np.all(call >= 0)
     assert np.all(put >= 0)
+
+
+@pytest.mark.parametrize("q", [0.0, 0.02, 0.05, -0.01])
+def test_vec_matches_scalar_with_dividend_yield(q: float) -> None:
+    """Cell for cell parity between vectorized and scalar BS for non zero q."""
+    S_axis = np.array([80.0, 100.0, 120.0])
+    sigma_axis = np.array([0.15, 0.20, 0.30])
+    K, T, r = 100.0, 1.0, 0.05
+
+    call_vec = black_scholes_call_vec(S_axis, K, T, r, sigma_axis, q=q)
+    put_vec = black_scholes_put_vec(S_axis, K, T, r, sigma_axis, q=q)
+
+    for i, sigma in enumerate(sigma_axis):
+        for j, S in enumerate(S_axis):
+            assert call_vec[i, j] == pytest.approx(
+                black_scholes_call(float(S), K, T, r, float(sigma), q=q), abs=1e-9
+            )
+            assert put_vec[i, j] == pytest.approx(
+                black_scholes_put(float(S), K, T, r, float(sigma), q=q), abs=1e-9
+            )

@@ -5,10 +5,10 @@ import userEvent from '@testing-library/user-event'
 import { InputForm } from './InputForm'
 import type { PriceRequest } from '../lib/api'
 
-const INPUTS: PriceRequest = { S: 100, K: 100, T: 1, r: 0.05, sigma: 0.2 }
+const INPUTS: PriceRequest = { S: 100, K: 100, T: 1, r: 0.05, sigma: 0.2, q: 0 }
 
 describe('InputForm', () => {
-  it('renders all five Black Scholes inputs and the Calculate button', () => {
+  it('renders all six Black Scholes inputs and the Calculate button', () => {
     render(
       <InputForm
         inputs={INPUTS}
@@ -23,14 +23,16 @@ describe('InputForm', () => {
     expect(screen.getByLabelText(/strike \(k\)/i)).toBeInTheDocument()
     expect(screen.getByLabelText(/time to expiry \(t\)/i)).toBeInTheDocument()
     expect(screen.getByLabelText(/risk free rate \(r\)/i)).toBeInTheDocument()
+    expect(screen.getByLabelText(/dividend yield \(q\)/i)).toBeInTheDocument()
     expect(screen.getByLabelText(/volatility \(sigma\)/i)).toBeInTheDocument()
     expect(screen.getByRole('button', { name: /calculate/i })).toBeEnabled()
   })
 
-  it('renders r and sigma in percent', () => {
+  it('renders r, q, and sigma in percent', () => {
+    const inputs: PriceRequest = { ...INPUTS, q: 0.03 }
     render(
       <InputForm
-        inputs={INPUTS}
+        inputs={inputs}
         invalid={new Set()}
         pending={false}
         onChange={() => {}}
@@ -39,7 +41,28 @@ describe('InputForm', () => {
     )
 
     expect(screen.getByLabelText(/risk free rate \(r\)/i)).toHaveValue('5')
+    expect(screen.getByLabelText(/dividend yield \(q\)/i)).toHaveValue('3')
     expect(screen.getByLabelText(/volatility \(sigma\)/i)).toHaveValue('20')
+  })
+
+  it('converts a typed q percent value to a decimal in onChange', async () => {
+    const user = userEvent.setup()
+    const onChange = vi.fn()
+    render(
+      <InputForm
+        inputs={INPUTS}
+        invalid={new Set()}
+        pending={false}
+        onChange={onChange}
+        onCalculate={() => {}}
+      />,
+    )
+
+    const qInput = screen.getByLabelText(/dividend yield \(q\)/i)
+    await user.clear(qInput)
+    await user.type(qInput, '4')
+
+    expect(onChange).toHaveBeenLastCalledWith(expect.objectContaining({ q: 0.04 }))
   })
 
   it('disables Calculate while a request is pending', () => {

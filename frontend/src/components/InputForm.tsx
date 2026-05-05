@@ -78,6 +78,13 @@ export function InputForm({
           onChange={(v) => setField('r', v / 100)}
         />
         <NumField
+          label="Dividend Yield (q)"
+          suffix="%"
+          value={Number(((inputs.q ?? 0) * 100).toFixed(3))}
+          invalid={invalid.has('q')}
+          onChange={(v) => setField('q', v / 100)}
+        />
+        <NumField
           label="Volatility (sigma)"
           suffix="%"
           value={Number((inputs.sigma * 100).toFixed(3))}

@@ -146,6 +146,7 @@ Both flows write one line here per change, prefixed with the flow letter.
 Format: `YYYY-MM-DD [A or B]: <one line summary of what changed and which components were updated>`.
 
 2026-05-05 A: dividends `q` field added to InputForm, HeatMapControls (via reuse), BacktestForm; new `psi` row added to GreeksPanel with `rose` accent token; `q` rendered in HistoryScreen summary table column and detail card inputs strip.
+2026-05-05 A: GreeksPanel grid switched from 5 columns to 3 (now lays out as 2 rows of 3), so the sixth `psi` tile no longer wraps alone on the second row. Row 1 carries delta, gamma, theta; row 2 carries vega, rho, psi.
 
 ## How to update this file
 

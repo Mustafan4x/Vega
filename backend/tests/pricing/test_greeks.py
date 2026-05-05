@@ -198,12 +198,14 @@ def test_greeks_at_T_zero_are_zero() -> None:
         assert g.theta == 0.0
         assert g.vega == 0.0
         assert g.rho == 0.0
+        assert g.psi == 0.0
 
 
 def test_greeks_at_sigma_zero_are_zero() -> None:
     call_g = black_scholes_call_greeks(100.0, 100.0, 1.0, 0.05, 0.0)
     assert call_g.delta == 0.0
     assert call_g.gamma == 0.0
+    assert call_g.psi == 0.0
 
 
 def test_greeks_reject_invalid_inputs() -> None:
@@ -213,9 +215,7 @@ def test_greeks_reject_invalid_inputs() -> None:
         black_scholes_put_greeks(100.0, 100.0, 1.0, 0.05, -0.1)
 
 
-# =============================================================================
-# Continuous dividend yield (q != 0): psi and dividend-adjusted Greeks
-# =============================================================================
+# ── Continuous dividend yield (q != 0): psi and dividend-adjusted Greeks ──
 
 # Reference inputs with dividend: S=K=100, T=1, r=0.05, sigma=0.20, q=0.03.
 # d1 = (ln(1) + (0.05 - 0.03 + 0.5*0.04)*1) / (0.20*1) = 0.2000

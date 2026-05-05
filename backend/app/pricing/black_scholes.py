@@ -17,6 +17,8 @@ Greeks are returned in mathematical (textbook) units:
          for display friendly units.
 * rho:   per unit r (a rho of 53 means $53 move if r goes from 0.05 to 1.05).
          The API layer scales to "per 1 percent r" for display.
+* psi:   per unit q (a psi of -56 means $56 drop if q goes from 0.00 to 1.00).
+         The API layer scales to "per 1 percent q" for display.
 
 This separation keeps the math layer unambiguous and the conversion to display
 units explicit in one place.

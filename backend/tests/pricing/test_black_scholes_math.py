@@ -326,6 +326,44 @@ def test_put_rejects_invalid_inputs(S: float, K: float, T: float, r: float, sigm
 
 
 # =============================================================================
+# Continuous dividend yield (q != 0): Hull 10e Chapter 17 reference values
+# =============================================================================
+
+
+@pytest.mark.parametrize(
+    "S, K, T, r, sigma, q, expected_call, expected_put",
+    [
+        (100.0, 100.0, 1.0, 0.05, 0.20, 0.03, 8.6525, 6.7309),
+        (42.0, 40.0, 0.5, 0.10, 0.20, 0.02, 4.4383, 0.9054),
+        (100.0, 110.0, 0.25, 0.05, 0.30, 0.05, 2.4692, 12.3450),
+        (80.0, 70.0, 2.0, 0.04, 0.25, -0.01, 20.8842, 3.8862),
+    ],
+)
+def test_call_put_with_dividend_yield(
+    S: float,
+    K: float,
+    T: float,
+    r: float,
+    sigma: float,
+    q: float,
+    expected_call: float,
+    expected_put: float,
+) -> None:
+    """Hull 10e Chapter 17 closed-form values with continuous dividend yield."""
+    call = black_scholes_call(S=S, K=K, T=T, r=r, sigma=sigma, q=q)
+    put = black_scholes_put(S=S, K=K, T=T, r=r, sigma=sigma, q=q)
+    assert call == pytest.approx(expected_call, abs=1e-4)
+    assert put == pytest.approx(expected_put, abs=1e-4)
+
+
+def test_q_zero_matches_no_dividend_path() -> None:
+    """q == 0.0 is bit-identical to omitting q (default value preserved)."""
+    no_q = black_scholes_call(S=100.0, K=100.0, T=1.0, r=0.05, sigma=0.20)
+    with_q_zero = black_scholes_call(S=100.0, K=100.0, T=1.0, r=0.05, sigma=0.20, q=0.0)
+    assert no_q == with_q_zero
+
+
+# =============================================================================
 # Put call parity: C - P == S - K * exp(-r*T)
 # =============================================================================
 

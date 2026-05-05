@@ -12,11 +12,12 @@ const INPUTS: BacktestRequest = {
   end_date: '2026-02-15',
   sigma: 0.2,
   r: 0.05,
+  q: 0,
   dte_days: 30,
 }
 
 describe('BacktestForm', () => {
-  it('renders the symbol, strategy, dates, dte, sigma, r inputs and a Run button', () => {
+  it('renders the symbol, strategy, dates, dte, sigma, r, q inputs and a Run button', () => {
     render(
       <BacktestForm
         inputs={INPUTS}
@@ -34,7 +35,28 @@ describe('BacktestForm', () => {
     expect(screen.getByLabelText(/days to expiry/i)).toBeInTheDocument()
     expect(screen.getByLabelText(/implied volatility/i)).toBeInTheDocument()
     expect(screen.getByLabelText(/risk free rate/i)).toBeInTheDocument()
+    expect(screen.getByLabelText(/dividend yield \(q\)/i)).toBeInTheDocument()
     expect(screen.getByRole('button', { name: /run backtest/i })).toBeEnabled()
+  })
+
+  it('converts a typed q percent value to a decimal in onChange', async () => {
+    const user = userEvent.setup()
+    const onChange = vi.fn()
+    render(
+      <BacktestForm
+        inputs={INPUTS}
+        invalid={new Set()}
+        pending={false}
+        onChange={onChange}
+        onRun={() => {}}
+      />,
+    )
+
+    const qInput = screen.getByLabelText(/dividend yield \(q\)/i)
+    await user.clear(qInput)
+    await user.type(qInput, '4')
+
+    expect(onChange).toHaveBeenLastCalledWith(expect.objectContaining({ q: 0.04 }))
   })
 
   it('uppercases the symbol on input', async () => {

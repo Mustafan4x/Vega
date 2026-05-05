@@ -71,6 +71,7 @@ Compute call and put values plus Greeks for a single set of inputs.
 | `T` | float | `[0, 100]` | Time to expiry in years. |
 | `r` | float | `[-1, 1]` | Continuously compounded annual risk free rate. |
 | `sigma` | float | `[0, 10]` | Annualized volatility. |
+| `q` | float | `[-1, 1]`, default `0` | Continuous dividend yield (annualized, decimal). Optional; omitting it is identical to `q = 0`, which preserves the pre dividend behavior bit for bit. |
 | `model` | enum | `black_scholes` (default), `binomial`, `monte_carlo` | Which pricer computes the call and put. Greeks always come from closed form Black Scholes regardless. |
 
 Strict: extra fields rejected with 422; `Infinity` or `NaN` rejected.
@@ -87,19 +88,21 @@ Strict: extra fields rejected with 422; `Infinity` or `NaN` rejected.
     "gamma": 0.01876,
     "theta_per_day": -0.01757,
     "vega_per_pct": 0.3752,
-    "rho_per_pct": 0.5323
+    "rho_per_pct": 0.5323,
+    "psi_per_pct": -0.6368
   },
   "put_greeks": {
     "delta": -0.3632,
     "gamma": 0.01876,
     "theta_per_day": -0.01054,
     "vega_per_pct": 0.3752,
-    "rho_per_pct": -0.4189
+    "rho_per_pct": -0.4189,
+    "psi_per_pct": 0.3632
   }
 }
 ```
 
-Greeks are returned in display friendly units: vega per 1 percent of sigma, rho per 1 percent of r, theta per calendar day. Delta and gamma are in natural units. See `docs/risk/conventions.md`.
+Greeks are returned in display friendly units: vega per 1 percent of sigma, rho per 1 percent of r, theta per calendar day, psi per 1 percent of q. Delta and gamma are in natural units. See `docs/risk/conventions.md`.
 
 ### `POST /api/heatmap`
 
@@ -117,7 +120,7 @@ Adds to the price request:
 | `cols` | int | `[1, 21]` | Spot axis points. |
 | `model` | enum | as above | Pricing model for every cell. |
 
-The 21x21 cap is threat model T12 (server cost ceiling).
+`q` (inherited from the price request) is held constant across all cells; the heat map does not shock the dividend yield. The 21x21 cap is threat model T12 (server cost ceiling).
 
 **Response**
 
@@ -158,7 +161,7 @@ Paginated list of saved calculations, newest first. Drives the History screen.
     {
       "calculation_id": "9c8f64a8-...",
       "created_at": "2026-05-04T03:32:21.000+00:00",
-      "s": 100.0, "k": 100.0, "t": 1.0, "r": 0.05, "sigma": 0.2,
+      "s": 100.0, "k": 100.0, "t": 1.0, "r": 0.05, "sigma": 0.2, "q": 0.025,
       "rows": 9, "cols": 9
     }
   ],
@@ -166,7 +169,7 @@ Paginated list of saved calculations, newest first. Drives the History screen.
 }
 ```
 
-`items` carries the input parameters at a glance; the full grid lives at `GET /api/calculations/{id}`.
+`items` carries the input parameters at a glance; the full grid lives at `GET /api/calculations/{id}`. Calculations saved before the dividend feature shipped report `q = 0.0` (backfilled by the Alembic migration with a server default of zero).
 
 ### `GET /api/calculations/{id}`
 
@@ -177,7 +180,7 @@ Reconstruct a previously persisted heat map by UUID. The path parameter is ancho
 ```json
 {
   "calculation_id": "9c8f64a8-...",
-  "s": 100.0, "k": 100.0, "t": 1.0, "r": 0.05, "sigma": 0.2,
+  "s": 100.0, "k": 100.0, "t": 1.0, "r": 0.05, "sigma": 0.2, "q": 0.025,
   "rows": 9, "cols": 9,
   "call": [[ ... ]], "put": [[ ... ]],
   "sigma_axis": [...], "spot_axis": [...]
@@ -216,6 +219,7 @@ Replay a strategy against historical prices and return the daily P&L curve.
 | `end_date` | date | ISO 8601 | Last mark date (inclusive). Range capped at 5 years. |
 | `sigma` | float | `(0, 10]` | Implied vol the position was opened against, held constant for every mark. |
 | `r` | float | `[-1, 1]` | Risk free rate. |
+| `q` | float | `[-1, 1]`, default `0` | Continuous dividend yield, held constant across the replay window. Optional. |
 | `dte_days` | int | `(0, 365]` | Days to expiry from the entry date. |
 
 **Response**

@@ -68,7 +68,7 @@ button {
   min-width: 0;
 }
 .tr-page {
-  padding: var(--space-4);
+  padding: var(--space-3);
   max-width: var(--layout-page-max);
   width: 100%;
   margin: 0 auto;
@@ -94,7 +94,7 @@ button {
   font-family: var(--font-display);
   font-style: italic;
   font-weight: var(--weight-bold);
-  font-size: 26px;
+  font-size: 20px;
   line-height: 1;
   letter-spacing: var(--tracking-tight);
   color: var(--color-text-primary);
@@ -114,13 +114,13 @@ button {
 [data-component='Sidebar'] [data-element='navItem'] {
   display: flex;
   align-items: center;
-  gap: var(--space-2);
-  padding: 9px 12px;
+  gap: 6px;
+  padding: 7px 9px;
   border-radius: var(--radius-md);
   font-family: var(--font-display);
   font-style: italic;
   font-weight: var(--weight-medium);
-  font-size: 15px;
+  font-size: 11px;
   line-height: 1.3;
   color: var(--color-text-muted);
   text-align: left;
@@ -140,20 +140,20 @@ button {
 [data-component='Sidebar'] [data-element='footer'] {
   font-family: var(--font-mono);
   font-weight: var(--weight-medium);
-  font-size: 11px;
+  font-size: 9px;
   color: var(--color-text-subtle);
   display: flex;
   align-items: center;
-  gap: var(--space-2);
-  padding: var(--space-2) var(--space-3);
+  gap: var(--space-1);
+  padding: var(--space-1) var(--space-2);
   border-top: 1px solid var(--color-border);
 }
 [data-component='Sidebar'] [data-element='statusDot'] {
-  width: 6px;
-  height: 6px;
+  width: 5px;
+  height: 5px;
   border-radius: 50%;
   background: var(--color-success-500);
-  box-shadow: 0 0 8px var(--color-success-500);
+  box-shadow: 0 0 6px var(--color-success-500);
 }
 
 /* ══ Top bar ═════════════════════════════════════════════════════════════ */
@@ -163,7 +163,7 @@ button {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 0 var(--space-6);
+  padding: 0 var(--space-4);
   background: rgba(14, 26, 44, 0.85);
   backdrop-filter: blur(8px);
   -webkit-backdrop-filter: blur(8px);
@@ -171,36 +171,36 @@ button {
 [data-component='TopBar'] [data-element='crumbs'] {
   display: flex;
   align-items: center;
-  gap: var(--space-2);
+  gap: var(--space-1);
 }
 [data-component='TopBar'] [data-element='crumbMuted'] {
   font-family: var(--font-display);
   font-style: italic;
   font-weight: var(--weight-medium);
-  font-size: 17px;
+  font-size: 13px;
   color: var(--color-text-subtle);
 }
 [data-component='TopBar'] [data-element='crumbSep'] {
   color: var(--color-text-subtle);
   font-family: var(--font-display);
   font-style: italic;
-  font-size: 17px;
+  font-size: 13px;
 }
 [data-component='TopBar'] [data-element='crumb'] {
   font-family: var(--font-display);
   font-style: italic;
   font-weight: var(--weight-bold);
-  font-size: 17px;
+  font-size: 13px;
   color: var(--color-text-primary);
 }
 [data-component='TopBar'] [data-element='actions'] {
   display: flex;
   align-items: center;
-  gap: var(--space-3);
+  gap: var(--space-2);
 }
 [data-component='TopBar'] [data-element='iconBtn'] {
-  width: 40px;
-  height: 40px;
+  width: 30px;
+  height: 30px;
   display: grid;
   place-items: center;
   border-radius: var(--radius-md);
@@ -212,8 +212,8 @@ button {
   color: var(--color-text-primary);
 }
 [data-component='TopBar'] [data-element='avatar'] {
-  width: 40px;
-  height: 40px;
+  width: 30px;
+  height: 30px;
   border-radius: 50%;
   background: var(--color-primary-500);
   color: var(--color-text-inverse);
@@ -221,7 +221,7 @@ button {
   place-items: center;
   font-family: var(--font-mono);
   font-weight: var(--weight-semibold);
-  font-size: 14px;
+  font-size: 11px;
 }
 
 /* ══ Cards ═══════════════════════════════════════════════════════════════ */
@@ -229,20 +229,20 @@ button {
   background: var(--color-surface);
   border: 1px solid var(--color-border);
   border-radius: var(--radius-card);
-  padding: var(--space-5);
+  padding: var(--space-3);
   box-shadow: var(--shadow-card);
 }
 .tr-card-head {
   display: flex;
   align-items: baseline;
   justify-content: space-between;
-  margin-bottom: var(--space-4);
+  margin-bottom: var(--space-3);
 }
 .tr-card-title {
   font-family: var(--font-display);
   font-style: italic;
   font-weight: var(--weight-bold);
-  font-size: 24px;
+  font-size: 18px;
   line-height: 1.2;
   margin: 0;
   letter-spacing: -0.005em;
@@ -252,7 +252,7 @@ button {
   font-family: var(--font-display);
   font-style: italic;
   font-weight: var(--weight-medium);
-  font-size: 14px;
+  font-size: 11px;
   color: var(--color-text-muted);
   white-space: nowrap;
 }
@@ -262,10 +262,10 @@ button {
   font-family: var(--font-display);
   font-style: italic;
   font-weight: var(--weight-bold);
-  font-size: 16px;
+  font-size: 12px;
   color: var(--color-text-primary);
   display: block;
-  margin-bottom: 10px;
+  margin-bottom: 6px;
 }
 .tr-input-wrap {
   position: relative;
@@ -274,15 +274,15 @@ button {
 }
 .tr-input {
   width: 100%;
-  height: 44px;
-  padding: 0 14px;
+  height: 32px;
+  padding: 0 10px;
   background: rgba(0, 0, 0, 0.32);
   border: 1px solid var(--color-border);
   border-radius: var(--radius-md);
   color: var(--color-text-primary);
   font-family: var(--font-sans);
   font-weight: var(--weight-medium);
-  font-size: 14px;
+  font-size: 11px;
   transition:
     border-color 180ms cubic-bezier(0.2, 0, 0, 1),
     box-shadow 180ms cubic-bezier(0.2, 0, 0, 1);
@@ -308,11 +308,11 @@ button {
 }
 .tr-suffix {
   position: absolute;
-  right: 12px;
+  right: 10px;
   font-family: var(--font-display);
   font-style: italic;
   font-weight: var(--weight-medium);
-  font-size: 14px;
+  font-size: 11px;
   color: var(--color-text-subtle);
   pointer-events: none;
 }
@@ -321,14 +321,14 @@ button {
 .tr-btn {
   display: inline-flex;
   align-items: center;
-  gap: var(--space-2);
-  height: 44px;
-  padding: 0 18px;
+  gap: var(--space-1);
+  height: 32px;
+  padding: 0 14px;
   border-radius: var(--radius-md);
   font-family: var(--font-display);
   font-style: italic;
   font-weight: var(--weight-bold);
-  font-size: 15px;
+  font-size: 12px;
   transition:
     filter 180ms cubic-bezier(0.2, 0, 0, 1),
     transform 100ms cubic-bezier(0.2, 0, 0, 1),
@@ -392,8 +392,8 @@ button {
   display: flex;
   flex-wrap: wrap;
   align-items: baseline;
-  gap: var(--space-3);
-  font-size: 14px;
+  gap: var(--space-2);
+  font-size: 11px;
   color: var(--color-text-primary);
 }
 [data-component='TickerAutocomplete'] [data-element='symbol'] {
@@ -418,15 +418,15 @@ button {
 [data-component='ModelSelector'] [data-element='tabs'] {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
-  gap: var(--space-2);
-  margin-bottom: var(--space-4);
+  gap: var(--space-1);
+  margin-bottom: var(--space-3);
 }
 [data-component='ModelSelector'] .tr-tab {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 4px;
-  padding: 10px 8px;
+  gap: 3px;
+  padding: 7px 6px;
   background: rgba(0, 0, 0, 0.32);
   border: 1px solid var(--color-border);
   border-radius: var(--radius-md);
@@ -454,25 +454,25 @@ button {
   font-family: var(--font-display);
   font-style: italic;
   font-weight: var(--weight-bold);
-  font-size: 14px;
+  font-size: 11px;
 }
 [data-component='ModelSelector'] .tr-tab-short {
-  font-size: 11px;
+  font-size: 9px;
   font-weight: var(--weight-medium);
 }
 [data-component='ModelSelector'] [data-element='compareRow'] {
-  margin-top: var(--space-3);
+  margin-top: var(--space-2);
 }
 [data-component='ModelSelector'] .tr-toggle {
   display: flex;
   align-items: center;
-  gap: var(--space-3);
+  gap: var(--space-2);
   cursor: pointer;
 }
 [data-component='ModelSelector'] .tr-toggle-track {
   position: relative;
-  width: 38px;
-  height: 22px;
+  width: 30px;
+  height: 17px;
   border-radius: 999px;
   background: rgba(0, 0, 0, 0.45);
   border: 1px solid var(--color-border);
@@ -487,17 +487,17 @@ button {
   position: absolute;
   top: 2px;
   left: 2px;
-  width: 16px;
-  height: 16px;
+  width: 11px;
+  height: 11px;
   border-radius: 50%;
   background: var(--color-text-primary);
   transition: transform 180ms cubic-bezier(0.2, 0, 0, 1);
 }
 [data-component='ModelSelector'] .tr-toggle-track--on .tr-toggle-thumb {
-  transform: translateX(16px);
+  transform: translateX(13px);
 }
 [data-component='ModelSelector'] .tr-toggle-label {
-  font-size: 13px;
+  font-size: 10px;
   color: var(--color-text-muted);
 }
 
@@ -507,19 +507,19 @@ button {
   font-variant-numeric: tabular-nums;
   font-style: normal;
   font-weight: var(--weight-medium);
-  font-size: 13px;
+  font-size: 10px;
   color: var(--color-accent-500);
 }
 [data-component='ComparePanel'] [data-element='columns'] {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
-  gap: var(--space-4);
+  gap: var(--space-3);
 }
 [data-component='ComparePanel'] [data-element='column'] {
   display: flex;
   flex-direction: column;
-  gap: var(--space-3);
-  padding: var(--space-4);
+  gap: var(--space-2);
+  padding: var(--space-3);
   background: rgba(0, 0, 0, 0.22);
   border: 1px solid var(--color-border);
   border-radius: var(--radius-md);
@@ -528,10 +528,10 @@ button {
   font-family: var(--font-display);
   font-style: italic;
   font-weight: var(--weight-bold);
-  font-size: 15px;
+  font-size: 11px;
   color: var(--color-text-primary);
   border-bottom: 1px solid var(--color-border);
-  padding-bottom: var(--space-2);
+  padding-bottom: var(--space-1);
 }
 [data-component='ComparePanel'] .tr-compare-row {
   display: flex;
@@ -541,11 +541,11 @@ button {
 [data-component='ComparePanel'] .tr-compare-label {
   font-family: var(--font-display);
   font-style: italic;
-  font-size: 13px;
+  font-size: 10px;
   color: var(--color-text-muted);
 }
 [data-component='ComparePanel'] .tr-compare-value {
-  font-size: 18px;
+  font-size: 14px;
   font-weight: var(--weight-bold);
   color: var(--color-text-primary);
   font-variant-numeric: tabular-nums;
@@ -558,8 +558,8 @@ button {
   grid-template-columns: minmax(280px, 340px) 1fr;
   gap: var(--space-3);
   align-items: stretch;
-  height: calc(100vh - var(--layout-topbar-height) - 2 * var(--space-4));
-  min-height: 540px;
+  height: calc(100vh - var(--layout-topbar-height) - 2 * var(--space-3));
+  min-height: 420px;
 }
 .tr-backtest > [data-component='BacktestForm'] {
   min-height: 0;
@@ -642,7 +642,7 @@ button {
 [data-component='MetricCard'] {
   display: flex;
   flex-direction: column;
-  gap: var(--space-3);
+  gap: var(--space-2);
   position: relative;
   overflow: hidden;
 }
@@ -655,7 +655,7 @@ button {
   font-family: var(--font-display);
   font-style: italic;
   font-weight: var(--weight-bold);
-  font-size: 18px;
+  font-size: 14px;
   color: var(--color-text-primary);
 }
 /*
@@ -673,11 +673,11 @@ button {
   font-family: var(--font-display);
   font-style: italic;
   font-weight: var(--weight-medium);
-  font-size: 14px;
+  font-size: 11px;
   color: var(--color-text-muted);
   display: flex;
   align-items: center;
-  gap: var(--space-2);
+  gap: var(--space-1);
 }
 [data-component='MetricCard'] [data-element='sub'] .t-num {
   color: var(--color-text-primary);
@@ -697,16 +697,16 @@ button {
 [data-component='GreeksPanel'] [data-element='row'] {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
-  gap: var(--space-3);
+  gap: var(--space-2);
 }
 [data-component='GreeksPanel'] [data-element='tile'] {
   background: var(--color-surface-2);
   border-radius: var(--radius-lg);
-  padding: var(--space-4);
-  border-left: 3px solid var(--color-border);
+  padding: var(--space-2);
+  border-left: 2px solid var(--color-border);
   display: flex;
   flex-direction: column;
-  gap: var(--space-1);
+  gap: 2px;
 }
 [data-component='GreeksPanel'] [data-element='tile'][data-accent='primary'] {
   border-left-color: var(--color-primary-300);
@@ -730,13 +730,13 @@ button {
   font-family: var(--font-display);
   font-style: italic;
   font-weight: var(--weight-bold);
-  font-size: 22px;
+  font-size: 17px;
   color: var(--color-text-muted);
   line-height: 1;
 }
 [data-component='GreeksPanel'] [data-element='value'] {
   font-family: var(--font-number);
-  font-size: 22px;
+  font-size: 17px;
   font-variant-numeric: tabular-nums;
   color: var(--color-text-primary);
   line-height: 1.1;
@@ -745,7 +745,7 @@ button {
   font-family: var(--font-display);
   font-style: italic;
   font-weight: var(--weight-medium);
-  font-size: 14px;
+  font-size: 11px;
   color: var(--color-text-muted);
 }
 
@@ -759,12 +759,12 @@ button {
 .tr-tag {
   display: inline-flex;
   align-items: center;
-  gap: var(--space-1);
-  padding: 3px var(--space-2);
+  gap: 3px;
+  padding: 2px 7px;
   font-family: var(--font-display);
   font-style: italic;
   font-weight: var(--weight-semibold);
-  font-size: 13px;
+  font-size: 10px;
   border-radius: var(--radius-pill);
 }
 .tr-tag--success {
@@ -781,7 +781,7 @@ button {
   font-family: var(--font-display);
   font-style: italic;
   font-weight: var(--weight-medium);
-  font-size: 14px;
+  font-size: 11px;
   color: var(--color-text-muted);
 }
 .tr-status--error {
@@ -795,8 +795,8 @@ button {
   display: grid;
   grid-template-rows: auto 1fr auto auto auto;
   gap: var(--space-3);
-  height: calc(100vh - var(--layout-topbar-height) - 2 * var(--space-4));
-  min-height: 540px;
+  height: calc(100vh - var(--layout-topbar-height) - 2 * var(--space-3));
+  min-height: 420px;
 }
 .tr-heatmap-top {
   display: grid;
@@ -807,20 +807,20 @@ button {
 .tr-heatmap-screen [data-component='InputForm'] [data-element='grid'] {
   grid-template-columns: repeat(3, 1fr);
   align-items: end;
-  gap: 10px 12px;
+  gap: 8px 10px;
 }
 .tr-heatmap-screen [data-component='InputForm'] .tr-calc-btn {
   grid-column: 1 / -1;
   margin-top: 2px;
 }
 .tr-heatmap-screen .tr-card {
-  padding: var(--space-3);
+  padding: var(--space-2);
 }
 .tr-heatmap-screen .tr-card-head {
-  margin-bottom: var(--space-3);
+  margin-bottom: var(--space-2);
 }
 .tr-heatmap-screen .tr-card-title {
-  font-size: 18px;
+  font-size: 14px;
 }
 .tr-heatmap-grids {
   display: grid;
@@ -867,11 +867,11 @@ button {
 .tr-history-table {
   width: 100%;
   border-collapse: collapse;
-  font-size: 14px;
+  font-size: 11px;
 }
 .tr-history-table th,
 .tr-history-table td {
-  padding: var(--space-2) var(--space-3);
+  padding: var(--space-1) var(--space-2);
   border-bottom: 1px solid var(--color-border);
   text-align: left;
 }
@@ -880,7 +880,7 @@ button {
   font-weight: 500;
   letter-spacing: 0.04em;
   text-transform: uppercase;
-  font-size: 11px;
+  font-size: 9px;
 }
 .tr-history-table tr[data-selected='true'] {
   background: var(--color-surface-2, rgba(255, 255, 255, 0.03));
@@ -905,13 +905,13 @@ button {
 [data-component='HeatMapControls'] [data-element='tab'] {
   display: inline-flex;
   align-items: center;
-  gap: var(--space-2);
-  padding: 6px 12px;
+  gap: 6px;
+  padding: 4px 9px;
   border-radius: 4px;
   font-family: var(--font-display);
   font-style: italic;
   font-weight: var(--weight-semibold);
-  font-size: 13px;
+  font-size: 10px;
   color: var(--color-text-muted);
 }
 [data-component='HeatMapControls'] [data-element='tab'][data-active='true'] {
@@ -935,9 +935,9 @@ button {
   width: 100%;
 }
 [data-component='HeatMapControls'] .tr-range-vals {
-  font-size: 12px;
+  font-size: 9px;
   color: var(--color-text-muted);
-  margin-left: var(--space-2);
+  margin-left: var(--space-1);
 }
 
 [data-component='HeatMap'],
@@ -949,7 +949,7 @@ button {
 [data-component='HeatMap'] [data-element='frame'],
 [data-component='PnlHeatMap'] [data-element='frame'] {
   display: grid;
-  grid-template-columns: 36px 1fr;
+  grid-template-columns: 28px 1fr;
   gap: var(--space-1);
 }
 [data-component='HeatMap'] [data-element='axis'],
@@ -958,7 +958,7 @@ button {
   flex-direction: column;
   justify-content: space-between;
   font-family: var(--font-mono);
-  font-size: 11px;
+  font-size: 9px;
   color: var(--color-text-subtle);
   text-align: right;
   padding-right: var(--space-1);
@@ -973,7 +973,7 @@ button {
 [data-component='PnlHeatMap'] [data-element='canvasWrap'] {
   position: relative;
   aspect-ratio: 1 / 1;
-  min-height: 280px;
+  min-height: 200px;
   border: 1px solid var(--color-border);
   border-radius: var(--radius-md);
   overflow: hidden;
@@ -1007,9 +1007,9 @@ button {
   display: flex;
   justify-content: space-between;
   font-family: var(--font-mono);
-  font-size: 11px;
+  font-size: 9px;
   color: var(--color-text-subtle);
-  margin-left: 36px;
+  margin-left: 28px;
 }
 
 @media (max-width: 1100px) {
@@ -1110,8 +1110,8 @@ button {
   grid-template-rows: 1fr auto auto;
   gap: var(--space-3);
   align-items: stretch;
-  height: calc(100vh - var(--layout-topbar-height) - 2 * var(--space-4));
-  min-height: 540px;
+  height: calc(100vh - var(--layout-topbar-height) - 2 * var(--space-3));
+  min-height: 420px;
 }
 .tr-pricing > [data-element='col-market'] {
   display: grid;
@@ -1155,17 +1155,17 @@ button {
    the input so the card doesn't look hollow. */
 .tr-pricing > [data-element='col-market'] > [data-component='TickerAutocomplete'] {
   justify-content: flex-start;
-  gap: var(--space-3);
+  gap: var(--space-2);
 }
 .tr-pricing > [data-element='col-market'] > [data-component='TickerAutocomplete'] .tr-input {
-  height: 56px;
-  font-size: 18px;
+  height: 42px;
+  font-size: 13px;
 }
 .tr-pricing
   > [data-element='col-market']
   > [data-component='TickerAutocomplete']
   [data-element='hint'] {
-  font-size: 14px;
+  font-size: 11px;
 }
 
 /* Model: title up top, content pulled to vertical center. Enlarge the
@@ -1174,20 +1174,20 @@ button {
   justify-content: space-between;
 }
 .tr-pricing [data-component='ModelSelector'] .tr-tab {
-  padding: 14px 10px;
-  gap: 6px;
+  padding: 10px 7px;
+  gap: 4px;
 }
 .tr-pricing [data-component='ModelSelector'] .tr-tab-label {
-  font-size: 16px;
+  font-size: 12px;
 }
 .tr-pricing [data-component='ModelSelector'] .tr-tab-short {
-  font-size: 13px;
+  font-size: 10px;
 }
 .tr-pricing [data-component='ModelSelector'] [data-element='compareRow'] {
-  margin-top: var(--space-4);
+  margin-top: var(--space-3);
 }
 .tr-pricing [data-component='ModelSelector'] .tr-toggle-label {
-  font-size: 15px;
+  font-size: 12px;
 }
 
 /* Call / Put value card: big dollar number drifts to vertical center. */
@@ -1212,10 +1212,10 @@ button {
     gap: var(--space-2);
   }
   .tr-pricing .tr-card {
-    padding: var(--space-3);
+    padding: var(--space-2);
   }
   .tr-pricing [data-component='GreeksPanel'] [data-element='glyph'] {
-    font-size: 18px;
+    font-size: 14px;
   }
 }
 

@@ -291,16 +291,27 @@ def test_run_backtest_accepts_q_and_lowers_long_call_basis() -> None:
 
 
 def test_run_backtest_q_zero_matches_no_q() -> None:
-    common = dict(
-        strategy=Strategy.LONG_CALL,
-        dates=("2025-01-02", "2025-01-03", "2025-01-06"),
-        closes=(100.0, 101.0, 102.0),
-        sigma=0.20,
-        r=0.05,
-        dte_days=30,
+    no_q = run_backtest(
+        BacktestRequest(
+            strategy=Strategy.LONG_CALL,
+            dates=("2025-01-02", "2025-01-03", "2025-01-06"),
+            closes=(100.0, 101.0, 102.0),
+            sigma=0.20,
+            r=0.05,
+            dte_days=30,
+        )
     )
-    no_q = run_backtest(BacktestRequest(**common))
-    with_q = run_backtest(BacktestRequest(**common, q=0.0))
+    with_q = run_backtest(
+        BacktestRequest(
+            strategy=Strategy.LONG_CALL,
+            dates=("2025-01-02", "2025-01-03", "2025-01-06"),
+            closes=(100.0, 101.0, 102.0),
+            sigma=0.20,
+            r=0.05,
+            dte_days=30,
+            q=0.0,
+        )
+    )
     assert no_q.entry_basis == with_q.entry_basis
     assert no_q.position_value == with_q.position_value
 

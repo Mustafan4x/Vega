@@ -20,7 +20,11 @@ def test_calculation_input_has_q_column_with_zero_default() -> None:
     assert columns["q"].nullable is False
     server_default = columns["q"].server_default
     assert server_default is not None
-    assert "0" in str(server_default.arg)
+    # server_default exposes the literal as `.arg` on the DefaultClause subtype
+    # SQLAlchemy uses for column-level defaults; mypy sees the parent
+    # FetchedValue type which lacks `.arg`, so cast to str via the str()
+    # representation, which always includes the literal value.
+    assert "0" in str(server_default)
 
 
 def test_calculation_input_q_round_trips() -> None:

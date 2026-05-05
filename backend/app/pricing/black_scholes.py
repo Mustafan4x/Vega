@@ -37,6 +37,7 @@ class Greeks:
     theta: float
     vega: float
     rho: float
+    psi: float
 
 
 def _validate_inputs(S: float, K: float, T: float, sigma: float, q: float = 0.0) -> None:
@@ -122,48 +123,62 @@ def black_scholes_put(
 
 
 def _greeks_components(
-    S: float, K: float, T: float, r: float, sigma: float
-) -> tuple[float, float, float, float]:
-    """Return (d1, d2, N'(d1), discounted_strike). Used by the call/put Greek functions."""
+    S: float, K: float, T: float, r: float, sigma: float, q: float
+) -> tuple[float, float, float, float, float]:
+    """Return (d1, d2, N'(d1), discounted_strike, fwd_S)."""
     sigma_sqrt_t = sigma * math.sqrt(T)
-    d1 = (math.log(S / K) + (r + 0.5 * sigma * sigma) * T) / sigma_sqrt_t
+    d1 = (math.log(S / K) + (r - q + 0.5 * sigma * sigma) * T) / sigma_sqrt_t
     d2 = d1 - sigma_sqrt_t
-    return d1, d2, _norm_pdf(d1), K * math.exp(-r * T)
+    return d1, d2, _norm_pdf(d1), K * math.exp(-r * T), S * math.exp(-q * T)
 
 
 def _zero_greeks() -> Greeks:
-    return Greeks(delta=0.0, gamma=0.0, theta=0.0, vega=0.0, rho=0.0)
+    return Greeks(delta=0.0, gamma=0.0, theta=0.0, vega=0.0, rho=0.0, psi=0.0)
 
 
-def black_scholes_call_greeks(S: float, K: float, T: float, r: float, sigma: float) -> Greeks:
+def black_scholes_call_greeks(
+    S: float, K: float, T: float, r: float, sigma: float, q: float = 0.0
+) -> Greeks:
     """Closed form Greeks for a European call. Math units (see module docstring)."""
-    _validate_inputs(S, K, T, sigma)
+    _validate_inputs(S, K, T, sigma, q)
     if T == 0.0 or S == 0.0 or sigma <= _SIGMA_DETERMINISTIC_THRESHOLD:
         return _zero_greeks()
 
-    d1, d2, npdf_d1, discounted_strike = _greeks_components(S, K, T, r, sigma)
+    d1, d2, npdf_d1, discounted_strike, fwd_S = _greeks_components(S, K, T, r, sigma, q)
     sqrt_t = math.sqrt(T)
 
-    delta = _norm_cdf(d1)
-    gamma = npdf_d1 / (S * sigma * sqrt_t)
-    vega = S * sqrt_t * npdf_d1
-    theta = -S * npdf_d1 * sigma / (2.0 * sqrt_t) - r * discounted_strike * _norm_cdf(d2)
+    delta = math.exp(-q * T) * _norm_cdf(d1)
+    gamma = math.exp(-q * T) * npdf_d1 / (S * sigma * sqrt_t)
+    vega = fwd_S * sqrt_t * npdf_d1
+    theta = (
+        -fwd_S * npdf_d1 * sigma / (2.0 * sqrt_t)
+        - r * discounted_strike * _norm_cdf(d2)
+        + q * fwd_S * _norm_cdf(d1)
+    )
     rho = T * discounted_strike * _norm_cdf(d2)
-    return Greeks(delta=delta, gamma=gamma, theta=theta, vega=vega, rho=rho)
+    psi = -T * fwd_S * _norm_cdf(d1)
+    return Greeks(delta=delta, gamma=gamma, theta=theta, vega=vega, rho=rho, psi=psi)
 
 
-def black_scholes_put_greeks(S: float, K: float, T: float, r: float, sigma: float) -> Greeks:
+def black_scholes_put_greeks(
+    S: float, K: float, T: float, r: float, sigma: float, q: float = 0.0
+) -> Greeks:
     """Closed form Greeks for a European put. Math units (see module docstring)."""
-    _validate_inputs(S, K, T, sigma)
+    _validate_inputs(S, K, T, sigma, q)
     if T == 0.0 or S == 0.0 or sigma <= _SIGMA_DETERMINISTIC_THRESHOLD:
         return _zero_greeks()
 
-    d1, d2, npdf_d1, discounted_strike = _greeks_components(S, K, T, r, sigma)
+    d1, d2, npdf_d1, discounted_strike, fwd_S = _greeks_components(S, K, T, r, sigma, q)
     sqrt_t = math.sqrt(T)
 
-    delta = _norm_cdf(d1) - 1.0
-    gamma = npdf_d1 / (S * sigma * sqrt_t)
-    vega = S * sqrt_t * npdf_d1
-    theta = -S * npdf_d1 * sigma / (2.0 * sqrt_t) + r * discounted_strike * _norm_cdf(-d2)
+    delta = math.exp(-q * T) * (_norm_cdf(d1) - 1.0)
+    gamma = math.exp(-q * T) * npdf_d1 / (S * sigma * sqrt_t)
+    vega = fwd_S * sqrt_t * npdf_d1
+    theta = (
+        -fwd_S * npdf_d1 * sigma / (2.0 * sqrt_t)
+        + r * discounted_strike * _norm_cdf(-d2)
+        - q * fwd_S * _norm_cdf(-d1)
+    )
     rho = -T * discounted_strike * _norm_cdf(-d2)
-    return Greeks(delta=delta, gamma=gamma, theta=theta, vega=vega, rho=rho)
+    psi = T * fwd_S * _norm_cdf(-d1)
+    return Greeks(delta=delta, gamma=gamma, theta=theta, vega=vega, rho=rho, psi=psi)

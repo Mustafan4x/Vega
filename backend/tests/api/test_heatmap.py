@@ -232,3 +232,56 @@ def test_heatmap_performance_21_by_21_under_500_ms(client: TestClient) -> None:
 
     assert response.status_code == 200
     assert elapsed_ms < 500, f"21x21 heatmap took {elapsed_ms:.1f} ms, expected < 500 ms"
+
+
+def test_heatmap_accepts_q_and_shifts_values(client: TestClient) -> None:
+    """Same heatmap with q=0.05 produces strictly lower call values than q=0."""
+    base = {
+        "S": 100.0,
+        "K": 100.0,
+        "T": 1.0,
+        "r": 0.05,
+        "sigma": 0.20,
+        "vol_shock": [-0.5, 0.5],
+        "spot_shock": [-0.2, 0.2],
+        "rows": 5,
+        "cols": 5,
+    }
+    no_div = client.post("/api/heatmap", json=base).json()
+    with_div = client.post("/api/heatmap", json={**base, "q": 0.05}).json()
+    assert with_div["call"][2][2] < no_div["call"][2][2]
+
+
+def test_heatmap_q_defaults_to_zero(client: TestClient) -> None:
+    base = {
+        "S": 100.0,
+        "K": 100.0,
+        "T": 1.0,
+        "r": 0.05,
+        "sigma": 0.20,
+        "vol_shock": [-0.5, 0.5],
+        "spot_shock": [-0.2, 0.2],
+        "rows": 5,
+        "cols": 5,
+    }
+    res_no_q = client.post("/api/heatmap", json=base).json()
+    res_q_zero = client.post("/api/heatmap", json={**base, "q": 0.0}).json()
+    assert res_no_q == res_q_zero
+
+
+@pytest.mark.parametrize("bad_q", [1.5, -1.5])
+def test_heatmap_rejects_out_of_range_q(client: TestClient, bad_q: float) -> None:
+    payload = {
+        "S": 100.0,
+        "K": 100.0,
+        "T": 1.0,
+        "r": 0.05,
+        "sigma": 0.20,
+        "vol_shock": [-0.5, 0.5],
+        "spot_shock": [-0.2, 0.2],
+        "rows": 5,
+        "cols": 5,
+        "q": bad_q,
+    }
+    res = client.post("/api/heatmap", json=payload)
+    assert res.status_code == 422

@@ -65,6 +65,13 @@ class HeatmapRequest(BaseModel):
     sigma: float = Field(
         ge=0, le=10, allow_inf_nan=False, description="Base volatility (annualized)."
     )
+    q: float = Field(
+        default=0.0,
+        ge=-1.0,
+        le=1.0,
+        allow_inf_nan=False,
+        description="Continuous dividend yield (annualized, continuous).",
+    )
     vol_shock: list[float] = Field(
         min_length=2, max_length=2, description="[min, max] vol shock as fraction of sigma."
     )
@@ -104,15 +111,15 @@ def _is_finite(x: float) -> bool:
 
 
 def _grid_black_scholes(
-    spot_axis: np.ndarray, sigma_axis: np.ndarray, K: float, T: float, r: float
+    spot_axis: np.ndarray, sigma_axis: np.ndarray, K: float, T: float, r: float, q: float
 ) -> tuple[np.ndarray, np.ndarray]:
-    call = black_scholes_call_vec(spot_axis, K, T, r, sigma_axis)
-    put = black_scholes_put_vec(spot_axis, K, T, r, sigma_axis)
+    call = black_scholes_call_vec(spot_axis, K, T, r, sigma_axis, q=q)
+    put = black_scholes_put_vec(spot_axis, K, T, r, sigma_axis, q=q)
     return call, put
 
 
 def _grid_binomial(
-    spot_axis: np.ndarray, sigma_axis: np.ndarray, K: float, T: float, r: float
+    spot_axis: np.ndarray, sigma_axis: np.ndarray, K: float, T: float, r: float, q: float
 ) -> tuple[np.ndarray, np.ndarray]:
     rows, cols = sigma_axis.size, spot_axis.size
     call = np.zeros((rows, cols))
@@ -125,6 +132,7 @@ def _grid_binomial(
                 T,
                 r,
                 float(sigma_axis[i]),
+                q=q,
                 steps=_HEATMAP_BINOMIAL_STEPS,
             )
             put[i, j] = binomial_put(
@@ -133,23 +141,20 @@ def _grid_binomial(
                 T,
                 r,
                 float(sigma_axis[i]),
+                q=q,
                 steps=_HEATMAP_BINOMIAL_STEPS,
             )
     return call, put
 
 
 def _grid_monte_carlo(
-    spot_axis: np.ndarray, sigma_axis: np.ndarray, K: float, T: float, r: float
+    spot_axis: np.ndarray, sigma_axis: np.ndarray, K: float, T: float, r: float, q: float
 ) -> tuple[np.ndarray, np.ndarray]:
     rows, cols = sigma_axis.size, spot_axis.size
     call = np.zeros((rows, cols))
     put = np.zeros((rows, cols))
     for i in range(rows):
         for j in range(cols):
-            # A deterministic per cell seed keeps the grid stable
-            # under repeat requests but uses an independent stream
-            # per cell so neighboring cells are not perfectly
-            # correlated.
             cell_seed = _HEATMAP_MC_SEED + i * MAX_DIMENSION + j
             call[i, j] = monte_carlo_call(
                 float(spot_axis[j]),
@@ -157,6 +162,7 @@ def _grid_monte_carlo(
                 T,
                 r,
                 float(sigma_axis[i]),
+                q=q,
                 paths=_HEATMAP_MC_PATHS,
                 seed=cell_seed,
             )
@@ -166,6 +172,7 @@ def _grid_monte_carlo(
                 T,
                 r,
                 float(sigma_axis[i]),
+                q=q,
                 paths=_HEATMAP_MC_PATHS,
                 seed=cell_seed,
             )
@@ -179,12 +186,13 @@ def _grid_for_model(
     K: float,
     T: float,
     r: float,
+    q: float,
 ) -> tuple[np.ndarray, np.ndarray]:
     if model == "black_scholes":
-        return _grid_black_scholes(spot_axis, sigma_axis, K, T, r)
+        return _grid_black_scholes(spot_axis, sigma_axis, K, T, r, q)
     if model == "binomial":
-        return _grid_binomial(spot_axis, sigma_axis, K, T, r)
-    return _grid_monte_carlo(spot_axis, sigma_axis, K, T, r)
+        return _grid_binomial(spot_axis, sigma_axis, K, T, r, q)
+    return _grid_monte_carlo(spot_axis, sigma_axis, K, T, r, q)
 
 
 @router.post("/heatmap", response_model=HeatmapResponse)
@@ -210,7 +218,7 @@ def heatmap(request: Request, payload: HeatmapRequest) -> HeatmapResponse:
     spot_axis = np.maximum(spot_axis, 0.0)
 
     call, put = _grid_for_model(
-        payload.model, spot_axis, sigma_axis, payload.K, payload.T, payload.r
+        payload.model, spot_axis, sigma_axis, payload.K, payload.T, payload.r, payload.q
     )
 
     return HeatmapResponse(

@@ -3,15 +3,14 @@
  * the LayoutShell component file only exports components (keeps Vite
  * Fast Refresh happy).
  *
- * "Compare" reuses the Pricing screen with the Compare toggle pre
- * flipped so users land directly in the side by side view. "History"
- * lists previously saved heat map calculations and lets the user
- * reload one.
+ * Compare-all-models lives as a toggle on the Pricing screen, not as
+ * its own nav item. "History" lists previously saved heat map
+ * calculations and lets the user reload one.
  */
 
 import type { IconName } from '../components/Icon'
 
-export type ScreenId = 'pricing' | 'heatmap' | 'compare' | 'backtest' | 'history'
+export type ScreenId = 'pricing' | 'heatmap' | 'backtest' | 'history'
 
 export interface ScreenDef {
   id: ScreenId
@@ -22,7 +21,6 @@ export interface ScreenDef {
 export const SCREENS: ReadonlyArray<ScreenDef> = [
   { id: 'pricing', label: 'Pricing', icon: 'calculator' },
   { id: 'heatmap', label: 'Heat Map', icon: 'grid-3x3' },
-  { id: 'compare', label: 'Model Comparison', icon: 'git-compare' },
   { id: 'backtest', label: 'Backtest', icon: 'activity' },
   { id: 'history', label: 'History', icon: 'history' },
 ]

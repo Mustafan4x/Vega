@@ -30,27 +30,16 @@ describe('App', () => {
     expect(screen.getByRole('button', { name: /run backtest/i })).toBeInTheDocument()
   })
 
-  it('exposes all five screens in the sidebar nav', () => {
+  it('exposes all four screens in the sidebar nav', () => {
     render(<App />)
 
     const nav = screen.getByRole('navigation', { name: /primary navigation/i })
     expect(nav).toBeInTheDocument()
     expect(screen.getByRole('button', { name: /pricing/i })).toBeInTheDocument()
     expect(screen.getByRole('button', { name: /heat map/i })).toBeInTheDocument()
-    expect(screen.getByRole('button', { name: /model comparison/i })).toBeInTheDocument()
     expect(screen.getByRole('button', { name: /backtest/i })).toBeInTheDocument()
     expect(screen.getByRole('button', { name: /history/i })).toBeInTheDocument()
-  })
-
-  it('renders the Compare view via the Pricing screen when Model Comparison is active', async () => {
-    const user = (await import('@testing-library/user-event')).default.setup()
-    render(<App />)
-
-    await user.click(screen.getByRole('button', { name: /model comparison/i }))
-
-    expect(document.querySelector('[data-component="PricingScreen"]')).not.toBeNull()
-    // Compare toggle starts on, so the side by side ComparePanel renders.
-    expect(document.querySelector('[data-component="ComparePanel"]')).not.toBeNull()
+    expect(screen.queryByRole('button', { name: /model comparison/i })).toBeNull()
   })
 
   it('renders the History screen when History is active', async () => {

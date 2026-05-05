@@ -25,14 +25,13 @@ export function LayoutShell({ active, onNav, children }: LayoutShellProps) {
     <div data-component="LayoutShell">
       <aside data-component="Sidebar">
         <div data-element="brand">
-          <div data-element="brandMark" aria-hidden="true">
-            <svg viewBox="0 0 64 64" width="22" height="22">
-              <rect x="8" y="8" width="48" height="8" rx="1.5" fill="currentColor" />
-              <rect x="28" y="8" width="8" height="48" rx="1.5" fill="currentColor" />
-              <rect x="30" y="56" width="4" height="4" fill="currentColor" opacity="0.4" />
-            </svg>
-          </div>
-          <span data-element="brandName">Vega</span>
+          <span data-element="brandName">
+            <span data-element="brandNu" aria-hidden="true">
+              ν
+            </span>
+            ega
+          </span>
+          <span className="sr-only">Vega</span>
         </div>
         <nav data-element="nav" aria-label="Primary navigation">
           {SCREENS.map((s) => (
@@ -45,7 +44,7 @@ export function LayoutShell({ active, onNav, children }: LayoutShellProps) {
               aria-label={s.label}
               onClick={() => onNav(s.id)}
             >
-              <Icon name={s.icon} size={16} />
+              <Icon name={s.icon} size={20} />
               <span aria-hidden="true">{s.label}</span>
             </button>
           ))}
@@ -72,9 +71,6 @@ export function LayoutShell({ active, onNav, children }: LayoutShellProps) {
             <button type="button" data-element="iconBtn" aria-label="Settings">
               <Icon name="settings" size={16} />
             </button>
-            <div data-element="avatar" role="img" aria-label="Vega account">
-              <span aria-hidden="true">V</span>
-            </div>
           </div>
         </header>
         <main className="tr-page">{children}</main>

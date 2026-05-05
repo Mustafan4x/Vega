@@ -5,6 +5,9 @@
  * Clicking the button calls ``onApply`` with the full quote so the
  * parent can wire the price into its form.
  *
+ * Focus opens a dropdown of popular tickers; clicking one fills the
+ * input and triggers the lookup. Filter narrows as the user types.
+ *
  * The component is intentionally explicit (resolve, then click): the
  * threat model lists market data as untrusted, and silently
  * overwriting the user's price field on every keystroke would make
@@ -19,6 +22,29 @@ import { fetchTicker, PriceError, type TickerQuote } from '../lib/api'
 const DEBOUNCE_MS = 250
 const TICKER_RE = /^[A-Z0-9.-]{1,10}$/
 
+interface PopularTicker {
+  symbol: string
+  name: string
+}
+
+const POPULAR_TICKERS: ReadonlyArray<PopularTicker> = [
+  { symbol: 'AAPL', name: 'Apple Inc.' },
+  { symbol: 'MSFT', name: 'Microsoft Corporation' },
+  { symbol: 'GOOGL', name: 'Alphabet Inc.' },
+  { symbol: 'AMZN', name: 'Amazon.com, Inc.' },
+  { symbol: 'NVDA', name: 'NVIDIA Corporation' },
+  { symbol: 'TSLA', name: 'Tesla, Inc.' },
+  { symbol: 'META', name: 'Meta Platforms, Inc.' },
+  { symbol: 'JPM', name: 'JPMorgan Chase & Co.' },
+  { symbol: 'V', name: 'Visa Inc.' },
+  { symbol: 'WMT', name: 'Walmart Inc.' },
+  { symbol: 'HD', name: 'The Home Depot, Inc.' },
+  { symbol: 'DIS', name: 'The Walt Disney Company' },
+  { symbol: 'NFLX', name: 'Netflix, Inc.' },
+  { symbol: 'AMD', name: 'Advanced Micro Devices, Inc.' },
+  { symbol: 'BA', name: 'The Boeing Company' },
+]
+
 interface TickerAutocompleteProps {
   onApply: (quote: TickerQuote) => void
 }
@@ -32,8 +58,10 @@ type Status =
 export function TickerAutocomplete({ onApply }: TickerAutocompleteProps): JSX.Element {
   const inputId = useId()
   const helpId = useId()
+  const listboxId = useId()
   const [draft, setDraft] = useState<string>('')
   const [status, setStatus] = useState<Status>({ kind: 'idle' })
+  const [dropdownOpen, setDropdownOpen] = useState<boolean>(false)
   const inFlight = useRef<AbortController | null>(null)
   const debounceTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
 
@@ -57,6 +85,7 @@ export function TickerAutocomplete({ onApply }: TickerAutocompleteProps): JSX.El
       .then((quote) => {
         if (controller.signal.aborted) return
         setStatus({ kind: 'resolved', quote })
+        setDropdownOpen(false)
       })
       .catch((err) => {
         if (controller.signal.aborted) return
@@ -73,6 +102,7 @@ export function TickerAutocomplete({ onApply }: TickerAutocompleteProps): JSX.El
       const next = raw.toUpperCase()
       setDraft(next)
       cancelInFlight()
+      setDropdownOpen(true)
       if (next === '') {
         setStatus({ kind: 'idle' })
         return
@@ -92,11 +122,24 @@ export function TickerAutocomplete({ onApply }: TickerAutocompleteProps): JSX.El
     [cancelInFlight, runLookup],
   )
 
+  const selectTicker = useCallback(
+    (symbol: string) => {
+      const upper = symbol.toUpperCase()
+      setDraft(upper)
+      setDropdownOpen(false)
+      cancelInFlight()
+      runLookup(upper)
+    },
+    [cancelInFlight, runLookup],
+  )
+
   const onApplyClick = () => {
     if (status.kind === 'resolved') {
       onApply(status.quote)
     }
   }
+
+  const filtered = filterPopular(draft)
 
   return (
     <section className="tr-card" data-component="TickerAutocomplete">
@@ -108,23 +151,68 @@ export function TickerAutocomplete({ onApply }: TickerAutocompleteProps): JSX.El
         <label className="tr-label" htmlFor={inputId}>
           Ticker symbol
         </label>
-        <div className="tr-input-wrap">
-          <input
-            id={inputId}
-            type="search"
-            role="searchbox"
-            inputMode="text"
-            autoComplete="off"
-            autoCorrect="off"
-            autoCapitalize="characters"
-            spellCheck={false}
-            maxLength={10}
-            placeholder="e.g. AAPL"
-            className="tr-input tr-mono"
-            value={draft}
-            aria-describedby={helpId}
-            onChange={(e) => onInput(e.target.value)}
-          />
+        <div className="tr-ticker-combo" data-element="combo">
+          <div className="tr-input-wrap">
+            <input
+              id={inputId}
+              type="search"
+              role="combobox"
+              inputMode="text"
+              autoComplete="off"
+              autoCorrect="off"
+              autoCapitalize="characters"
+              spellCheck={false}
+              maxLength={10}
+              placeholder="e.g. AAPL"
+              className="tr-input tr-mono"
+              value={draft}
+              aria-describedby={helpId}
+              aria-controls={listboxId}
+              aria-expanded={dropdownOpen}
+              aria-autocomplete="list"
+              aria-haspopup="listbox"
+              onChange={(e) => onInput(e.target.value)}
+              onFocus={() => setDropdownOpen(true)}
+              onBlur={() => {
+                window.setTimeout(() => setDropdownOpen(false), 120)
+              }}
+              onKeyDown={(e) => {
+                if (e.key === 'Escape') {
+                  setDropdownOpen(false)
+                }
+              }}
+            />
+          </div>
+          {dropdownOpen && filtered.length > 0 && (
+            <ul
+              id={listboxId}
+              role="listbox"
+              aria-label="Popular tickers"
+              className="tr-ticker-listbox"
+              data-element="listbox"
+            >
+              {filtered.map((entry) => (
+                <li key={entry.symbol} role="presentation">
+                  <button
+                    type="button"
+                    role="option"
+                    aria-selected={draft === entry.symbol}
+                    className="tr-ticker-option"
+                    data-element="option"
+                    onMouseDown={(e) => {
+                      e.preventDefault()
+                      selectTicker(entry.symbol)
+                    }}
+                  >
+                    <span className="tr-mono" data-element="optionSymbol">
+                      {entry.symbol}
+                    </span>
+                    <span data-element="optionName">{entry.name}</span>
+                  </button>
+                </li>
+              ))}
+            </ul>
+          )}
         </div>
         <p id={helpId} className="tr-status" data-element="hint">
           Look up the current price for a ticker.
@@ -166,6 +254,15 @@ export function TickerAutocomplete({ onApply }: TickerAutocompleteProps): JSX.El
         )}
       </div>
     </section>
+  )
+}
+
+function filterPopular(query: string): ReadonlyArray<PopularTicker> {
+  const trimmed = query.trim()
+  if (trimmed === '') return POPULAR_TICKERS
+  const lower = trimmed.toLowerCase()
+  return POPULAR_TICKERS.filter(
+    (t) => t.symbol.toLowerCase().includes(lower) || t.name.toLowerCase().includes(lower),
   )
 }
 

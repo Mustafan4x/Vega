@@ -377,6 +377,56 @@ button {
 [data-component='TickerAutocomplete'] [data-element='search'] {
   display: block;
 }
+.tr-ticker-combo {
+  position: relative;
+}
+.tr-ticker-listbox {
+  position: absolute;
+  top: calc(100% + 4px);
+  left: 0;
+  right: 0;
+  z-index: var(--z-popover);
+  margin: 0;
+  padding: 4px;
+  list-style: none;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-md);
+  max-height: 280px;
+  overflow-y: auto;
+}
+.tr-ticker-option {
+  width: 100%;
+  display: flex;
+  align-items: baseline;
+  gap: var(--space-2);
+  padding: 7px 10px;
+  border-radius: var(--radius-sm);
+  text-align: left;
+  color: var(--color-text-primary);
+  font-family: var(--font-sans);
+  font-size: 13px;
+  background: transparent;
+  transition: background 120ms cubic-bezier(0.2, 0, 0, 1);
+}
+.tr-ticker-option:hover,
+.tr-ticker-option:focus-visible {
+  background: var(--color-surface-2);
+}
+.tr-ticker-option [data-element='optionSymbol'] {
+  font-family: var(--font-mono);
+  font-weight: var(--weight-bold);
+  color: var(--color-primary-300);
+  min-width: 56px;
+}
+.tr-ticker-option [data-element='optionName'] {
+  color: var(--color-text-muted);
+  font-style: italic;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
 [data-component='TickerAutocomplete'] [data-element='hint'] {
   margin-top: var(--space-2);
 }

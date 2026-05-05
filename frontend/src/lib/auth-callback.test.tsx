@@ -71,4 +71,21 @@ describe('AuthCallback', () => {
     await waitFor(() => expect(fetchSpy).toHaveBeenCalled())
     await waitFor(() => expect(replaceSpy).toHaveBeenCalledWith({}, '', '/'))
   })
+
+  it('dispatches a popstate event after successful redirect so the App leaves /callback', async () => {
+    const handleRedirectCallback = vi.fn().mockResolvedValue({ appState: undefined })
+    setAuth0MockState(makeAuth0Mock({ isAuthenticated: true, handleRedirectCallback }))
+
+    const dispatchSpy = vi.spyOn(window, 'dispatchEvent')
+
+    render(<AuthCallback />)
+
+    await waitFor(() => expect(handleRedirectCallback).toHaveBeenCalled())
+    await waitFor(() => {
+      const popstateCalls = dispatchSpy.mock.calls.filter(
+        ([event]) => event instanceof PopStateEvent && event.type === 'popstate',
+      )
+      expect(popstateCalls.length).toBeGreaterThan(0)
+    })
+  })
 })

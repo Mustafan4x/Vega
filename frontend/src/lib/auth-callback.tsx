@@ -32,6 +32,11 @@ export function AuthCallback(): JSX.Element {
           await saveCalculation(pending.request, { bearerToken: token })
         }
         window.history.replaceState({}, '', '/')
+        // App.tsx tracks the active screen from window.location.pathname
+        // and only updates on popstate. replaceState alone does not fire
+        // popstate, so without this dispatch the App keeps rendering
+        // <AuthCallback /> forever even after the URL is back to /.
+        window.dispatchEvent(new PopStateEvent('popstate'))
         setStatus('done')
       } catch (err) {
         console.error('AuthCallback failed:', err)

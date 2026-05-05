@@ -57,6 +57,7 @@ def _crr_price(
     sigma: float,
     steps: int,
     is_call: bool,
+    q: float = 0.0,
 ) -> float:
     _validate(S, K, T, sigma, steps)
 
@@ -67,27 +68,22 @@ def _crr_price(
         return 0.0 if is_call else K * math.exp(-r * T)
 
     if sigma <= 1e-12:
-        forward = S * math.exp(r * T)
+        forward = S * math.exp((r - q) * T)
         intrinsic = forward - K if is_call else K - forward
         return max(intrinsic, 0.0) * math.exp(-r * T)
 
     dt = T / steps
     u = math.exp(sigma * math.sqrt(dt))
     d = 1.0 / u
-    a = math.exp(r * dt)
+    a = math.exp((r - q) * dt)
     p = (a - d) / (u - d)
     if not (0.0 < p < 1.0):
-        # Numerical degeneracy from extreme inputs (very low sigma
-        # with very high r over a long horizon). Fall back to the
-        # deterministic discounted forward, which is the limit of
-        # the tree as sigma collapses to zero.
-        forward = S * math.exp(r * T)
+        forward = S * math.exp((r - q) * T)
         intrinsic = forward - K if is_call else K - forward
         return max(intrinsic, 0.0) * math.exp(-r * T)
 
     discount = math.exp(-r * dt)
 
-    # Terminal asset prices: S * u^(steps - i) * d^i for i in [0, steps].
     j = np.arange(steps + 1)
     terminal = S * (u ** (steps - j)) * (d**j)
     if is_call:
@@ -95,7 +91,6 @@ def _crr_price(
     else:
         values = np.maximum(K - terminal, 0.0)
 
-    # Roll back the tree. Each step shrinks the layer by one node.
     for _ in range(steps):
         values = discount * (p * values[:-1] + (1.0 - p) * values[1:])
 
@@ -116,9 +111,10 @@ def binomial_call(
     sigma: float,
     *,
     steps: int = DEFAULT_STEPS,
+    q: float = 0.0,
 ) -> float:
     """Price a European call under the CRR binomial tree."""
-    return _crr_price(S, K, T, r, sigma, steps, is_call=True)
+    return _crr_price(S, K, T, r, sigma, steps, is_call=True, q=q)
 
 
 def binomial_put(
@@ -129,6 +125,7 @@ def binomial_put(
     sigma: float,
     *,
     steps: int = DEFAULT_STEPS,
+    q: float = 0.0,
 ) -> float:
     """Price a European put under the CRR binomial tree."""
-    return _crr_price(S, K, T, r, sigma, steps, is_call=False)
+    return _crr_price(S, K, T, r, sigma, steps, is_call=False, q=q)

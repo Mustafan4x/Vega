@@ -74,6 +74,13 @@ class BacktestPayload(BaseModel):
         ),
     )
     r: float = Field(ge=-1.0, le=1.0, allow_inf_nan=False, description="Risk free rate.")
+    q: float = Field(
+        default=0.0,
+        ge=-1.0,
+        le=1.0,
+        allow_inf_nan=False,
+        description="Continuous dividend yield (annualized, continuous).",
+    )
     dte_days: int = Field(gt=0, le=365, description="Days to expiry from the entry date.")
 
     @model_validator(mode="after")
@@ -150,6 +157,7 @@ def backtest(
                 sigma=payload.sigma,
                 r=payload.r,
                 dte_days=payload.dte_days,
+                q=payload.q,
             )
         )
     except ValueError as exc:

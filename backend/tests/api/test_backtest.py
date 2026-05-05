@@ -245,3 +245,23 @@ def test_rejects_extra_fields(stub_client: TestClient) -> None:
     )
 
     assert response.status_code == 422
+
+
+def test_backtest_accepts_q(stub_client: TestClient) -> None:
+    payload = {**VALID_PAYLOAD, "q": 0.03}
+    res = stub_client.post("/api/backtest", json=payload)
+    assert res.status_code == 200
+
+
+def test_backtest_q_defaults_to_zero(stub_client: TestClient) -> None:
+    """Omitting q yields the same numerical result as q=0 for the same inputs."""
+    res_no_q = stub_client.post("/api/backtest", json=VALID_PAYLOAD).json()
+    res_q_zero = stub_client.post("/api/backtest", json={**VALID_PAYLOAD, "q": 0.0}).json()
+    assert res_no_q == res_q_zero
+
+
+@pytest.mark.parametrize("bad_q", [1.5, -1.5])
+def test_backtest_rejects_out_of_range_q(stub_client: TestClient, bad_q: float) -> None:
+    payload = {**VALID_PAYLOAD, "q": bad_q}
+    res = stub_client.post("/api/backtest", json=payload)
+    assert res.status_code == 422

@@ -6,6 +6,7 @@ export function SignInButton(): JSX.Element {
   return (
     <button
       type="button"
+      className="tr-btn tr-btn--primary"
       data-element="signInButton"
       onClick={() => void loginWithRedirect()}
       disabled={isLoading}
@@ -23,6 +24,7 @@ export function UserButton(): JSX.Element | null {
       <span aria-label="Signed in as">{user.email ?? user.name ?? user.sub}</span>
       <button
         type="button"
+        className="tr-btn tr-btn--primary"
         data-element="signOutButton"
         onClick={() => void logout({ logoutParams: { returnTo: window.location.origin } })}
       >

@@ -17,7 +17,7 @@ import { useCallback, useRef, useState, type JSX } from 'react'
 import { ComparePanel } from '../components/ComparePanel'
 import { InputForm } from '../components/InputForm'
 import { ModelSelector } from '../components/ModelSelector'
-import { ResultPanel } from '../components/ResultPanel'
+import { ResultColumn } from '../components/ResultColumn'
 import { TickerAutocomplete } from '../components/TickerAutocomplete'
 import {
   fetchPrice,
@@ -142,7 +142,7 @@ export function PricingScreen({ initialCompare = false }: PricingScreenProps = {
   return (
     <div className="tr-pricing tr-screen-fade" data-component="PricingScreen">
       <h1 className="sr-only">Pricing</h1>
-      <div data-element="leftColumn">
+      <div data-element="col-market">
         <TickerAutocomplete onApply={onTickerApply} />
         <ModelSelector
           model={model}
@@ -150,6 +150,8 @@ export function PricingScreen({ initialCompare = false }: PricingScreenProps = {
           onModelChange={setModel}
           onCompareChange={setCompare}
         />
+      </div>
+      <div data-element="col-inputs">
         <InputForm
           inputs={inputs}
           invalid={invalidFields}
@@ -161,25 +163,32 @@ export function PricingScreen({ initialCompare = false }: PricingScreenProps = {
           onCalculate={onCalculate}
         />
       </div>
-      <div data-element="resultColumn">
-        {compare ? (
+      {compare ? (
+        <div data-element="col-compare">
           <ComparePanel results={compareResults} pending={status.kind === 'pending'} />
-        ) : (
-          <ResultPanel inputs={inputs} result={result} />
-        )}
-        <p
-          className="tr-status"
-          role="status"
-          aria-live="polite"
-          aria-atomic="true"
-          data-element="status"
-        >
-          {infoMessage}
-        </p>
-        <p className="tr-status tr-status--error" role="alert" data-element="error">
-          {errorMessage}
-        </p>
-      </div>
+        </div>
+      ) : (
+        <>
+          <div data-element="col-call">
+            <ResultColumn side="call" inputs={inputs} result={result} />
+          </div>
+          <div data-element="col-put">
+            <ResultColumn side="put" inputs={inputs} result={result} />
+          </div>
+        </>
+      )}
+      <p
+        className="tr-status"
+        role="status"
+        aria-live="polite"
+        aria-atomic="true"
+        data-element="status"
+      >
+        {infoMessage}
+      </p>
+      <p className="tr-status tr-status--error" role="alert" data-element="error">
+        {errorMessage}
+      </p>
     </div>
   )
 }

@@ -90,40 +90,38 @@ button {
   padding: var(--space-1) var(--space-2) var(--space-3);
   border-bottom: 1px solid var(--color-border);
 }
-[data-component='Sidebar'] [data-element='brandMark'] {
-  width: 32px;
-  height: 32px;
-  display: grid;
-  place-items: center;
-  background: var(--color-primary-500);
-  color: var(--color-text-inverse);
-  border-radius: var(--radius-sm);
-}
 [data-component='Sidebar'] [data-element='brandName'] {
   font-family: var(--font-display);
   font-style: italic;
   font-weight: var(--weight-bold);
-  font-size: 19px;
-  line-height: 1.25;
+  font-size: 32px;
+  line-height: 1;
   letter-spacing: var(--tracking-tight);
+  color: var(--color-text-primary);
+}
+[data-component='Sidebar'] [data-element='brandNu'] {
+  color: var(--color-primary-500);
+  font-size: 1.5em;
+  margin-right: 2px;
+  vertical-align: -0.06em;
 }
 [data-component='Sidebar'] [data-element='nav'] {
   display: flex;
   flex-direction: column;
-  gap: var(--space-1);
+  gap: var(--space-2);
   flex: 1;
 }
 [data-component='Sidebar'] [data-element='navItem'] {
   display: flex;
   align-items: center;
   gap: var(--space-3);
-  padding: 11px 12px;
+  padding: 14px 16px;
   border-radius: var(--radius-md);
   font-family: var(--font-display);
   font-style: italic;
   font-weight: var(--weight-medium);
-  font-size: 17px;
-  line-height: 1.5;
+  font-size: 20px;
+  line-height: 1.4;
   color: var(--color-text-muted);
   text-align: left;
   transition:
@@ -179,29 +177,30 @@ button {
   font-family: var(--font-display);
   font-style: italic;
   font-weight: var(--weight-medium);
-  font-size: 15px;
+  font-size: 20px;
   color: var(--color-text-subtle);
 }
 [data-component='TopBar'] [data-element='crumbSep'] {
   color: var(--color-text-subtle);
   font-family: var(--font-display);
   font-style: italic;
+  font-size: 20px;
 }
 [data-component='TopBar'] [data-element='crumb'] {
   font-family: var(--font-display);
   font-style: italic;
   font-weight: var(--weight-bold);
-  font-size: 17px;
+  font-size: 20px;
   color: var(--color-text-primary);
 }
 [data-component='TopBar'] [data-element='actions'] {
   display: flex;
   align-items: center;
-  gap: var(--space-2);
+  gap: var(--space-3);
 }
 [data-component='TopBar'] [data-element='iconBtn'] {
-  width: 32px;
-  height: 32px;
+  width: 40px;
+  height: 40px;
   display: grid;
   place-items: center;
   border-radius: var(--radius-md);
@@ -213,8 +212,8 @@ button {
   color: var(--color-text-primary);
 }
 [data-component='TopBar'] [data-element='avatar'] {
-  width: 32px;
-  height: 32px;
+  width: 40px;
+  height: 40px;
   border-radius: 50%;
   background: var(--color-primary-500);
   color: var(--color-text-inverse);
@@ -222,7 +221,7 @@ button {
   place-items: center;
   font-family: var(--font-mono);
   font-weight: var(--weight-semibold);
-  font-size: 11px;
+  font-size: 14px;
 }
 
 /* ══ Cards ═══════════════════════════════════════════════════════════════ */
@@ -361,18 +360,10 @@ button {
 }
 
 /* ══ Pricing screen layout ═══════════════════════════════════════════════ */
-.tr-pricing {
-  display: grid;
-  grid-template-columns: 380px 1fr;
-  gap: var(--space-5);
-  align-items: start;
-}
-
-.tr-pricing > [data-element='leftColumn'] {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-5);
-}
+/* The active layout for the Pricing screen lives further down with the
+   selector .tr-pricing (formerly .tr-pricing). It is a 4 column grid
+   sized to fit the viewport without scrolling. The old 2 column layout
+   was removed in the dividends polish round. */
 
 [data-component='InputForm'] [data-element='grid'] {
   display: grid;
@@ -998,14 +989,6 @@ button {
 }
 
 /* ══ Responsive breakpoints ══════════════════════════════════════════════ */
-@media (max-width: 1100px) {
-  .tr-pricing {
-    grid-template-columns: 1fr;
-  }
-  [data-component='ResultPanel'] {
-    grid-template-columns: 1fr 1fr;
-  }
-}
 @media (max-width: 768px) {
   [data-component='LayoutShell'] {
     grid-template-columns: 64px 1fr;
@@ -1015,10 +998,162 @@ button {
   [data-component='Sidebar'] [data-element='footer'] {
     display: none;
   }
-  [data-component='ResultPanel'] {
-    grid-template-columns: 1fr;
-  }
   .tr-page {
     padding: var(--space-4);
+  }
+}
+
+/* ══ Pricing screen: 4 column grid (Market+Model | Inputs | Call | Put) ══
+   Sized to fit the viewport without scrolling. Total height is capped at
+   (viewport - topbar - page padding) so the whole pricing screen stays
+   above the fold on any reasonable desktop. Columns use minmax so the
+   fixed-width left columns can shrink on narrower viewports without
+   breaking the layout. */
+.tr-pricing {
+  display: grid;
+  grid-template-columns:
+    minmax(220px, 280px)
+    minmax(260px, 320px)
+    minmax(220px, 1fr)
+    minmax(220px, 1fr);
+  grid-template-rows: 1fr auto auto;
+  gap: var(--space-3);
+  align-items: stretch;
+  height: calc(100vh - var(--layout-topbar-height) - 2 * var(--space-6));
+  min-height: 540px;
+}
+.tr-pricing > [data-element='col-market'] {
+  display: grid;
+  grid-template-rows: 1fr 1fr;
+  gap: var(--space-4);
+  min-height: 0;
+}
+.tr-pricing > [data-element='col-call'],
+.tr-pricing > [data-element='col-put'] {
+  display: grid;
+  grid-template-rows: 2fr 3fr;
+  gap: var(--space-4);
+  min-height: 0;
+}
+.tr-pricing > [data-element='col-inputs'] {
+  display: contents;
+}
+.tr-pricing > [data-element='col-inputs'] > [data-component='InputForm'] {
+  grid-column: 2;
+}
+.tr-pricing > [data-element='col-compare'] {
+  grid-column: 3 / span 2;
+}
+.tr-pricing > [data-element='status'],
+.tr-pricing > [data-element='error'] {
+  grid-column: 1 / -1;
+}
+
+/* Make every card a flex column so its contents distribute over the
+   stretched cell height. Without this, the card body sits at the top
+   with empty space below. */
+.tr-pricing > [data-element='col-market'] > .tr-card,
+.tr-pricing > [data-element='col-call'] > .tr-card,
+.tr-pricing > [data-element='col-put'] > .tr-card {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+
+/* Market data: keep the search content close under the title, then enlarge
+   the input so the card doesn't look hollow. */
+.tr-pricing > [data-element='col-market'] > [data-component='TickerAutocomplete'] {
+  justify-content: flex-start;
+  gap: var(--space-3);
+}
+.tr-pricing > [data-element='col-market'] > [data-component='TickerAutocomplete'] .tr-input {
+  height: 56px;
+  font-size: 18px;
+}
+.tr-pricing
+  > [data-element='col-market']
+  > [data-component='TickerAutocomplete']
+  [data-element='hint'] {
+  font-size: 14px;
+}
+
+/* Model: title up top, content pulled to vertical center. Enlarge the
+   model tabs and the compare toggle so they fill the larger card. */
+.tr-pricing > [data-element='col-market'] > [data-component='ModelSelector'] {
+  justify-content: space-between;
+}
+.tr-pricing [data-component='ModelSelector'] .tr-tab {
+  padding: 14px 10px;
+  gap: 6px;
+}
+.tr-pricing [data-component='ModelSelector'] .tr-tab-label {
+  font-size: 16px;
+}
+.tr-pricing [data-component='ModelSelector'] .tr-tab-short {
+  font-size: 13px;
+}
+.tr-pricing [data-component='ModelSelector'] [data-element='compareRow'] {
+  margin-top: var(--space-4);
+}
+.tr-pricing [data-component='ModelSelector'] .tr-toggle-label {
+  font-size: 15px;
+}
+
+/* Call / Put value card: big dollar number drifts to vertical center. */
+.tr-pricing > [data-element='col-call'] > [data-component='MetricCard'],
+.tr-pricing > [data-element='col-put'] > [data-component='MetricCard'] {
+  justify-content: center;
+  gap: var(--space-3);
+}
+
+/* Greeks panel: the row of tiles grows to fill the rest of the card. */
+.tr-pricing [data-component='GreeksPanel'] [data-element='row'] {
+  grid-template-columns: repeat(2, 1fr);
+  flex: 1;
+}
+.tr-pricing [data-component='GreeksPanel'] [data-element='tile'] {
+  justify-content: center;
+}
+
+/* Tighten cards on narrower viewports so the 4 col layout still fits. */
+@media (max-width: 1400px) {
+  .tr-pricing {
+    gap: var(--space-2);
+  }
+  .tr-pricing .tr-card {
+    padding: var(--space-3);
+  }
+  .tr-pricing [data-component='GreeksPanel'] [data-element='glyph'] {
+    font-size: 18px;
+  }
+}
+
+/* Below 1100px wide we run out of room for 4 sensible columns. Fall back to
+   a 2 col layout (left: market+model+inputs, right: values+greeks stacked)
+   and remove the fixed viewport height so vertical scroll comes back. */
+@media (max-width: 1100px) {
+  .tr-pricing {
+    grid-template-columns: minmax(280px, 360px) 1fr;
+    grid-template-rows: auto;
+    height: auto;
+    min-height: 0;
+  }
+  .tr-pricing > [data-element='col-market'] {
+    grid-template-rows: auto auto;
+  }
+  .tr-pricing > [data-element='col-call'],
+  .tr-pricing > [data-element='col-put'] {
+    grid-template-rows: auto 1fr;
+  }
+  .tr-pricing > [data-element='col-inputs'] > [data-component='InputForm'] {
+    grid-column: 1;
+  }
+  .tr-pricing > [data-element='col-call'] {
+    grid-column: 2;
+    grid-row: 1;
+  }
+  .tr-pricing > [data-element='col-put'] {
+    grid-column: 2;
+    grid-row: 2;
   }
 }

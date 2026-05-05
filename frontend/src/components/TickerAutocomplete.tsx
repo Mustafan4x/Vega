@@ -14,36 +14,44 @@
  * a typo destructive.
  */
 
-import { useCallback, useEffect, useId, useRef, useState, type JSX } from 'react'
+import { useCallback, useEffect, useId, useMemo, useRef, useState, type JSX } from 'react'
 
 import { Icon } from './Icon'
 import { fetchTicker, PriceError, type TickerQuote } from '../lib/api'
+import sp500Data from '../data/sp500.json'
 
 const DEBOUNCE_MS = 250
 const TICKER_RE = /^[A-Z0-9.-]{1,10}$/
+const MAX_RESULTS = 12
 
-interface PopularTicker {
+interface TickerEntry {
   symbol: string
   name: string
 }
 
-const POPULAR_TICKERS: ReadonlyArray<PopularTicker> = [
-  { symbol: 'AAPL', name: 'Apple Inc.' },
-  { symbol: 'MSFT', name: 'Microsoft Corporation' },
-  { symbol: 'GOOGL', name: 'Alphabet Inc.' },
-  { symbol: 'AMZN', name: 'Amazon.com, Inc.' },
-  { symbol: 'NVDA', name: 'NVIDIA Corporation' },
-  { symbol: 'TSLA', name: 'Tesla, Inc.' },
-  { symbol: 'META', name: 'Meta Platforms, Inc.' },
-  { symbol: 'JPM', name: 'JPMorgan Chase & Co.' },
-  { symbol: 'V', name: 'Visa Inc.' },
-  { symbol: 'WMT', name: 'Walmart Inc.' },
-  { symbol: 'HD', name: 'The Home Depot, Inc.' },
-  { symbol: 'DIS', name: 'The Walt Disney Company' },
-  { symbol: 'NFLX', name: 'Netflix, Inc.' },
-  { symbol: 'AMD', name: 'Advanced Micro Devices, Inc.' },
-  { symbol: 'BA', name: 'The Boeing Company' },
-]
+const SP500: ReadonlyArray<TickerEntry> = sp500Data as ReadonlyArray<TickerEntry>
+
+// Curated headliner set shown before the user starts typing. Once they
+// type anything, the full S&P 500 universe is searched.
+const POPULAR_SYMBOLS = [
+  'AAPL',
+  'MSFT',
+  'GOOGL',
+  'AMZN',
+  'NVDA',
+  'TSLA',
+  'META',
+  'JPM',
+  'V',
+  'WMT',
+  'HD',
+  'DIS',
+] as const
+
+const POPULAR_TICKERS: ReadonlyArray<TickerEntry> = POPULAR_SYMBOLS.flatMap((s) => {
+  const match = SP500.find((t) => t.symbol === s)
+  return match ? [match] : []
+})
 
 interface TickerAutocompleteProps {
   onApply: (quote: TickerQuote) => void
@@ -139,7 +147,7 @@ export function TickerAutocomplete({ onApply }: TickerAutocompleteProps): JSX.El
     }
   }
 
-  const filtered = filterPopular(draft)
+  const filtered = useMemo(() => filterTickers(draft), [draft])
 
   return (
     <section className="tr-card" data-component="TickerAutocomplete">
@@ -257,13 +265,31 @@ export function TickerAutocomplete({ onApply }: TickerAutocompleteProps): JSX.El
   )
 }
 
-function filterPopular(query: string): ReadonlyArray<PopularTicker> {
+function filterTickers(query: string): ReadonlyArray<TickerEntry> {
   const trimmed = query.trim()
   if (trimmed === '') return POPULAR_TICKERS
   const lower = trimmed.toLowerCase()
-  return POPULAR_TICKERS.filter(
-    (t) => t.symbol.toLowerCase().includes(lower) || t.name.toLowerCase().includes(lower),
-  )
+
+  // Symbol prefix matches rank above name substring matches; otherwise
+  // a search like "A" buries AAPL under every name starting with A.
+  const symbolPrefix: TickerEntry[] = []
+  const symbolContains: TickerEntry[] = []
+  const nameContains: TickerEntry[] = []
+
+  for (const entry of SP500) {
+    const sym = entry.symbol.toLowerCase()
+    const name = entry.name.toLowerCase()
+    if (sym.startsWith(lower)) {
+      symbolPrefix.push(entry)
+    } else if (sym.includes(lower)) {
+      symbolContains.push(entry)
+    } else if (name.includes(lower)) {
+      nameContains.push(entry)
+    }
+    if (symbolPrefix.length >= MAX_RESULTS) break
+  }
+
+  return [...symbolPrefix, ...symbolContains, ...nameContains].slice(0, MAX_RESULTS)
 }
 
 function messageFor(err: PriceError): string {

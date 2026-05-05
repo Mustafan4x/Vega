@@ -33,7 +33,8 @@ export function AuthCallback(): JSX.Element {
         }
         window.history.replaceState({}, '', '/')
         setStatus('done')
-      } catch {
+      } catch (err) {
+        console.error('AuthCallback failed:', err)
         setStatus('error')
       }
     }

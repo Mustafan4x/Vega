@@ -110,3 +110,29 @@ def test_monte_carlo_rejects_non_positive_paths() -> None:
         monte_carlo_call(100.0, 100.0, 1.0, 0.05, 0.2, paths=0)
     with pytest.raises(ValueError):
         monte_carlo_call(100.0, 100.0, 1.0, 0.05, 0.2, paths=-1)
+
+
+@pytest.mark.parametrize(
+    "S, K, T, r, sigma, q",
+    [
+        (100.0, 100.0, 1.0, 0.05, 0.20, 0.03),
+        (100.0, 110.0, 0.25, 0.05, 0.30, 0.05),
+    ],
+)
+def test_monte_carlo_converges_to_bs_with_dividend_yield(
+    S: float, K: float, T: float, r: float, sigma: float, q: float
+) -> None:
+    """100k paths with antithetic variates agree with closed form BS within 5 cents."""
+    bs_call = black_scholes_call(S, K, T, r, sigma, q=q)
+    bs_put = black_scholes_put(S, K, T, r, sigma, q=q)
+    mc_call = monte_carlo_call(S, K, T, r, sigma, q=q, paths=100_000, seed=4242)
+    mc_put = monte_carlo_put(S, K, T, r, sigma, q=q, paths=100_000, seed=4242)
+    assert mc_call == pytest.approx(bs_call, abs=0.05)
+    assert mc_put == pytest.approx(bs_put, abs=0.05)
+
+
+def test_monte_carlo_q_zero_matches_no_dividend_path() -> None:
+    """q=0 keyword preserves pre-feature numerical results bit-for-bit (same seed)."""
+    no_q = monte_carlo_call(100.0, 100.0, 1.0, 0.05, 0.20, paths=100_000, seed=4242)
+    with_q = monte_carlo_call(100.0, 100.0, 1.0, 0.05, 0.20, q=0.0, paths=100_000, seed=4242)
+    assert no_q == with_q

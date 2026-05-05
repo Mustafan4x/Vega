@@ -33,6 +33,7 @@ const SAMPLE_LIST = {
       t: 1,
       r: 0.05,
       sigma: 0.2,
+      q: 0.025,
       rows: 5,
       cols: 5,
     },
@@ -44,6 +45,7 @@ const SAMPLE_LIST = {
       t: 0.5,
       r: 0.04,
       sigma: 0.35,
+      q: 0,
       rows: 9,
       cols: 9,
     },
@@ -101,6 +103,7 @@ describe('HistoryScreen', () => {
         t: 1,
         r: 0.05,
         sigma: 0.2,
+        q: 0.025,
         rows: 2,
         cols: 2,
         call: [
@@ -127,6 +130,22 @@ describe('HistoryScreen', () => {
       expect(document.querySelectorAll('[data-component="HeatMap"]')).toHaveLength(1)
       expect(document.querySelectorAll('[data-component="PnlHeatMap"]')).toHaveLength(1)
     })
+
+    const detailInputs = document.querySelector('[data-element="detailInputs"]')
+    expect(detailInputs).not.toBeNull()
+    expect(detailInputs?.querySelector('[data-pair="q"] dd')?.textContent).toBe('2.5%')
+  })
+
+  it('renders q as a percent in the summary table for each row', async () => {
+    fetchSpy.mockResolvedValue(jsonResponse(200, SAMPLE_LIST))
+
+    render(<HistoryScreen />)
+
+    await screen.findByText(/2 total/i)
+    const qCells = document.querySelectorAll('td[data-element="q"]')
+    expect(qCells.length).toBe(2)
+    expect(qCells[0].textContent).toBe('2.5%')
+    expect(qCells[1].textContent).toBe('0.0%')
   })
 
   it('shows an error message when the list fetch fails', async () => {

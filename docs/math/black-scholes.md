@@ -153,11 +153,57 @@ Phase 1 ships pure unit tests on `black_scholes_call` and `black_scholes_put`. P
 2. Property based tests using `hypothesis` for monotonicity.
 3. Numerical Greeks via finite differences of the price function as a cross check.
 
+## Continuous dividend yield (q)
+
+The pricer accepts an optional continuous dividend yield `q` (annualized, decimal). Default is `q = 0`, which preserves the original v1 numerical behavior bit for bit. The substitution is the standard Merton (1973) generalization: replace `S` with `S * exp(-q * T)` in the option price and adjust the d1 numerator.
+
+Modified call and put:
+
+```
+d1 = (ln(S/K) + (r - q + 0.5 * sigma^2) * T) / (sigma * sqrt(T))
+d2 = d1 - sigma * sqrt(T)
+call = S * exp(-q*T) * N(d1) - K * exp(-r*T) * N(d2)
+put  = K * exp(-r*T) * N(-d2) - S * exp(-q*T) * N(-d1)
+```
+
+Edge cases keep the same shape: `T = 0` returns the intrinsic payoff (q has no effect); `S = 0` returns 0 for the call and `K * exp(-r*T)` for the put (q has no effect); `sigma = 0` returns the deterministic discounted intrinsic on the dividend adjusted forward.
+
+### Greeks with q
+
+Five existing Greeks pick up the `exp(-q*T)` factor where appropriate, and a sixth Greek `psi` (the analytical derivative with respect to `q`) is returned alongside them. Math (textbook) units:
+
+```
+delta_call = exp(-q*T) * N(d1)
+delta_put  = exp(-q*T) * (N(d1) - 1)
+gamma      = exp(-q*T) * N'(d1) / (S * sigma * sqrt(T))
+vega       = S * exp(-q*T) * sqrt(T) * N'(d1)
+theta_call = -S*exp(-q*T)*N'(d1)*sigma/(2*sqrt(T)) - r*K*exp(-r*T)*N(d2)
+             + q*S*exp(-q*T)*N(d1)
+theta_put  = -S*exp(-q*T)*N'(d1)*sigma/(2*sqrt(T)) + r*K*exp(-r*T)*N(-d2)
+             - q*S*exp(-q*T)*N(-d1)
+rho_call   =  T * K * exp(-r*T) * N(d2)    (unchanged)
+rho_put    = -T * K * exp(-r*T) * N(-d2)   (unchanged)
+psi_call   = -T * S * exp(-q*T) * N(d1)
+psi_put    =  T * S * exp(-q*T) * N(-d1)
+```
+
+The API layer scales `psi` to "per 1 percent q" for display, mirroring the existing `vega_per_pct` and `rho_per_pct` convention.
+
+### Put call parity with q
+
+The parity identity becomes:
+
+```
+C - P = S * exp(-q*T) - K * exp(-r*T)
+```
+
+Tests assert this within `1e-9` across at least four parametrized cases including a negative q case (foreign currency or cost of carry differential). Reference: Hull 10e Chapter 17.
+
 ## Out of scope for v1
 
-The following are explicitly NOT implemented in v1 and are tracked in the maintainer's private notes:
+The following are explicitly NOT implemented and are tracked in the maintainer's private notes:
 
-* Dividend yield `q` (continuous or discrete).
+* Discrete dividends (event driven re pricing on ex dividend dates; the continuous yield approximation is what ships).
 * American exercise.
 * Implied volatility solver.
 * Volatility surface.

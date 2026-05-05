@@ -36,6 +36,7 @@ class CalculationInput(Base):
     t: Mapped[float] = mapped_column(Float, nullable=False)
     r: Mapped[float] = mapped_column(Float, nullable=False)
     sigma: Mapped[float] = mapped_column(Float, nullable=False)
+    q: Mapped[float] = mapped_column(Float, nullable=False, server_default="0.0")
     vol_shock_min: Mapped[float] = mapped_column(Float, nullable=False)
     vol_shock_max: Mapped[float] = mapped_column(Float, nullable=False)
     spot_shock_min: Mapped[float] = mapped_column(Float, nullable=False)

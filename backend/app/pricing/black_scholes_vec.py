@@ -56,6 +56,7 @@ def black_scholes_call_vec(
     T: float,
     r: float,
     sigma_axis: FloatArray | list[float],
+    q: float = 0.0,
 ) -> FloatArray:
     s_arr = np.asarray(S_axis, dtype=np.float64)
     sig_arr = np.asarray(sigma_axis, dtype=np.float64)
@@ -67,15 +68,17 @@ def black_scholes_call_vec(
         return cast(FloatArray, np.maximum(S - K, 0.0) + np.zeros_like(sigma))
 
     discounted_strike = K * math.exp(-r * T)
-    deterministic = np.maximum(S - discounted_strike, 0.0)
+    fwd_S = S * math.exp(-q * T)
+    deterministic = np.maximum(fwd_S - discounted_strike, 0.0)
     deterministic = np.where(S == 0.0, 0.0, deterministic)
 
     sqrt_t = math.sqrt(T)
     sigma_safe = np.where(sigma <= _SIGMA_DETERMINISTIC_THRESHOLD, 1.0, sigma)
     S_safe = np.where(S == 0.0, 1.0, S)
-    d1 = (np.log(S_safe / K) + (r + 0.5 * sigma_safe * sigma_safe) * T) / (sigma_safe * sqrt_t)
+    fwd_S_safe = S_safe * math.exp(-q * T)
+    d1 = (np.log(S_safe / K) + (r - q + 0.5 * sigma_safe * sigma_safe) * T) / (sigma_safe * sqrt_t)
     d2 = d1 - sigma_safe * sqrt_t
-    bs_value = S_safe * _norm_cdf(d1) - discounted_strike * _norm_cdf(d2)
+    bs_value = fwd_S_safe * _norm_cdf(d1) - discounted_strike * _norm_cdf(d2)
 
     out = np.broadcast_to(bs_value, (sig_arr.size, s_arr.size)).copy()
     sigma_zero = np.broadcast_to(sigma <= _SIGMA_DETERMINISTIC_THRESHOLD, out.shape)
@@ -90,6 +93,7 @@ def black_scholes_put_vec(
     T: float,
     r: float,
     sigma_axis: FloatArray | list[float],
+    q: float = 0.0,
 ) -> FloatArray:
     s_arr = np.asarray(S_axis, dtype=np.float64)
     sig_arr = np.asarray(sigma_axis, dtype=np.float64)
@@ -101,15 +105,17 @@ def black_scholes_put_vec(
         return cast(FloatArray, np.maximum(K - S, 0.0) + np.zeros_like(sigma))
 
     discounted_strike = K * math.exp(-r * T)
-    deterministic = np.maximum(discounted_strike - S, 0.0)
+    fwd_S = S * math.exp(-q * T)
+    deterministic = np.maximum(discounted_strike - fwd_S, 0.0)
     deterministic = np.where(S == 0.0, discounted_strike, deterministic)
 
     sqrt_t = math.sqrt(T)
     sigma_safe = np.where(sigma <= _SIGMA_DETERMINISTIC_THRESHOLD, 1.0, sigma)
     S_safe = np.where(S == 0.0, 1.0, S)
-    d1 = (np.log(S_safe / K) + (r + 0.5 * sigma_safe * sigma_safe) * T) / (sigma_safe * sqrt_t)
+    fwd_S_safe = S_safe * math.exp(-q * T)
+    d1 = (np.log(S_safe / K) + (r - q + 0.5 * sigma_safe * sigma_safe) * T) / (sigma_safe * sqrt_t)
     d2 = d1 - sigma_safe * sqrt_t
-    bs_value = discounted_strike * _norm_cdf(-d2) - S_safe * _norm_cdf(-d1)
+    bs_value = discounted_strike * _norm_cdf(-d2) - fwd_S_safe * _norm_cdf(-d1)
 
     out = np.broadcast_to(bs_value, (sig_arr.size, s_arr.size)).copy()
     sigma_zero = np.broadcast_to(sigma <= _SIGMA_DETERMINISTIC_THRESHOLD, out.shape)

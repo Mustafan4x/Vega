@@ -2,7 +2,7 @@
 
 This document is the canonical reference for the financial conventions used throughout the Vega pricing service. Every agent that touches pricing math, P&L, or the user facing input form must follow these conventions exactly. Disagreements are resolved by the Risk Reviewer in coordination with the Quant Domain Validator before code lands.
 
-The conventions here track the textbook Black Scholes model on a non dividend paying stock. They are deliberately conservative and standard so that hand calculations from any options textbook reproduce the service's outputs to two decimal places.
+The conventions here track the textbook Black Scholes model on a stock with optional continuous dividend yield. They are deliberately conservative and standard so that hand calculations from any options textbook reproduce the service's outputs to two decimal places.
 
 ## Day count convention
 
@@ -17,13 +17,23 @@ Why 365 and not ACT/365 or ACT/360 or business day counts: this is a pet project
 
 ## Dividends
 
-**Assumed zero in v1.** The pricing module computes prices under the textbook no dividend assumption. The user facing form does not collect a dividend yield. The backend does not compute or persist a dividend value. Greeks are computed under the same no dividend assumption.
+**Continuous dividend yield `q` is a first class input** across all three pricers (Black Scholes scalar and vectorized, binomial CRR, Monte Carlo) and all four pricing endpoints (`/api/price`, `/api/heatmap`, `/api/calculations`, `/api/backtest`). The default `q = 0` preserves the original v1 numerical behavior bit for bit when the field is omitted. The implementation follows the standard Merton (1973) generalization: `S` is replaced with `S * exp(-q * T)` in the option price and the d1 numerator picks up `(r - q)` instead of `r`.
 
-**Greeks at the deterministic limits.** When `T = 0`, `sigma = 0`, or `S = 0`, the closed form Greeks are not well defined (delta is a step function in those limits, gamma and vega blow up or vanish). The implementation returns zero for all five Greeks at these inputs by design. The price functions still return the correct deterministic forward intrinsic at those inputs (e.g., `max(S - K, 0)` at `T = 0`); only the Greeks short circuit. A user who needs sensitivity at these limits should perturb the inputs slightly and inspect the resulting Greeks numerically.
+The Greeks panel exposes a sixth Greek `psi` (the analytical derivative of option value with respect to `q`) per 1 percent q, mirroring the existing `vega_per_pct` and `rho_per_pct` display convention.
 
-This is an explicit modeling choice, not a bug. It is the simplest assumption that lets the whole project ship and is consistent with the source video transcript.
+**Discrete dividends remain out of scope.** Event driven re pricing on ex dividend dates (with discrete jumps in the underlying) is not implemented. The continuous yield approximation is the textbook generalization documented in Hull, Wilmott, and Natenberg, and it is what real desks use as a first pass model for vanilla European options. Discrete dividend modeling is tracked in the maintainer's private notes for possible future work.
 
-If a future phase adds dividends, the change is captured as a new entry in the maintainer's private notes and surfaces as an ADR. The expected route is to add a `q` field (continuous dividend yield) to the request payload, switch to the Black Scholes Merton form (multiply S by exp(-qT) inside the d1 numerator and the call value), and update both the conventions doc and the sanity cases.
+**Put call parity identity.** Tests and reviews use the dividend adjusted parity identity:
+
+```
+C - P = S * exp(-q * T) - K * exp(-r * T)
+```
+
+This reduces to the original `C - P = S - K * exp(-r * T)` when `q = 0`.
+
+**Greeks at the deterministic limits.** When `T = 0`, `sigma = 0`, or `S = 0`, the closed form Greeks are not well defined (delta is a step function in those limits, gamma and vega blow up or vanish). The implementation returns zero for all six Greeks (delta, gamma, theta, vega, rho, psi) at these inputs by design. The price functions still return the correct deterministic forward intrinsic at those inputs (e.g., `max(S - K, 0)` at `T = 0`); only the Greeks short circuit. A user who needs sensitivity at these limits should perturb the inputs slightly and inspect the resulting Greeks numerically.
+
+This is an explicit modeling choice, not a bug. The decision to add `q` as a continuous yield (rather than discrete dividends) is recorded as ADR 0005.
 
 ## Volatility convention
 
@@ -148,4 +158,5 @@ The backtest engine in `backend/app/backtest/engine.py` makes a small set of exp
 
 * `docs/math/black-scholes.md`: the Quant Domain Validator's formula and derivation reference. The conventions in this file must agree with that one.
 * `docs/risk/sanity-cases.md`: hand calculated reference cases that the pricing module must reproduce to two decimal places. Cases 6 and 7 cover model comparison and divergence regimes; Case 8 covers the backtest engine.
-* The maintainer's private notes (gitignored): where the dividend yield extension will be captured if added.
+* `docs/adr/0005-dividends-as-continuous-yield.md`: rationale for choosing the continuous yield approximation over discrete dividends, and for exposing `psi` as a first class Greek.
+* The maintainer's private notes (gitignored): where any further dividend related extensions (e.g., yfinance auto fill of `q`, discrete dividend modeling) are tracked.

@@ -123,3 +123,30 @@ def test_binomial_call_error_decreases_with_steps(steps: int) -> None:
     # CRR at n steps has worst case error around O(1/sqrt(n)) for
     # ATM options due to oscillation; bound generously.
     assert err < 0.5
+
+
+@pytest.mark.parametrize(
+    "S, K, T, r, sigma, q",
+    [
+        (100.0, 100.0, 1.0, 0.05, 0.20, 0.03),
+        (100.0, 110.0, 0.25, 0.05, 0.30, 0.05),
+        (80.0, 70.0, 2.0, 0.04, 0.25, -0.01),
+    ],
+)
+def test_binomial_converges_to_bs_with_dividend_yield(
+    S: float, K: float, T: float, r: float, sigma: float, q: float
+) -> None:
+    """At 500 steps, the CRR tree price agrees with closed form BS within 1 cent."""
+    bs_call = black_scholes_call(S, K, T, r, sigma, q=q)
+    bs_put = black_scholes_put(S, K, T, r, sigma, q=q)
+    bn_call = binomial_call(S, K, T, r, sigma, q=q, steps=500)
+    bn_put = binomial_put(S, K, T, r, sigma, q=q, steps=500)
+    assert bn_call == pytest.approx(bs_call, abs=0.01)
+    assert bn_put == pytest.approx(bs_put, abs=0.01)
+
+
+def test_binomial_q_zero_matches_no_dividend_path() -> None:
+    """q=0 keyword preserves pre-feature numerical results bit-for-bit."""
+    no_q = binomial_call(100.0, 100.0, 1.0, 0.05, 0.20, steps=500)
+    with_q = binomial_call(100.0, 100.0, 1.0, 0.05, 0.20, q=0.0, steps=500)
+    assert no_q == with_q

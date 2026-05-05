@@ -84,8 +84,10 @@ def create_calculation(
     sigma_axis = np.maximum(sigma_axis, 0.0)
     spot_axis = np.maximum(spot_axis, 0.0)
 
-    call = black_scholes_call_vec(spot_axis, payload.K, payload.T, payload.r, sigma_axis)
-    put = black_scholes_put_vec(spot_axis, payload.K, payload.T, payload.r, sigma_axis)
+    call = black_scholes_call_vec(
+        spot_axis, payload.K, payload.T, payload.r, sigma_axis, q=payload.q
+    )
+    put = black_scholes_put_vec(spot_axis, payload.K, payload.T, payload.r, sigma_axis, q=payload.q)
 
     calc_id = str(uuid.uuid4())
     record = CalculationInput(
@@ -95,6 +97,7 @@ def create_calculation(
         t=payload.T,
         r=payload.r,
         sigma=payload.sigma,
+        q=payload.q,
         vol_shock_min=payload.vol_shock[0],
         vol_shock_max=payload.vol_shock[1],
         spot_shock_min=payload.spot_shock[0],
@@ -139,6 +142,7 @@ class CalculationDetail(BaseModel):
     t: float
     r: float
     sigma: float
+    q: float
     rows: int
     cols: int
     call: list[list[float]]
@@ -155,6 +159,7 @@ class CalculationSummary(BaseModel):
     t: float
     r: float
     sigma: float
+    q: float
     rows: int
     cols: int
 
@@ -200,6 +205,7 @@ def list_calculations(
             t=row.t,
             r=row.r,
             sigma=row.sigma,
+            q=row.q,
             rows=row.rows,
             cols=row.cols,
         )
@@ -245,6 +251,7 @@ def read_calculation(
         t=record.t,
         r=record.r,
         sigma=record.sigma,
+        q=record.q,
         rows=record.rows,
         cols=record.cols,
         call=call_grid,

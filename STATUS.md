@@ -2,7 +2,7 @@
 
 Single source of truth for which phase is next. Read this file when the user says "work on the next phase" or any equivalent. Update this file when a phase changes state. The Project Manager session owns it.
 
-**Last updated**: 2026-05-04 (Phase 12 completed; v1+1 shipped).
+**Last updated**: 2026-05-05 (post v1+1 polish: dividends `q` shipped across the full surface).
 
 ## Next phase
 
@@ -145,7 +145,7 @@ Both flows write one line here per change, prefixed with the flow letter.
 
 Format: `YYYY-MM-DD [A or B]: <one line summary of what changed and which components were updated>`.
 
-(empty)
+2026-05-05 A: dividends `q` field added to InputForm, HeatMapControls (via reuse), BacktestForm; new `psi` row added to GreeksPanel with `rose` accent token; `q` rendered in HistoryScreen summary table column and detail card inputs strip.
 
 ## How to update this file
 

@@ -11,6 +11,7 @@ function makeResult(model: PriceResponse['model'], call: number, put: number): P
     theta_per_day: -0.02,
     vega_per_pct: 0.3,
     rho_per_pct: 0.4,
+    psi_per_pct: -0.5,
   }
   return { call, put, model, call_greeks: greeks, put_greeks: { ...greeks, delta: -0.5 } }
 }

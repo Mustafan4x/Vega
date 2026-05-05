@@ -1,10 +1,10 @@
 /**
- * Greeks display panel: five tiles for delta, gamma, theta, vega, rho
+ * Greeks display panel: six tiles for delta, gamma, theta, vega, rho, psi
  * for either the call or the put. Anatomy mirrors the canonical
  * reference at ``docs/design/claude-design-output.html`` lines 1330 to
  * 1350: each tile carries a glyph (Greek letter, italic serif), a
  * value (Newsreader, tabular), a name (italic serif body sm), and a
- * 3 px left accent border that cycles through five accents.
+ * 3 px left accent border that cycles through six accents.
  *
  * The values come in display friendly units from the API:
  *
@@ -13,6 +13,7 @@
  *   theta_per_day: dollars per calendar day
  *   vega_per_pct:  dollars per 1 percent of sigma
  *   rho_per_pct:   dollars per 1 percent of r
+ *   psi_per_pct:   dollars per 1 percent of q (continuous dividend yield)
  */
 
 import type { JSX } from 'react'
@@ -27,9 +28,9 @@ interface GreeksPanelProps {
 
 interface TileSpec {
   glyph: string
-  name: keyof GreeksDisplay | 'theta' | 'vega' | 'rho'
+  name: keyof GreeksDisplay | 'theta' | 'vega' | 'rho' | 'psi'
   label: string
-  accent: 'primary' | 'accent' | 'amber' | 'info' | 'violet'
+  accent: 'primary' | 'accent' | 'amber' | 'info' | 'violet' | 'rose'
   format: (value: number) => string
 }
 
@@ -69,6 +70,13 @@ const TILES: ReadonlyArray<TileSpec> = [
     accent: 'violet',
     format: (v) => fmtUsd(v, 4),
   },
+  {
+    glyph: 'ψ',
+    name: 'psi',
+    label: 'Psi',
+    accent: 'rose',
+    format: (v) => fmtUsd(v, 4),
+  },
 ]
 
 function valueFor(greeks: GreeksDisplay, tile: TileSpec): number {
@@ -83,6 +91,8 @@ function valueFor(greeks: GreeksDisplay, tile: TileSpec): number {
       return greeks.vega_per_pct
     case 'rho':
       return greeks.rho_per_pct
+    case 'psi':
+      return greeks.psi_per_pct
     default:
       return 0
   }
@@ -96,6 +106,8 @@ function ariaUnit(tile: TileSpec): string {
       return 'per 1 percent of sigma'
     case 'rho':
       return 'per 1 percent of r'
+    case 'psi':
+      return 'per 1 percent of q'
     default:
       return ''
   }

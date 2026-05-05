@@ -249,6 +249,7 @@ def test_list_summary_shape(client: TestClient, auth_headers: dict[str, str]) ->
         "t",
         "r",
         "sigma",
+        "q",
         "rows",
         "cols",
     }
@@ -343,3 +344,32 @@ def test_endpoints_reject_unauthenticated_requests(client: TestClient) -> None:
     assert client.post("/api/calculations", json=VALID_PAYLOAD).status_code == 401
     assert client.get("/api/calculations").status_code == 401
     assert client.get("/api/calculations/00000000-0000-0000-0000-000000000000").status_code == 401
+
+
+# ---------- Dividend yield (q) persistence tests ------------------------------
+
+
+def test_create_calculation_persists_q(client: TestClient, auth_headers: dict[str, str]) -> None:
+    payload = {**VALID_PAYLOAD, "q": 0.03}
+    create_res = client.post("/api/calculations", json=payload, headers=auth_headers)
+    assert create_res.status_code == 201
+    calc_id = create_res.json()["calculation_id"]
+
+    detail_res = client.get(f"/api/calculations/{calc_id}", headers=auth_headers)
+    assert detail_res.status_code == 200
+    assert detail_res.json()["q"] == pytest.approx(0.03, abs=1e-9)
+
+
+def test_list_calculations_includes_q(client: TestClient, auth_headers: dict[str, str]) -> None:
+    payload = {**VALID_PAYLOAD, "q": 0.025}
+    client.post("/api/calculations", json=payload, headers=auth_headers)
+    res = client.get("/api/calculations", headers=auth_headers).json()
+    assert any(item["q"] == pytest.approx(0.025, abs=1e-9) for item in res["items"])
+
+
+def test_calculation_q_defaults_to_zero(client: TestClient, auth_headers: dict[str, str]) -> None:
+    """Save without q; detail returns q == 0.0."""
+    create_res = client.post("/api/calculations", json=VALID_PAYLOAD, headers=auth_headers)
+    calc_id = create_res.json()["calculation_id"]
+    detail_res = client.get(f"/api/calculations/{calc_id}", headers=auth_headers)
+    assert detail_res.json()["q"] == 0.0

@@ -76,6 +76,7 @@ class BacktestRequest:
     sigma: float
     r: float
     dte_days: int
+    q: float = 0.0
 
 
 @dataclass(frozen=True)
@@ -108,13 +109,17 @@ def _validate(req: BacktestRequest) -> None:
             raise ValueError(f"every close price must be positive and finite, got {c}.")
     if req.r < -1.0 or req.r > 1.0:
         raise ValueError(f"r out of supported range, got r={req.r}.")
+    if not math.isfinite(req.q):
+        raise ValueError(f"q must be finite, got q={req.q}.")
+    if req.q < -1.0 or req.q > 1.0:
+        raise ValueError(f"q out of supported range, got q={req.q}.")
 
 
-def _leg_value(leg: Leg, S: float, K: float, T: float, r: float, sigma: float) -> float:
+def _leg_value(leg: Leg, S: float, K: float, T: float, r: float, sigma: float, q: float) -> float:
     if leg.kind == "call":
-        v = black_scholes_call(S, K, T, r, sigma)
+        v = black_scholes_call(S, K, T, r, sigma, q=q)
     elif leg.kind == "put":
-        v = black_scholes_put(S, K, T, r, sigma)
+        v = black_scholes_put(S, K, T, r, sigma, q=q)
     else:
         raise ValueError(f"unknown leg kind: {leg.kind!r}")
     return leg.sign * v
@@ -134,7 +139,7 @@ def run_backtest(req: BacktestRequest) -> BacktestResult:
     T_entry = req.dte_days / DAYS_PER_YEAR
     entry_basis = 0.0
     for leg in legs:
-        entry_basis += _leg_value(leg, entry_close, K, T_entry, req.r, req.sigma)
+        entry_basis += _leg_value(leg, entry_close, K, T_entry, req.r, req.sigma, req.q)
 
     dates_out: list[str] = []
     spot_out: list[float] = []
@@ -149,7 +154,7 @@ def run_backtest(req: BacktestRequest) -> BacktestResult:
         T = max(days_remaining, 0) / DAYS_PER_YEAR
         position_value = 0.0
         for leg in legs:
-            position_value += _leg_value(leg, close, K, T, req.r, req.sigma)
+            position_value += _leg_value(leg, close, K, T, req.r, req.sigma, req.q)
         dates_out.append(date_iso)
         spot_out.append(close)
         position_out.append(position_value)

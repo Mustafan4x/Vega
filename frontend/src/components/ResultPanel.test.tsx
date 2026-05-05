@@ -13,6 +13,7 @@ const ZERO_GREEKS: GreeksDisplay = {
   theta_per_day: 0,
   vega_per_pct: 0,
   rho_per_pct: 0,
+  psi_per_pct: 0,
 }
 
 function priceResponse(call: number, put: number): PriceResponse {

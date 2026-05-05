@@ -58,6 +58,7 @@ def _mc_price(
     paths: int,
     seed: int | None,
     is_call: bool,
+    q: float = 0.0,
 ) -> float:
     _validate(S, K, T, sigma, paths)
 
@@ -68,7 +69,7 @@ def _mc_price(
         return 0.0 if is_call else K * math.exp(-r * T)
 
     if sigma <= 1e-12:
-        forward = S * math.exp(r * T)
+        forward = S * math.exp((r - q) * T)
         intrinsic = forward - K if is_call else K - forward
         return max(intrinsic, 0.0) * math.exp(-r * T)
 
@@ -78,7 +79,7 @@ def _mc_price(
     z = rng.standard_normal(half)
     z_full = np.concatenate([z, -z])
 
-    drift = (r - 0.5 * sigma * sigma) * T
+    drift = (r - q - 0.5 * sigma * sigma) * T
     diffusion = sigma * math.sqrt(T)
     s_t = S * np.exp(drift + diffusion * z_full)
 
@@ -102,9 +103,10 @@ def monte_carlo_call(
     *,
     paths: int = DEFAULT_PATHS,
     seed: int | None = None,
+    q: float = 0.0,
 ) -> float:
     """Price a European call by Monte Carlo (GBM, antithetic variates)."""
-    return _mc_price(S, K, T, r, sigma, paths, seed, is_call=True)
+    return _mc_price(S, K, T, r, sigma, paths, seed, is_call=True, q=q)
 
 
 def monte_carlo_put(
@@ -116,6 +118,7 @@ def monte_carlo_put(
     *,
     paths: int = DEFAULT_PATHS,
     seed: int | None = None,
+    q: float = 0.0,
 ) -> float:
     """Price a European put by Monte Carlo (GBM, antithetic variates)."""
-    return _mc_price(S, K, T, r, sigma, paths, seed, is_call=False)
+    return _mc_price(S, K, T, r, sigma, paths, seed, is_call=False, q=q)

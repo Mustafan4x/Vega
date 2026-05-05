@@ -698,6 +698,9 @@ button {
 [data-component='GreeksPanel'] [data-element='tile'][data-accent='violet'] {
   border-left-color: var(--color-greek-violet);
 }
+[data-component='GreeksPanel'] [data-element='tile'][data-accent='rose'] {
+  border-left-color: var(--color-greek-rose);
+}
 [data-component='GreeksPanel'] [data-element='glyph'] {
   font-family: var(--font-display);
   font-style: italic;

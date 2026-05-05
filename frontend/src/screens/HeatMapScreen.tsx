@@ -31,6 +31,7 @@ const INITIAL_INPUTS: PriceRequest = {
   K: 100,
   T: 1,
   r: 0.05,
+  q: 0,
   sigma: 0.2,
 }
 

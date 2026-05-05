@@ -17,6 +17,7 @@ const INITIAL_INPUTS: BacktestRequest = {
   end_date: defaultEnd(),
   sigma: 0.2,
   r: 0.05,
+  q: 0,
   dte_days: 30,
 }
 

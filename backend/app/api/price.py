@@ -54,6 +54,13 @@ class PriceRequest(BaseModel):
         ge=-1.0, le=1.0, allow_inf_nan=False, description="Risk free rate (annualized, continuous)."
     )
     sigma: float = Field(ge=0, le=10, allow_inf_nan=False, description="Volatility (annualized).")
+    q: float = Field(
+        default=0.0,
+        ge=-1.0,
+        le=1.0,
+        allow_inf_nan=False,
+        description="Continuous dividend yield (annualized, continuous).",
+    )
     model: PricingModel = Field(
         default="black_scholes",
         description="Pricing model: black_scholes, binomial, or monte_carlo.",
@@ -64,9 +71,9 @@ class GreeksDisplay(BaseModel):
     """Greeks scaled for display friendly units.
 
     The math layer (`app.pricing.black_scholes.Greeks`) returns textbook
-    units (per unit sigma, per unit r, per year). The API rescales:
-    vega per 1 percent sigma, rho per 1 percent r, theta per calendar day.
-    Delta and gamma stay in their natural units.
+    units (per unit sigma, per unit r, per unit q, per year). The API rescales:
+    vega per 1 percent sigma, rho per 1 percent r, psi per 1 percent q,
+    theta per calendar day. Delta and gamma stay in their natural units.
     """
 
     delta: float
@@ -74,6 +81,7 @@ class GreeksDisplay(BaseModel):
     theta_per_day: float
     vega_per_pct: float
     rho_per_pct: float
+    psi_per_pct: float
 
 
 class PriceResponse(BaseModel):
@@ -91,6 +99,7 @@ def _to_display(g: MathGreeks) -> GreeksDisplay:
         theta_per_day=g.theta / 365.0,
         vega_per_pct=g.vega * 0.01,
         rho_per_pct=g.rho * 0.01,
+        psi_per_pct=g.psi * 0.01,
     )
 
 
@@ -101,27 +110,35 @@ def _price_call_put(
     T: float,
     r: float,
     sigma: float,
+    q: float,
 ) -> tuple[float, float]:
     if model == "black_scholes":
-        return black_scholes_call(S, K, T, r, sigma), black_scholes_put(S, K, T, r, sigma)
+        return (
+            black_scholes_call(S, K, T, r, sigma, q=q),
+            black_scholes_put(S, K, T, r, sigma, q=q),
+        )
     if model == "binomial":
         return (
-            binomial_call(S, K, T, r, sigma, steps=_BINOMIAL_STEPS),
-            binomial_put(S, K, T, r, sigma, steps=_BINOMIAL_STEPS),
+            binomial_call(S, K, T, r, sigma, q=q, steps=_BINOMIAL_STEPS),
+            binomial_put(S, K, T, r, sigma, q=q, steps=_BINOMIAL_STEPS),
         )
     return (
-        monte_carlo_call(S, K, T, r, sigma, paths=_MC_PATHS, seed=_MC_SEED),
-        monte_carlo_put(S, K, T, r, sigma, paths=_MC_PATHS, seed=_MC_SEED),
+        monte_carlo_call(S, K, T, r, sigma, q=q, paths=_MC_PATHS, seed=_MC_SEED),
+        monte_carlo_put(S, K, T, r, sigma, q=q, paths=_MC_PATHS, seed=_MC_SEED),
     )
 
 
 @router.post("/price", response_model=PriceResponse)
 def price(payload: PriceRequest) -> PriceResponse:
     call, put = _price_call_put(
-        payload.model, payload.S, payload.K, payload.T, payload.r, payload.sigma
+        payload.model, payload.S, payload.K, payload.T, payload.r, payload.sigma, payload.q
     )
-    call_g = black_scholes_call_greeks(payload.S, payload.K, payload.T, payload.r, payload.sigma)
-    put_g = black_scholes_put_greeks(payload.S, payload.K, payload.T, payload.r, payload.sigma)
+    call_g = black_scholes_call_greeks(
+        payload.S, payload.K, payload.T, payload.r, payload.sigma, q=payload.q
+    )
+    put_g = black_scholes_put_greeks(
+        payload.S, payload.K, payload.T, payload.r, payload.sigma, q=payload.q
+    )
     return PriceResponse(
         call=call,
         put=put,

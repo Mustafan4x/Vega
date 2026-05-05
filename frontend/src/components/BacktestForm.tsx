@@ -151,6 +151,13 @@ export function BacktestForm({
           invalid={invalid.has('r')}
           onChange={(v) => set('r', v / 100)}
         />
+        <NumField
+          label="Dividend yield (q)"
+          suffix="%"
+          value={Number(((inputs.q ?? 0) * 100).toFixed(3))}
+          invalid={invalid.has('q')}
+          onChange={(v) => set('q', v / 100)}
+        />
 
         <button
           type="submit"

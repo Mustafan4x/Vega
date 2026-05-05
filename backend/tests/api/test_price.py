@@ -41,7 +41,14 @@ def test_price_response_includes_greeks_in_display_units(client: TestClient) -> 
     body = response.json()
     for key in ("call_greeks", "put_greeks"):
         g = body[key]
-        assert set(g.keys()) == {"delta", "gamma", "theta_per_day", "vega_per_pct", "rho_per_pct"}
+        assert set(g.keys()) == {
+            "delta",
+            "gamma",
+            "theta_per_day",
+            "vega_per_pct",
+            "rho_per_pct",
+            "psi_per_pct",
+        }
         for v in g.values():
             assert math.isfinite(v)
 
@@ -69,6 +76,7 @@ def test_price_greeks_zero_at_expiry(client: TestClient) -> None:
         assert g["theta_per_day"] == 0.0
         assert g["vega_per_pct"] == 0.0
         assert g["rho_per_pct"] == 0.0
+        assert g["psi_per_pct"] == 0.0
 
 
 def test_price_atm_call_greater_than_put_when_r_positive(client: TestClient) -> None:
@@ -258,3 +266,38 @@ def test_price_returns_textbook_value_at_known_inputs(client: TestClient) -> Non
     body = response.json()
     assert body["call"] == pytest.approx(10.4506, abs=1e-3)
     assert body["put"] == pytest.approx(5.5735, abs=1e-3)
+
+
+def test_price_accepts_q_and_returns_psi_per_pct(client: TestClient) -> None:
+    payload = {
+        "S": 100.0,
+        "K": 100.0,
+        "T": 1.0,
+        "r": 0.05,
+        "sigma": 0.20,
+        "q": 0.03,
+    }
+    res = client.post("/api/price", json=payload)
+    assert res.status_code == 200
+    body = res.json()
+    assert body["call"] == pytest.approx(8.6525, abs=0.01)
+    assert body["put"] == pytest.approx(6.7309, abs=0.01)
+    assert "psi_per_pct" in body["call_greeks"]
+    assert "psi_per_pct" in body["put_greeks"]
+    assert body["call_greeks"]["psi_per_pct"] == pytest.approx(-0.5621, abs=0.005)
+    assert body["put_greeks"]["psi_per_pct"] == pytest.approx(0.4083, abs=0.005)
+
+
+def test_price_q_defaults_to_zero(client: TestClient) -> None:
+    """Omitting q yields the same numbers as q=0.0 (backwards compat)."""
+    payload = {"S": 100.0, "K": 100.0, "T": 1.0, "r": 0.05, "sigma": 0.20}
+    res_no_q = client.post("/api/price", json=payload).json()
+    res_q_zero = client.post("/api/price", json={**payload, "q": 0.0}).json()
+    assert res_no_q == res_q_zero
+
+
+@pytest.mark.parametrize("bad_q", [1.5, -1.5])
+def test_price_rejects_out_of_range_q(client: TestClient, bad_q: float) -> None:
+    payload = {"S": 100.0, "K": 100.0, "T": 1.0, "r": 0.05, "sigma": 0.20, "q": bad_q}
+    res = client.post("/api/price", json=payload)
+    assert res.status_code == 422

@@ -147,6 +147,7 @@ Format: `YYYY-MM-DD [A or B]: <one line summary of what changed and which compon
 
 2026-05-05 A: dividends `q` field added to InputForm, HeatMapControls (via reuse), BacktestForm; new `psi` row added to GreeksPanel with `rose` accent token; `q` rendered in HistoryScreen summary table column and detail card inputs strip.
 2026-05-05 A: GreeksPanel grid switched from 5 columns to 3 (now lays out as 2 rows of 3), so the sixth `psi` tile no longer wraps alone on the second row. Row 1 carries delta, gamma, theta; row 2 carries vega, rho, psi.
+2026-05-05 A: Sidebar narrowed from 280 to 200; topbar from 72 to 64; page padding from 24 to 16. Brand 32 to 26, nav font 20 to 15. Heat Map and Backtest screens now use viewport-bound height (calc(100vh - topbar - 2*page padding)) above 1100/880px so they fit without scrolling. Heat map canvas wraps shrink to fit available height, square aspect retained via aspect-ratio + height 100% + width auto.
 
 ## How to update this file
 

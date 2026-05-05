@@ -156,6 +156,7 @@ export function HistoryScreen(): JSX.Element {
                 <th scope="col">K</th>
                 <th scope="col">T</th>
                 <th scope="col">sigma</th>
+                <th scope="col">q</th>
                 <th scope="col">Grid</th>
                 <th scope="col"></th>
               </tr>
@@ -196,26 +197,54 @@ export function HistoryScreen(): JSX.Element {
           </p>
         )}
         {detailStatus.kind === 'ready' && selected !== null && (
-          <div className="tr-heatmap-grids">
-            <HeatMap
-              dataComp="HeatMap"
-              title="Call value"
-              grid={selected.call}
-              vAxis={selected.sigma_axis}
-              sAxis={selected.spot_axis}
-              mode="value"
-              basis={0}
-            />
-            <HeatMap
-              dataComp="PnlHeatMap"
-              title="Put value"
-              grid={selected.put}
-              vAxis={selected.sigma_axis}
-              sAxis={selected.spot_axis}
-              mode="value"
-              basis={0}
-            />
-          </div>
+          <>
+            <dl className="tr-mono" data-element="detailInputs">
+              <div data-pair="S">
+                <dt>S</dt>
+                <dd>{selected.s.toFixed(2)}</dd>
+              </div>
+              <div data-pair="K">
+                <dt>K</dt>
+                <dd>{selected.k.toFixed(2)}</dd>
+              </div>
+              <div data-pair="T">
+                <dt>T</dt>
+                <dd>{selected.t.toFixed(2)}</dd>
+              </div>
+              <div data-pair="r">
+                <dt>r</dt>
+                <dd>{(selected.r * 100).toFixed(1)}%</dd>
+              </div>
+              <div data-pair="q">
+                <dt>q</dt>
+                <dd>{(selected.q * 100).toFixed(1)}%</dd>
+              </div>
+              <div data-pair="sigma">
+                <dt>sigma</dt>
+                <dd>{(selected.sigma * 100).toFixed(1)}%</dd>
+              </div>
+            </dl>
+            <div className="tr-heatmap-grids">
+              <HeatMap
+                dataComp="HeatMap"
+                title="Call value"
+                grid={selected.call}
+                vAxis={selected.sigma_axis}
+                sAxis={selected.spot_axis}
+                mode="value"
+                basis={0}
+              />
+              <HeatMap
+                dataComp="PnlHeatMap"
+                title="Put value"
+                grid={selected.put}
+                vAxis={selected.sigma_axis}
+                sAxis={selected.spot_axis}
+                mode="value"
+                basis={0}
+              />
+            </div>
+          </>
         )}
       </section>
     </div>
@@ -236,6 +265,9 @@ function HistoryRow({ row, selected, onSelect }: HistoryRowProps): JSX.Element {
       <td className="tr-mono">{row.k.toFixed(2)}</td>
       <td className="tr-mono">{row.t.toFixed(2)}</td>
       <td className="tr-mono">{(row.sigma * 100).toFixed(1)}%</td>
+      <td className="tr-mono" data-element="q">
+        {(row.q * 100).toFixed(1)}%
+      </td>
       <td className="tr-mono">
         {row.rows} x {row.cols}
       </td>

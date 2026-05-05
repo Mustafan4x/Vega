@@ -25,6 +25,7 @@ export interface PriceRequest {
   T: number
   r: number
   sigma: number
+  q?: number
   model?: PricingModel
 }
 
@@ -34,6 +35,7 @@ export interface GreeksDisplay {
   theta_per_day: number
   vega_per_pct: number
   rho_per_pct: number
+  psi_per_pct: number
 }
 
 export interface PriceResponse {
@@ -75,6 +77,7 @@ export interface BacktestRequest {
   end_date: string
   sigma: number
   r: number
+  q?: number
   dte_days: number
 }
 
@@ -111,6 +114,7 @@ export interface CalculationSummary {
   t: number
   r: number
   sigma: number
+  q: number
   rows: number
   cols: number
 }
@@ -129,6 +133,7 @@ export interface CalculationDetail {
   t: number
   r: number
   sigma: number
+  q: number
   rows: number
   cols: number
   call: number[][]

@@ -229,7 +229,7 @@ The Pricing screen now has six inputs and the Greeks panel has six rows. This pu
 Backend, ordered by phase of TDD:
 
 - **`backend/tests/pricing/test_black_scholes_math.py`**: a parameterized block of `q != 0` reference values. Source: Hull (the chapter currently cited by the file). Plan ~6 to 8 new cases covering ITM/ATM/OTM, T near zero, `q in {0.02, 0.05, -0.01}`. Existing `q == 0` cases pass unchanged because the kernels accept `q = 0` as the default-equivalent path. Update the parity-related cases that already live in this file so the new identity `C - P = S * exp(-q*T) - K * exp(-r*T)` is asserted.
-- **`backend/tests/pricing/test_greeks.py`**: new reference values for `psi` (call and put) and updated reference values for the four Greeks that change shape under `q != 0` (`delta`, `gamma`, `vega`, `theta`). Add a Hypothesis property test that draws random `(S, K, T, r, sigma, q)` and asserts the put-call parity identity holds within tolerance.
+- **`backend/tests/pricing/test_greeks.py`**: new reference values for `psi` (call and put) and updated reference values for the four Greeks that change shape under `q != 0` (`delta`, `gamma`, `vega`, `theta`). Update the existing `test_put_call_parity` cases (parametrize block) so the new identity `C - P = S * exp(-q*T) - K * exp(-r*T)` is asserted across at least four diverse `(S, K, T, r, sigma, q)` cases including `q != 0`. Hypothesis is not currently a project dependency; stay with `pytest.parametrize`.
 - **`backend/tests/pricing/test_binomial.py`**: at least two `q != 0` cases asserting convergence to the closed-form BS value within tolerance.
 - **`backend/tests/pricing/test_monte_carlo.py`**: at least two `q != 0` cases (with the project's existing seed convention) asserting convergence to the closed-form BS value within tolerance.
 - **`backend/tests/pricing/test_black_scholes_vec.py`**: vectorized version returns identical results to scalar version under `q != 0`. Two or three new parametric cases.
@@ -262,7 +262,7 @@ Risk Reviewer sign-off is required before merge per `SPEC.md` coordination rule 
 2. With `q == 0` and an otherwise unchanged payload, every endpoint returns identical numerical results to pre-feature behavior (regression test against frozen reference values).
 3. With `q != 0`, the closed-form Black Scholes price matches the published Hull reference values within 1e-6.
 4. With `q != 0`, the binomial and Monte Carlo prices converge to the closed-form Black Scholes price within the project's existing convergence tolerances.
-5. Put-call parity holds with the new identity `C - P = S * exp(-q*T) - K * exp(-r*T)` within 1e-9 across a Hypothesis-generated input space.
+5. Put-call parity holds with the new identity `C - P = S * exp(-q*T) - K * exp(-r*T)` within 1e-9 across at least four parametrized cases including `q != 0`.
 6. The Greeks panel renders six rows for both call and put; `psi` renders in the units `per 1% q`.
 7. The Alembic migration adds the `q` column with `NOT NULL` and `server_default '0.0'`; existing rows are preserved with `q == 0.0`.
 8. The history summary card and detail view render `q` as a percent (suffix `%`) for every saved calculation, including those backfilled from before the migration.

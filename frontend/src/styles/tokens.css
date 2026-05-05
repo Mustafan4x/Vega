@@ -81,18 +81,18 @@
   --font-number: 'Newsreader', 'Iowan Old Style', Georgia, serif;
   --font-mono: 'JetBrains Mono', ui-monospace, 'SF Mono', Menlo, monospace;
 
-  /* Typography, scale (size + line-height bundled). Sizes baked at the
-     equivalent of 75 percent browser zoom on the previous scale, so the
-     full app fits one viewport without needing the user to zoom out. */
-  --text-display-lg: 42px / 1.05;
-  --text-display-md: 24px / 1.1;
-  --text-heading-lg: 18px / 1.2;
-  --text-heading-md: 14px / 1.25;
-  --text-body-lg: 13px / 1.5;
-  --text-body-md: 12px / 1.5;
-  --text-body-sm: 11px / 1.5;
-  --text-caption: 10px / 1.4;
-  --text-micro: 9px / 1.3;
+  /* Typography, scale (size + line-height bundled). Sized so the app
+     fits one viewport at 100 percent zoom on a typical desktop while
+     keeping body text in a comfortable reading range. */
+  --text-display-lg: 48px / 1.05;
+  --text-display-md: 28px / 1.1;
+  --text-heading-lg: 21px / 1.2;
+  --text-heading-md: 16px / 1.25;
+  --text-body-lg: 15px / 1.5;
+  --text-body-md: 13px / 1.5;
+  --text-body-sm: 12px / 1.5;
+  --text-caption: 11px / 1.4;
+  --text-micro: 10px / 1.3;
 
   /* Typography, weights and tracking */
   --weight-regular: 400;
@@ -144,7 +144,7 @@
   --z-modal: 40;
 
   /* Layout */
-  --layout-sidebar-width: 150px;
-  --layout-topbar-height: 48px;
+  --layout-sidebar-width: 175px;
+  --layout-topbar-height: 56px;
   --layout-page-max: 1400px;
 }

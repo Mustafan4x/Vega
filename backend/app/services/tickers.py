@@ -35,7 +35,7 @@ logger = logging.getLogger("app.tickers")
 
 TICKER_RE = re.compile(r"^[A-Z0-9.\-]{1,10}$")
 
-DEFAULT_TIMEOUT_SECONDS = 5.0
+DEFAULT_TIMEOUT_SECONDS = 12.0
 DEFAULT_TTL_SECONDS = 60.0
 DEFAULT_MAX_ENTRIES = 256
 

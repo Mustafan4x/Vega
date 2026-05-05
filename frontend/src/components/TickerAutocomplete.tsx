@@ -207,6 +207,7 @@ export function TickerAutocomplete({ onApply }: TickerAutocompleteProps): JSX.El
                     aria-selected={draft === entry.symbol}
                     className="tr-ticker-option"
                     data-element="option"
+                    title={`${entry.symbol}: ${entry.name}`}
                     onMouseDown={(e) => {
                       e.preventDefault()
                       selectTicker(entry.symbol)

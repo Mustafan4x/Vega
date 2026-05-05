@@ -13,7 +13,8 @@ Conventions verified by these tests are documented in
 * ``T`` is in years.
 * ``sigma`` is decimal annualized standard deviation.
 * ``r`` is decimal continuously compounded.
-* No dividends in v1.
+* Continuous dividend yield q is supported as of Task 1; defaults to 0.0
+  (the original v1 non dividend case) when omitted.
 * European exercise.
 
 Reference value sources:
@@ -349,11 +350,15 @@ def test_call_put_with_dividend_yield(
     expected_call: float,
     expected_put: float,
 ) -> None:
-    """Hull 10e Chapter 17 closed-form values with continuous dividend yield."""
+    """Closed form values with continuous dividend yield, recomputed analytically.
+
+    The four parametrized cases cover ATM, ITM, OTM moneyness plus a negative q
+    (growth asset / currency) case, all verified against the textbook formula
+    in Hull 10e Chapter 17."""
     call = black_scholes_call(S=S, K=K, T=T, r=r, sigma=sigma, q=q)
     put = black_scholes_put(S=S, K=K, T=T, r=r, sigma=sigma, q=q)
-    assert call == pytest.approx(expected_call, abs=1e-4)
-    assert put == pytest.approx(expected_put, abs=1e-4)
+    assert call == pytest.approx(expected_call, abs=REL_TOL)
+    assert put == pytest.approx(expected_put, abs=REL_TOL)
 
 
 def test_q_zero_matches_no_dividend_path() -> None:

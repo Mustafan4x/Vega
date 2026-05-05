@@ -1,4 +1,6 @@
-"""Black Scholes call and put pricing for European options on a non dividend paying stock.
+"""Black Scholes call and put pricing for European options on a stock.
+
+Supports optional continuous dividend yield (q).
 
 Canonical math reference: ``/home/mustafa/src/vega/docs/math/black-scholes.md``.
 Project conventions reference: ``/home/mustafa/src/vega/docs/risk/conventions.md``.

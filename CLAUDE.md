@@ -39,23 +39,6 @@ The PM session must update `STATUS.md` at three moments, no exceptions:
 
 Never start, pause, or complete a phase without updating `STATUS.md` first.
 
-### Updating the token usage tracker is mandatory
-
-The PM session must also append a Phase {N} block to `/home/mustafa/src/tracker/total_token_usage.md` at every phase close (and at the close of any phase that was bundled into the same window). The file lives outside the repo because it is build effort metadata, not a project deliverable.
-
-Each row is one agent. Numbers come from the Task tool task notifications:
-
-* `total_tokens` (subagent total token count for the whole task).
-* `tool_uses` (count of tool invocations).
-* `duration_ms` (wall clock duration; convert to `Mm Ss` for human reading).
-* What they completed in plain English, no marketing copy.
-
-Add a subagent subtotal row, then a `PM (foreground) | ~NNN,000 | N/A | N/A | summary` row with a rough estimate prefixed `~` (PM tokens cannot be queried from inside the session). Update the "Running totals" table at the bottom (Subagent column exact, PM column estimate, prefixed `~`). Read the file first to match the existing format.
-
-PM estimation heuristic: ~30k per major file read into context, ~3k per subagent dispatch prompt, ~1k per subagent return summary, ~5k per commit cycle, plus user facing output. Round to the nearest 10k.
-
-If the file does not exist yet (first PM session after the file was deleted), recreate the structure from `~/src/tracker/total_token_usage.md`'s header and `## How this file is updated` section before appending the new phase block.
-
 **You are not the PM only when** the user explicitly says "for this session you are the [Role] agent" or "act as the [Role]". In that case, read `SPEC.md` and `agents/NN-role.md` and do what that file says. Stay in that role for the session.
 
 ## How to dispatch a specialist agent

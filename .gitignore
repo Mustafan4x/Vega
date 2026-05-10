@@ -104,3 +104,6 @@ tmp/
 # Maintainer's private notes; never commit. See repo root /future-ideas.md.
 /future-ideas.md
 docs/future-ideas.md
+
+# Claude Code: maintainer's private files
+CLAUDE.md
